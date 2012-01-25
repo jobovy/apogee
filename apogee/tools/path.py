@@ -3,14 +3,13 @@ _APOGEE_DATA= os.getenv('APOGEE_DATA')
 _APOGEE_REDUX= os.getenv('APOGEE_REDUX')
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= 'v0.91'
-def apallPath(nodups=False):
+def apallPath():
     """
     NAME:
        apallPath
     PURPOSE:
        returns the path of the aprvall file
     INPUT:
-       nodups= ?
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -19,10 +18,6 @@ def apallPath(nodups=False):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
     """
-    if nodups:
-        return os.path.join(_APOGEE_DATA,
-                            'apall-nodups-'+_APOGEE_REDUX+'.fits')
-    else:
-        return os.path.join(_APOGEE_DATA,
-                            'apall-'+_APOGEE_REDUX+'.fits')
+    return os.path.join(_APOGEE_DATA,
+                        'apall-'+_APOGEE_REDUX+'.fits')
     
