@@ -3,7 +3,6 @@ import numpy
 import fitsio
 import apogee
 datafile= apogee.tools.apallPath()
-data= fitsio.read(datafile,1)
 def repeatedMeasurements(mjdrange=None,postshutdown=False):
     """
     NAME:
@@ -39,3 +38,22 @@ def repeatedMeasurements(mjdrange=None,postshutdown=False):
         meanvrad= numpy.mean(thesedata['VRAD'])
         out.extend((thesedata['VRAD']-meanvrad)/thesedata['VRADERR'])
     return numpy.array(out)
+
+def zeroVraderr():
+    """
+    NAME:
+       zeroVraderr
+    PURPOSE:
+       find zero vrads
+    INPUT:
+       (none)
+    OUTPUT:
+       recarray with only those data with vraderr=0
+    HISTORY:
+       2012-01-25 - Written - Bovy (IAS)
+    """
+    #Read data
+    data= fitsio.read(datafile,1)
+    indx= numpy.array(['STAR' in data['OBJTYPE'][ii] for ii in range(len(data))],dtype='bool')
+    data= data[indx]
+    return data[(data['VRADERR'] == 0.)]
