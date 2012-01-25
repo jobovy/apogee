@@ -2,7 +2,7 @@
 import numpy
 import fitsio
 import apogee
-datafile= apogee.tools.apallPath(nodups=nodups)
+datafile= apogee.tools.apallPath()
 data= fitsio.read(datafile,1)
 def repeatedMeasurements(mjdrange=None,postshutdown=False):
     """
@@ -28,14 +28,14 @@ def repeatedMeasurements(mjdrange=None,postshutdown=False):
     if not mjdrange is None:
         data= data[(data['MJD5'] > mjdrange[0])*(data['MJD5'] < mjdrange[1])]
     out= []
-    primarydata= data[data.specprimary]
+    primarydata= data[(data['SPECPRIMARY'] ==  1)]
     ndata= len(primarydata)
     for ii in range(ndata):
-        thesedata= data[(data.uniqid == primarydata[ii].specid)]
-        indx= (thesedata.vraderr != 0.)
+        thesedata= data[(data['UNIQID'] == primarydata['SPECID'][ii])]
+        indx= (thesedata['VRADERR'] != 0.)
         if numpy.sum(indx) < 2:
             continue
         thesedata= thesedata[indx]
-        meanvrad= numpy.mean(thesedata.vrad)
-        out.extend((thesedata.vrad-meanvrad)/thesedata.vraderr)
+        meanvrad= numpy.mean(thesedata['VRAD'])
+        out.extend((thesedata['VRAD']-meanvrad)/thesedata['VRADERR'])
     return numpy.array(out)
