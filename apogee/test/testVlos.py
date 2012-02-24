@@ -3,13 +3,14 @@ import numpy
 import fitsio
 import apogee
 datafile= apogee.tools.apallPath()
-def repeatedMeasurements(mjdrange=None,postshutdown=False):
+def repeatedMeasurements(data=None,mjdrange=None,postshutdown=False):
     """
     NAME:
        repeatedMeasurements
     PURPOSE:
        build the distribution of repeated measurements of vlos
     INPUT:
+       data= data structure (optional, default is to read all of the data)
        mjdrange= if not None, use this MJD range, or use
        postshutdown= (default: False) if True, only use post-shutdown data
     OUTPUT:
@@ -18,14 +19,15 @@ def repeatedMeasurements(mjdrange=None,postshutdown=False):
     HISTORY:
        2012-01-24 - Written - Bovy (2012)
     """
-    #Read data
-    data= fitsio.read(datafile,1)
-    indx= numpy.array(['STAR' in data['OBJTYPE'][ii] for ii in range(len(data))],dtype='bool')
-    data= data[indx]
-    if postshutdown:
-        data= data[(data['MJD5'] > 55788)]
-    if not mjdrange is None:
-        data= data[(data['MJD5'] > mjdrange[0])*(data['MJD5'] < mjdrange[1])]
+    if data is None:
+        #Read data
+        data= fitsio.read(datafile,1)
+        indx= numpy.array(['STAR' in data['OBJTYPE'][ii] for ii in range(len(data))],dtype='bool')
+        data= data[indx]
+        if postshutdown:
+            data= data[(data['MJD5'] > 55788)]
+        if not mjdrange is None:
+            data= data[(data['MJD5'] > mjdrange[0])*(data['MJD5'] < mjdrange[1])]
     out= []
     primarydata= data[(data['SPECPRIMARY'] ==  1)]
     ndata= len(primarydata)
