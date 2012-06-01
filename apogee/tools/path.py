@@ -5,7 +5,7 @@ _APOGEE_ASPCAP_REDUX= os.getenv('APOGEE_ASPCAP_REDUX')
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= 'v0.91'
 if _APOGEE_ASPCAP_REDUX is None:
-    _APOGEE_ASPCAP_REDUX= 'v0.91'
+    _APOGEE_ASPCAP_REDUX= 'v0.3'
 _ASPCAP= True
 def apallPath():
     """
