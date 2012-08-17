@@ -37,8 +37,8 @@ def repeatedMeasurements(data=None,mjdrange=None,postshutdown=False):
         if numpy.sum(indx) < 2:
             continue
         thesedata= thesedata[indx]
-        meanvrad= numpy.mean(thesedata['VRAD'])
-        out.extend((thesedata['VRAD']-meanvrad)/thesedata['VRADERR'])
+        meanvrad= numpy.mean(thesedata['VHELIO'])
+        out.extend((thesedata['VHELIO']-meanvrad)/thesedata['VRADERR'])
     return numpy.array(out)
 
 def zeroVraderr():
