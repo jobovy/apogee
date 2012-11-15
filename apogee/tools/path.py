@@ -7,7 +7,7 @@ if _APOGEE_REDUX is None:
 if _APOGEE_ASPCAP_REDUX is None:
     _APOGEE_ASPCAP_REDUX= 'v0.4'
 _ASPCAP= True
-_CODEV= '2'
+_CODEV= '1'
 def apallPath(visit=False):
     """
     NAME:
