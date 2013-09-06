@@ -40,3 +40,45 @@ def apallPath(visit=False):
             return os.path.join(_APOGEE_DATA,
                                 'allStar-'+_APOGEE_ASPCAP_REDUX+'.fits')
 
+def allStarPath():
+    """
+    NAME:
+       allStarPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       (none)
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-05-30 - Edited for ASPCAP - Bovy (IAS)
+    """
+    return os.path.join(_APOGEE_DATA,
+                        'allStar-'+_APOGEE_REDUX+'.fits')
+
+def distPath(redux=None):
+    """
+    NAME:
+       distPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       (none)
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-05-30 - Edited for ASPCAP - Bovy (IAS)
+    """
+    if redux is None:
+        redux= _APOGEE_REDUX
+    return os.path.join(_APOGEE_DATA,
+                        'distmagall-'+redux+'.fits')
+
