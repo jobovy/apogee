@@ -1,7 +1,6 @@
 import numpy
-import copy
-import fitsio
 import esutil
+import fitsio
 from apogee.tools import path
 def allStar(rmcommissioning=True,
             ak=True,
