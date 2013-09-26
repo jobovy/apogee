@@ -3,6 +3,7 @@ import esutil
 import fitsio
 from apogee.tools import path
 def allStar(rmcommissioning=True,
+            main=False,
             ak=True,
             akvers='targ',
             adddist=True,
@@ -14,6 +15,7 @@ def allStar(rmcommissioning=True,
        read the allStar file
     INPUT:
        rmcommissioning= (default: True) if True, only use data obtained after commissioning
+       main= (default: False) if True, only select stars in the main survey
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        adddist= (default: True) add distances from Michael Hayden
@@ -30,6 +32,9 @@ def allStar(rmcommissioning=True,
         indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
         indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
         data= data[True-indx]
+    if main:
+        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        data= data[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
     elif akvers.lower() == 'wise':
