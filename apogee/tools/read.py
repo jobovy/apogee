@@ -1,4 +1,5 @@
 import numpy
+from numpy.lib.recfunctions import stack_arrays
 import esutil
 import fitsio
 from apogee.tools import path
@@ -84,4 +85,42 @@ def allStar(rmcommissioning=True,
         data['SIG_DISTSOL']= dist['SIG_DISTSOL']/1000.
     return data
         
-        
+def apokasc(rmcommissioning=True,
+            main=False):
+    """
+    NAME:
+       apokasc
+    PURPOSE:
+       read the APOKASC data
+    INPUT:
+       rmcommissioning= (default: True) if True, only use data obtained after commissioning
+       main= (default: False) if True, only select stars in the main survey
+    OUTPUT:
+       APOKASC data
+    HISTORY:
+       2013-10-01 - Written - Bovy (IAS)
+    """
+    #read allStar file
+    data= allStar(rmcommissioning=rmcommissioning,main=main,adddist=False)
+    #read the APOKASC file
+    kascdata= fitsio.read(path.apokascPath())
+    #Match these two
+    h=esutil.htm.HTM()
+    m1,m2,d12 = h.match(kascdata['RA'],kascdata['DEC'],
+                        data['RA'],data['DEC'],
+                        2./3600.,maxmatch=1)
+    data= data[m2]
+    kascdata= kascdata[m1]
+    kascdata= esutil.numpy_util.add_fields(kascdata,[('J0', float),
+                                                     ('H0', float),
+                                                     ('K0', float),
+                                                     ('LOGG', float),
+                                                     ('TEFF', float),
+                                                     ('METALS', float)])
+    kascdata['J0']= data['J0']
+    kascdata['H0']= data['H0']
+    kascdata['K0']= data['K0']
+    kascdata['LOGG']= data['LOGG']
+    kascdata['TEFF']= data['TEFF']
+    kascdata['METALS']= data['METALS']
+    return kascdata
