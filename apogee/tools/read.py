@@ -124,3 +124,25 @@ def apokasc(rmcommissioning=True,
     kascdata['TEFF']= data['TEFF']
     kascdata['METALS']= data['METALS']
     return kascdata
+
+def rcsample(main=False):
+    """
+    NAME:
+       rcsample
+    PURPOSE:
+       read the rcsample file
+    INPUT:
+       main= (default: False) if True, only select stars in the main survey
+    OUTPUT:
+       rcsample data
+    HISTORY:
+       2013-10-08 - Written - Bovy (IAS)
+    """
+    #read rcsample file
+    data= fitsio.read(path.rcsamplePath())
+    #Some cuts
+    if main:
+        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        data= data[indx]
+    return data
+        
