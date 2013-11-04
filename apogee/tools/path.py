@@ -125,3 +125,23 @@ def rcsamplePath():
     return os.path.join(_APOGEE_DATA,
                         'rcsample_'+_APOGEE_REDUX+'.fits')
 
+def obslogPath(year=2):
+    """
+    NAME:
+       obslogPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       year= read up to this year (2)
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for obslog - Bovy (IAS)
+    """
+    if year == 1 or year == 2:
+        return os.path.join(_APOGEE_DATA,
+                            'obs-summary-year1+2.csv')

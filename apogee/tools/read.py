@@ -146,3 +146,46 @@ def rcsample(main=False):
         data= data[indx]
     return data
         
+def obslog(year=2):
+    """
+    NAME:
+       obslog
+    PURPOSE:
+       read the observation summary up to a certain year
+    INPUT:
+       year= read up to this year (2)
+    OUTPUT:
+       observation log
+    HISTORY:
+       2013-11-04 - Written - Bovy (IAS)
+    """
+    obslogfilename= path.obslogPath(year=year)
+    obslogtxt= numpy.genfromtxt(obslogfilename,skiprows=2,delimiter='|',
+                                dtype=[('Fieldname','S14'),
+                                       ('LocID','int'),
+                                       ('ra','float'),
+                                       ('dec','float'),
+                                       ('Plate','int'),
+                                       ('A_ver','S14'),
+                                       ('DrilledHA','float'),
+                                       ('HDB','int'),
+                                       ('NObs_Plan','int'),
+                                       ('NObs_Done','int'),
+                                       ('NObs_Ver_Plan','int'),
+                                       ('NObs_Ver_Done','int'),
+                                       ('Total_SN','float'),
+                                       ('Red_SN','float'),
+                                       ('ManPriority','int'),
+                                       ('Priority','float'),
+                                       ('Time','float'),
+                                       ('Shared','int'),
+                                       ('Stars','int'),
+                                       ('At_APO','int'),
+                                       ('Reduction','int'),
+                                       ('ObsHistory','S50'),
+                                       ('UNKNOWN','S50'),
+                                       ('UNKNOWN1','int'),
+                                       ('UNKNOWN2','int'),
+                                       ('ReductionHistory','S50')],
+                                invalid_raise=False)
+    return obslogtxt
