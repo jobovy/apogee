@@ -1,5 +1,19 @@
+##################################################################################
+#
+#   apogee.tools.read: read various APOGEE data files
+#
+#   contains:
+#   
+#             - allStar: read the allStar.fits file
+#             - apogeeDesign: read the apogeeDesign file
+#             - apogeeField: read the apogeeField file
+#             - apogeePlate: read the apogeePlate file
+#             - apokasc: read the APOKASC catalog
+#             - obslog: read the observation log
+#             - rcsample: read the red clump sample
+#
+##################################################################################
 import numpy
-from numpy.lib.recfunctions import stack_arrays
 import esutil
 import fitsio
 from apogee.tools import path
@@ -187,5 +201,50 @@ def obslog(year=2):
                                        ('UNKNOWN1','int'),
                                        ('UNKNOWN2','int'),
                                        ('ReductionHistory','S50')],
-                                invalid_raise=False)
+                                skip_footer=1)
     return obslogtxt
+
+def apogeePlate(dr='X'):
+    """
+    NAME:
+       apogeePlate
+    PURPOSE:
+       read the apogeePlate file
+    INPUT:
+       dr= return the file corresponding to this data release
+    OUTPUT:
+       apogeePlate file
+    HISTORY:
+       2013-11-04 - Written - Bovy (IAS)
+    """
+    return fitsio.read(path.apogeePlatePath(dr=dr))
+
+def apogeeDesign(dr='X'):
+    """
+    NAME:
+       apogeePlate
+    PURPOSE:
+       read the apogeePlate file
+    INPUT:
+       dr= return the file corresponding to this data release
+    OUTPUT:
+       apogeeDesign file
+    HISTORY:
+       2013-11-04 - Written - Bovy (IAS)
+    """
+    return fitsio.read(path.apogeeDesignPath(dr=dr))
+
+def apogeeField(dr='X'):
+    """
+    NAME:
+       apogeePlate
+    PURPOSE:
+       read the apogeePlate file
+    INPUT:
+       dr= return the file corresponding to this data release
+    OUTPUT:
+       apogeeField file
+    HISTORY:
+       2013-11-04 - Written - Bovy (IAS)
+    """
+    return fitsio.read(path.apogeeFieldPath(dr=dr))

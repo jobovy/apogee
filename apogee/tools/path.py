@@ -1,3 +1,27 @@
+##################################################################################
+#
+#   apogee.tools.path: return the path of various APOGEE data files
+#
+#   This file depends on various environment variables that should be set:
+#
+#             - APOGEE_DATA: top-level directory with APOGEE data
+#             - APOGEE_REDUX: APOGEE reduction version (e.g., v304 for DR10)
+#             - APOGEE_APOKASC_REDUX: APOKASC catalog version
+#
+#   contains:
+#   
+#             - allStarPath: the path of the allStar file
+#             - apogeeDesignPath: path of the apogeeDesign file
+#             - apogeeFieldPath: path of the apogeeField file
+#             - apogeePlatePlate: path of the apogeePlate file
+#             - apokascPath: path of the APOKASC catalog
+#             - distPath: path of the file that has M. Hayden's distances
+#             - obslogPath: path of the observation log
+#             - rcsamplePath: path of the red clump sample file
+#             - apallPath: the path of the apall file (an early version of 
+#               allStar by JB, now deprecated)
+#
+##################################################################################
 import os, os.path
 _APOGEE_DATA= os.getenv('APOGEE_DATA')
 _APOGEE_REDUX= os.getenv('APOGEE_REDUX')
@@ -145,3 +169,94 @@ def obslogPath(year=2):
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year1+2.csv')
+
+def apogeeTargetDirPath(dr='X'):
+    """
+    NAME:
+       apogeeTargetDirPath
+    PURPOSE:
+       returns the path of the relevant directory
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for apogeeTargetDir - Bovy (IAS)
+    """
+    return os.path.join(_APOGEE_DATA,'dr','apogee','target','apogee_DR'+dr)
+    
+def apogeePlatePath(dr='X'):
+    """
+    NAME:
+       apogeePlatePath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+    """
+    if dr == 'X':
+        platename= 'apogeePlate.fits'
+    else:
+        platename= 'apogeePlate_DR%s.fits' % dr
+    return os.path.join(apogeeTargetDirPath(dr=dr),
+                        platename)
+
+def apogeeDesignPath(dr='X'):
+    """
+    NAME:
+       apogeeDesignPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+    """
+    if dr == 'X':
+        platename= 'apogeeDesign.fits'
+    else:
+        platename= 'apogeeDesign_DR%s.fits' % dr
+    return os.path.join(apogeeTargetDirPath(dr=dr),
+                        platename)
+
+def apogeeFieldPath(dr='X'):
+    """
+    NAME:
+       apogeeFieldPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+    """
+    if dr == 'X':
+        platename= 'apogeeField.fits'
+    else:
+        platename= 'apogeeField_DR%s.fits' % dr
+    return os.path.join(apogeeTargetDirPath(dr=dr),
+                        platename)
