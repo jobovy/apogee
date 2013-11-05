@@ -22,7 +22,9 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4326,4327,4328,4329]
 class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
-    def __init__(self,sample='rcsample',plates=None,year=2):
+    def __init__(self,sample='rcsample',
+                 locations=None,
+                 year=2):
         """
         NAME:
            __init__
@@ -30,7 +32,7 @@ class apogeeSelect:
            load the selection function for this sample
         INPUT:
            sample= ('rcsample') sample to consider
-           plates= plates to load the selection function for
+           locations= locations to load the selection function for
            year= (2) load up to this year 
         OUTPUT:
         HISTORY:
@@ -45,6 +47,8 @@ class apogeeSelect:
             mjds= numpy.array(origobslog[ii]['ObsHistory'].split(','),dtype='int')
             if numpy.all(mjds < 55805): #commissioning MJD
                 indx[ii]= False
+            if origobslog[ii]['Plate'] in _COMPLATES:
+                indx[ii]= False
         origobslog= origobslog[indx]
         indx= origobslog['ObsHistory'] != 'NOT,OBSERVED'
         obslog= origobslog[indx]
@@ -54,13 +58,6 @@ class apogeeSelect:
             if obslog[ii]['NObs_Ver_Done'] < obslog[ii]['NObs_Ver_Plan']:
                 indx[ii]= False
         obslog= obslog[indx]
-        #Only select requested plates
-        if not plates is None:
-            indx= numpy.ones(len(obslog),dtype='bool')
-            for ii in range(len(obslog)):
-                if not obslog[ii]['Plate'] in plates:
-                    indx[ii]= False
-            obslog= obslog[indx]
         self._plates= obslog['Plate']
         self._obslog= obslog
         nplates= len(self._plates)
@@ -71,9 +68,11 @@ class apogeeSelect:
             dr= 'X'
         #Match up plates with designs           
         apogeePlate= apread.apogeePlate(dr=dr)
-        pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed
+        pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
         for ii in range(len(apogeePlate)):
             if numpy.sum(origobslog['Plate'] == apogeePlate['PLATE_ID'][ii]) == 0:
+                pindx[ii]= False
+            if apogeePlate['PLATE_ID'][ii] in _COMPLATES:
                 pindx[ii]= False
         apogeePlate= apogeePlate[pindx]
         apogeeDesign= apread.apogeeDesign(dr=dr)
@@ -105,11 +104,13 @@ class apogeeSelect:
         self._platesIndx= self._platesIndx[indx]
         self._designsIndx= self._designsIndx[indx]
         #Now match plates and designs with fields
-        apogeeField= apread.apogeeField(dr=dr)
-        locations= list(set(apogeeDesign[self._designsIndx]['LOCATION_ID']))
+        if locations is None:
+            locations= list(set(apogeeDesign[self._designsIndx]['LOCATION_ID']))
         self._locations= locations        
-        locPlatesIndx= numpy.zeros((len(self._locations),8),dtype='int')-1 #At most 8 plates / location
+        locPlatesIndx= numpy.zeros((len(self._locations),20),dtype='int')-1 #There can be more than 8 plates bc of redrilling
+        locDesignsIndx= numpy.zeros((len(self._locations),20),dtype='int')-1 #At most 8 designs / location, but we match to plates
         dummyIndxArray= numpy.arange(len(apogeePlate['PLATE_ID']),dtype='int')
+        dummyIndxArrayDesigns= numpy.arange(len(apogeeDesign['DESIGN_ID']),dtype='int')
         for ii in range(len(self._locations)):
             pindx= apogeePlate['LOCATION_ID'] == self._locations[ii]
             if numpy.sum(pindx) == 0:
@@ -120,13 +121,19 @@ class apogeeSelect:
                 dindx= apogeeDesign['DESIGN_ID'] == apogeePlate['DESIGN_ID'][cpindx][jj]
                 if numpy.any(apogeeDesign['SHORT_COHORT_VERSION'][dindx] < 0.):
                     pindx[dummyIndxArray[pindx][jj]]= False
-            try:
-                locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
-            except ValueError:
-                print "WARNING: FEW DISCREPANT LOCATIONS"
-                print ii, self._locations[ii], numpy.sum(pindx)
+            locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
+            for jj in range(numpy.sum(pindx)):
+                #Find the design index
+                dindx= apogeeDesign['DESIGN_ID'] == apogeePlate['DESIGN_ID'][pindx][jj]
+                locDesignsIndx[ii,jj]= dummyIndxArrayDesigns[dindx][0]
         self._locPlatesIndx= locPlatesIndx
+        self._locDesignsIndx= locDesignsIndx
+        #locations has all of the relevant locations
+        #locPlatesIndx has the corresponding indices into apogeePlate
+        #locDesignsIndx has the corresponding indices into apogeePlate
 
+
+        apogeeField= apread.apogeeField(dr=dr)
 
         self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
