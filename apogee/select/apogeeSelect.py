@@ -131,7 +131,35 @@ class apogeeSelect:
         #locations has all of the relevant locations
         #locPlatesIndx has the corresponding indices into apogeePlate
         #locDesignsIndx has the corresponding indices into apogeePlate
+        #Now figure out how much of each cohort has been observed
+        short_cohorts= numpy.zeros((len(self._locations),20))
+        short_cohorts_total= numpy.zeros((len(self._locations),20))
+        medium_cohorts= numpy.zeros((len(self._locations),4))
+        medium_cohorts_total= numpy.zeros((len(self._locations),4))
+        long_cohorts= numpy.zeros((len(self._locations),1))
+        long_cohorts_total= numpy.zeros((len(self._locations),1))
+        for ii in range(len(self._locations)):
+            for jj in range(self._locPlatesIndx.shape[1]):
+                if self._locDesignsIndx[ii,jj] == -1: continue
+                if apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                    short_cohorts_total[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                if apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                    medium_cohorts_total[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                    long_cohorts_total[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                if apogeePlate['PLATE_ID'][self._locPlatesIndx[ii,jj]] in self._plates:
+                    if apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                        short_cohorts[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                    if apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                        medium_cohorts[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                    if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
+                        long_cohorts[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+        self._short_completion= short_cohorts/short_cohorts_total
+        self._medium_completion= medium_cohorts/medium_cohorts_total
+        self._long_completion= long_cohorts/long_cohorts_total
 
+        self._long_cohorts= long_cohorts
+        self._long_cohorts_total= long_cohorts_total
 
         apogeeField= apread.apogeeField(dr=dr)
 
