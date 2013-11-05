@@ -157,14 +157,29 @@ class apogeeSelect:
         self._short_completion= short_cohorts/short_cohorts_total
         self._medium_completion= medium_cohorts/medium_cohorts_total
         self._long_completion= long_cohorts/long_cohorts_total
-
+        self._short_cohorts= short_cohorts
+        self._short_cohorts_total= short_cohorts_total
+        self._medium_cohorts= medium_cohorts
+        self._medium_cohorts_total= medium_cohorts_total
         self._long_cohorts= long_cohorts
         self._long_cohorts_total= long_cohorts_total
-
+        #Read apogeeField for location info
         apogeeField= apread.apogeeField(dr=dr)
+        indx= numpy.ones(len(apogeeField),dtype='bool')
+        for ii in range(len(apogeeField)):
+            if not apogeeField['LOCATION_ID'][ii] in self._locations:
+                indx[ii]= False
+        apogeeField= apogeeField[indx]
+        reorderapField= numpy.zeros(len(apogeeField),dtype='int')
+        dummyIndxArray= numpy.arange(len(self._locations),dtype='int')
+        for ii in range(len(apogeeField)):
+            reorderapField[ii]= dummyIndxArray[apogeeField['LOCATION_ID'][ii] == self._locations]
+        apogeeField= apogeeField[numpy.argsort(reorderapField)]
+        #There is a duplicate in apogeeField
 
         self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
+        self._apogeeField= apogeeField
 
         return None
             
