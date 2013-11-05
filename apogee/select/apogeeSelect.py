@@ -1,6 +1,25 @@
+import copy
 import numpy
 ##APOGEE TOOLS
 import apogee.tools.read as apread
+#Commissioning plates
+_COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
+             4829,4830,4809,4813,4814,4817,
+             #Moved downtown from here
+             5105,5070,5071,5072,5073,5074,5075,5076,5077,5078,5079,5080,
+             5081,5082,5083,5084,5085,5086,5087,5088,5089,5090,5091,5092,
+             4935,4936,4937,4938,4939,4940,4942,4943,4944,4945,4918,4919,
+             4909,4911,4913,4912,4915,4914,4917,4916,4810,4811,4812,4815,
+             4816,4818,4819,4820,4821,4822,4823,4824,4825,4946,4947,4948,
+             4949,4950,4951,4927,4932,4928,4929,4930,4931,4933,4934,5096,
+             5097,5098,5099,5100,5101,5102,5103,5104,
+             #Retired from here
+             4674,4673,4681,4680,4679,4670,4671,4672,4675,4676,4677,4678,
+             4682,4595,4596,4597,4598,4599,4600,4589,4593,4594,4587,4588,
+             4590,4591,4592,4440,4441,4442,4443,4512,4513,4514,4515,4516,
+             4517,4518,4519,4520,4521,
+             4325,#Not ever drilled, just test
+             4326,4327,4328,4329]
 class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
     def __init__(self,sample='rcsample',plates=None,year=2):
@@ -89,19 +108,28 @@ class apogeeSelect:
         apogeeField= apread.apogeeField(dr=dr)
         locations= list(set(apogeeDesign[self._designsIndx]['LOCATION_ID']))
         self._locations= locations        
-        locPlatesIndx= numpy.zeros((len(self._locations),8)) #At most 8 plates / location
-        dummyIndxArray= numpy.arange(len(apogeePlate['PLATE_ID']))
+        locPlatesIndx= numpy.zeros((len(self._locations),8),dtype='int')-1 #At most 8 plates / location
+        dummyIndxArray= numpy.arange(len(apogeePlate['PLATE_ID']),dtype='int')
         for ii in range(len(self._locations)):
             pindx= apogeePlate['LOCATION_ID'] == self._locations[ii]
             if numpy.sum(pindx) == 0:
                 raise IOError("No entry found in apogeePlate for location %i" % (self._locations[ii]))
+            #Remove designs with negative short cohort numbers
+            cpindx= copy.copy(pindx)
+            for jj in range(numpy.sum(cpindx)):
+                dindx= apogeeDesign['DESIGN_ID'] == apogeePlate['DESIGN_ID'][cpindx][jj]
+                if numpy.any(apogeeDesign['SHORT_COHORT_VERSION'][dindx] < 0.):
+                    pindx[dummyIndxArray[pindx][jj]]= False
             try:
                 locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
             except ValueError:
-                print ii, self._locations[ii]
-                raise
+                print "WARNING: FEW DISCREPANT LOCATIONS"
+                print ii, self._locations[ii], numpy.sum(pindx)
         self._locPlatesIndx= locPlatesIndx
+
+
         self._apogeePlate= apogeePlate
+        self._apogeeDesign= apogeeDesign
 
         return None
             
