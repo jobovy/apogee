@@ -20,7 +20,7 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4682,4595,4596,4597,4598,4599,4600,4589,4593,4594,4587,4588,
              4590,4591,4592,4440,4441,4442,4443,4512,4513,4514,4515,4516,
              4517,4518,4519,4520,4521,
-             4325,#Not ever drilled, just test
+             4325,#Not ever drilled, just test from here
              4326,4327,4328,4329]
 class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
@@ -191,11 +191,14 @@ class apogeeSelect:
                                          degree=True)
         apogeeField= _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])
         apogeeField= _append_field_recarray(apogeeField,'GLAT',fieldlb[:,1])
-        #There is a duplicate in apogeeField
-
+        #Save these
         self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
+        #Load spectroscopic data and cut to the statistical sample
+
+        #Load the underlying photometric sample for the locations/cohorts in 
+        #the statistical sample
 
         return None
 
