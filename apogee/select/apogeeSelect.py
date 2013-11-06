@@ -201,7 +201,8 @@ class apogeeSelect:
 
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
-                          yrange=[-90.,90.]):
+                          yrange=[-90.,90.],
+                          ms=30.):
         """
         NAME:
            plot_obs_progress
@@ -210,6 +211,7 @@ class apogeeSelect:
         INPUT:
            cohort= ('short') cohort to consider
            xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
         OUTPUT:
            plot to output device
         HISTORY:
@@ -227,15 +229,15 @@ class apogeeSelect:
         bovy_plot.bovy_print(fig_width=8.)
         bovy_plot.bovy_plot(self._apogeeField['GLON'],
                             self._apogeeField['GLAT'],
-                            c=progress,s=50.,
+                            c=progress,s=ms,
                             scatter=True,
                             edgecolor='none',
                             colorbar=True,
                             vmin=0.,vmax=1.,
                             crange=[0.,1.],
                             xrange=xrange,yrange=yrange,
-                            xlabel=r'$\mathrm{Galactic\ longitude}$',
-                            ylabel=r'$\mathrm{Galactic\ latitude}$',
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
                             clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
                             zorder=10)
         #Then plot *all* locations as zero progress, to include the ones that 
@@ -259,8 +261,9 @@ class apogeeSelect:
         apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
         colormap = cm.jet
         bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
-                            s=50.,overplot=True,
+                            s=ms,overplot=True,
                             c=colormap(0.),
+                            edgecolor='none',
                             scatter=True,
                             vmin=0.,vmax=1.,
                             crange=[0.,1.],
