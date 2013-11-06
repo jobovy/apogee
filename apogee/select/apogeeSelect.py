@@ -1,5 +1,7 @@
 import copy
 import numpy
+from galpy.util import bovy_plot, bovy_coords
+from matplotlib import cm
 ##APOGEE TOOLS
 import apogee.tools.read as apread
 #Commissioning plates
@@ -62,12 +64,13 @@ class apogeeSelect:
         self._obslog= obslog
         nplates= len(self._plates)
         #Read the plate and design files
-        if year == 1:
-            dr= '10'
-        elif year == 2:
-            dr= 'X'
+        self._year= year
+        if self._year == 1:
+            self._dr= '10'
+        elif self._year == 2:
+            self._dr= 'X'
         #Match up plates with designs           
-        apogeePlate= apread.apogeePlate(dr=dr)
+        apogeePlate= apread.apogeePlate(dr=self._dr)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
         for ii in range(len(apogeePlate)):
             if numpy.sum(origobslog['Plate'] == apogeePlate['PLATE_ID'][ii]) == 0:
@@ -75,7 +78,7 @@ class apogeeSelect:
             if apogeePlate['PLATE_ID'][ii] in _COMPLATES:
                 pindx[ii]= False
         apogeePlate= apogeePlate[pindx]
-        apogeeDesign= apread.apogeeDesign(dr=dr)
+        apogeeDesign= apread.apogeeDesign(dr=self._dr)
         designs= numpy.zeros_like(self._plates)
         platesIndx= numpy.zeros(nplates,dtype='int')
         designsIndx= numpy.zeros(nplates,dtype='int')
@@ -130,7 +133,7 @@ class apogeeSelect:
         self._locDesignsIndx= locDesignsIndx
         #locations has all of the relevant locations
         #locPlatesIndx has the corresponding indices into apogeePlate
-        #locDesignsIndx has the corresponding indices into apogeePlate
+        #locDesignsIndx has the corresponding indices into apogeeDesign
         #Now figure out how much of each cohort has been observed
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
@@ -164,17 +167,30 @@ class apogeeSelect:
         self._long_cohorts= long_cohorts
         self._long_cohorts_total= long_cohorts_total
         #Read apogeeField for location info
-        apogeeField= apread.apogeeField(dr=dr)
+        apogeeField= apread.apogeeField(dr=self._dr)
         indx= numpy.ones(len(apogeeField),dtype='bool')
         for ii in range(len(apogeeField)):
             if not apogeeField['LOCATION_ID'][ii] in self._locations:
                 indx[ii]= False
         apogeeField= apogeeField[indx]
+        #Remove duplicates
+        dupIndx= numpy.ones(len(apogeeField),dtype='bool')
+        dupIndxArray= numpy.arange(len(apogeeField),dtype='int')
+        for ii in range(len(apogeeField)):
+            mindx= apogeeField['LOCATION_ID'] == apogeeField['LOCATION_ID'][ii]
+            if numpy.sum(mindx) > 1 and ii != dupIndxArray[mindx][0]: #There is a duplicate
+                dupIndx[ii]= False
+        apogeeField= apogeeField[dupIndx]
         reorderapField= numpy.zeros(len(apogeeField),dtype='int')
         dummyIndxArray= numpy.arange(len(self._locations),dtype='int')
         for ii in range(len(apogeeField)):
             reorderapField[ii]= dummyIndxArray[apogeeField['LOCATION_ID'][ii] == self._locations]
         apogeeField= apogeeField[numpy.argsort(reorderapField)]
+        apogeeField= apogeeField.view(numpy.recarray)
+        fieldlb= bovy_coords.radec_to_lb(apogeeField['RA'],apogeeField['DEC'],
+                                         degree=True)
+        apogeeField= _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])
+        apogeeField= _append_field_recarray(apogeeField,'GLAT',fieldlb[:,1])
         #There is a duplicate in apogeeField
 
         self._apogeePlate= apogeePlate
@@ -182,4 +198,81 @@ class apogeeSelect:
         self._apogeeField= apogeeField
 
         return None
+
+    def plot_obs_progress(self,cohort='short',
+                          xrange=[0.,360.],
+                          yrange=[-90.,90.]):
+        """
+        NAME:
+           plot_obs_progress
+        PURPOSE:
+           plot the observational progress of a specific cohort
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-05 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        progress= numpy.zeros(len(self._locations))
+        for ii in range(len(self._locations)):
+            if cohort == 'short':
+                progress[ii]= numpy.mean(self._short_completion[ii,True-numpy.isnan(self._short_completion[ii,:])])
+            elif cohort == 'medium':
+                progress[ii]= numpy.mean(self._medium_completion[ii,True-numpy.isnan(self._medium_completion[ii,:])])
+            if cohort == 'long':
+                progress[ii]= numpy.mean(self._long_completion[ii,True-numpy.isnan(self._long_completion[ii,:])])
+        bovy_plot.bovy_print(fig_width=8.)
+        bovy_plot.bovy_plot(self._apogeeField['GLON'],
+                            self._apogeeField['GLAT'],
+                            c=progress,s=50.,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude}$',
+                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
+                            zorder=10)
+        #Then plot *all* locations as zero progress, to include the ones that 
+        #haven't been started yet
+        apF= apread.apogeeField(dr=self._dr)
+        apD= apread.apogeeDesign(dr=self._dr)
+        #Remove fields that don't have this cohort
+        has_cohort= numpy.ones(len(apF),dtype='bool')
+        for ii in range(len(apF)):
+            dindx= apD['LOCATION_ID'] == apF['LOCATION_ID'][ii]
+            if cohort == 'short':
+                if numpy.all(apD['SHORT_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'medium':
+                if numpy.all(apD['MEDIUM_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'long':
+                if numpy.all(apD['LONG_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+        apF= apF[has_cohort]
+        apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
+        colormap = cm.jet
+        bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
+                            s=50.,overplot=True,
+                            c=colormap(0.),
+                            scatter=True,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            zorder=1)
+        return None
+        
             
+def _append_field_recarray(recarray, name, new):
+    new = numpy.asarray(new)
+    newdtype = numpy.dtype(recarray.dtype.descr + [(name, new.dtype)])
+    newrecarray = numpy.recarray(recarray.shape, dtype=newdtype)
+    for field in recarray.dtype.fields:
+        newrecarray[field] = recarray.field(field)
+    newrecarray[name] = new
+    return newrecarray
