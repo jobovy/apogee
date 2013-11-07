@@ -1,3 +1,4 @@
+import sys
 import copy
 import numpy
 from galpy.util import bovy_plot, bovy_coords
@@ -22,6 +23,7 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4517,4518,4519,4520,4521,
              4325,#Not ever drilled, just test from here
              4326,4327,4328,4329]
+_ERASESTR= "                                                                                "
 class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
     def __init__(self,sample='rcsample',
@@ -106,6 +108,10 @@ class apogeeSelect:
         self._designs= self._designs[indx]
         self._platesIndx= self._platesIndx[indx]
         self._designsIndx= self._designsIndx[indx]
+        #plates has the list of plates
+        #designs has the corresponding list of designs
+        #platesIndx has the index into apogeePlate for the list of plates
+        #designsIndx has the index into apogeeDesign for the list of plates
         #Now match plates and designs with fields
         if locations is None:
             locations= list(set(apogeeDesign[self._designsIndx]['LOCATION_ID']))
@@ -157,9 +163,12 @@ class apogeeSelect:
                         medium_cohorts[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
                     if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         long_cohorts[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
-        self._short_completion= short_cohorts/short_cohorts_total
-        self._medium_completion= medium_cohorts/medium_cohorts_total
-        self._long_completion= long_cohorts/long_cohorts_total
+        self._short_completion= numpy.zeros_like(short_cohorts)
+        self._short_completion[short_cohorts_total != 0.]= short_cohorts[short_cohorts_total != 0.]/short_cohorts_total[short_cohorts_total != 0.]
+        self._medium_completion= numpy.zeros_like(medium_cohorts)
+        self._medium_completion[medium_cohorts_total != 0.]= medium_cohorts[medium_cohorts_total != 0.]/medium_cohorts_total[medium_cohorts_total != 0.]
+        self._long_completion= numpy.zeros_like(long_cohorts)
+        self._long_completion[long_cohorts_total != 0.]= long_cohorts[long_cohorts_total != 0.]/long_cohorts_total[long_cohorts_total != 0.]
         self._short_cohorts= short_cohorts
         self._short_cohorts_total= short_cohorts_total
         self._medium_cohorts= medium_cohorts
@@ -196,12 +205,59 @@ class apogeeSelect:
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
         #Load spectroscopic data and cut to the statistical sample
-
+        sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
+        sys.stdout.flush()
+        self._load_spec_data(sample=sample)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
         #Load the underlying photometric sample for the locations/cohorts in 
         #the statistical sample
 
         return None
 
+    def _load_spec_data(self,sample='rcsample'):
+        """Internal function to load the spectroscopic data set and cut it 
+        down to the statistical sample"""
+        if sample.lower() == 'rcsample':
+            specdata= apread.rcsample(main=True)
+        #Also read the allVisit file to match back to plates
+        allVisit= apread.allVisit() #no need to cut to main
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                 allVisit['PLATE'][ii]+'-'+
+                 '%05i' % allVisit['MJD'][ii] + '-'
+                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S17')
+        statIndx= numpy.zeros(len(specdata),dtype='bool')
+        #Go through the spectroscopic sample and check that it is in a full cohort
+        for ii in range(len(specdata)):
+            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
+            indx= visits == avisit
+            avisitsplate= int(allVisit['PLATE'][indx][0])
+            #Find the design corresponding to this plate
+            tplatesIndx= (self._plates == avisitsplate)
+            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
+            #Determine which cohort this star is in
+            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
+                tcohort= 'short'
+                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
+                tcohort= 'medium'
+                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
+                tcohort= 'long'
+                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
+            else:
+                tcohort= '???'
+            locIndx= specdata['LOCATION_ID'][ii] == self._locations
+            if cohortnum > 0 and tcohort != '???' and \
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] == 1.) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
+                statIndx[ii]= True
+        print numpy.sum(statIndx)
+        specdata= specdata[statIndx]
+        self._specdata= specdata
+                     
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],

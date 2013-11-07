@@ -11,6 +11,7 @@
 #   contains:
 #   
 #             - allStarPath: the path of the allStar file
+#             - allVisitPath: the path of the allStar file
 #             - apogeeDesignPath: path of the apogeeDesign file
 #             - apogeeFieldPath: path of the apogeeField file
 #             - apogeePlatePlate: path of the apogeePlate file
@@ -86,6 +87,26 @@ def allStarPath():
     """
     return os.path.join(_APOGEE_DATA,
                         'allStar-'+_APOGEE_REDUX+'.fits')
+
+def allVisitPath():
+    """
+    NAME:
+       allVisitPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       (none)
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-05-30 - Edited for ASPCAP - Bovy (IAS)
+    """
+    return os.path.join(_APOGEE_DATA,
+                        'allVisit-'+_APOGEE_REDUX+'.fits')
 
 def apokascPath():
     """

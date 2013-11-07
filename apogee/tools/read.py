@@ -99,6 +99,55 @@ def allStar(rmcommissioning=True,
         data['SIG_DISTSOL']= dist['SIG_DISTSOL']/1000.
     return data
         
+def allVisit(rmcommissioning=True,
+             main=False,
+             ak=True,
+             akvers='targ'):
+    """
+    NAME:
+       allVisit
+    PURPOSE:
+       read the allVisit file
+    INPUT:
+       rmcommissioning= (default: True) if True, only use data obtained after commissioning
+       main= (default: False) if True, only select stars in the main survey
+       ak= (default: True) only use objects for which dereddened mags exist
+       akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
+    OUTPUT:
+       allVisit data
+    HISTORY:
+       2013-11-07 - Written - Bovy (IAS)
+    """
+    #read allStar file
+    data= fitsio.read(path.allVisitPath())
+    #Some cuts
+    if rmcommissioning:
+        indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
+        indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
+        data= data[True-indx]
+    if main:
+        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        data= data[indx]
+    if akvers.lower() == 'targ':
+        aktag= 'AK_TARG'
+    elif akvers.lower() == 'wise':
+        aktag= 'AK_WISE'
+    if ak:
+        data= data[(data[aktag] > -50.)]
+    #Add dereddened J, H, and Ks
+    aj= data[aktag]*2.5
+    ah= data[aktag]*1.55
+    data= esutil.numpy_util.add_fields(data,[('J0', float),
+                                             ('H0', float),
+                                             ('K0', float)])
+    data['J0']= data['J']-aj
+    data['H0']= data['H']-ah
+    data['K0']= data['K']-data[aktag]
+    data['J0'][(data[aktag] <= -50.)]= -9999.9999
+    data['H0'][(data[aktag] <= -50.)]= -9999.9999
+    data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    return data
+        
 def apokasc(rmcommissioning=True,
             main=False):
     """
