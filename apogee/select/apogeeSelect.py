@@ -163,11 +163,11 @@ class apogeeSelect:
                         medium_cohorts[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
                     if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         long_cohorts[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
-        self._short_completion= numpy.zeros_like(short_cohorts)
+        self._short_completion= numpy.zeros_like(short_cohorts)+numpy.nan
         self._short_completion[short_cohorts_total != 0.]= short_cohorts[short_cohorts_total != 0.]/short_cohorts_total[short_cohorts_total != 0.]
-        self._medium_completion= numpy.zeros_like(medium_cohorts)
+        self._medium_completion= numpy.zeros_like(medium_cohorts)+numpy.nan
         self._medium_completion[medium_cohorts_total != 0.]= medium_cohorts[medium_cohorts_total != 0.]/medium_cohorts_total[medium_cohorts_total != 0.]
-        self._long_completion= numpy.zeros_like(long_cohorts)
+        self._long_completion= numpy.zeros_like(long_cohorts)+numpy.nan
         self._long_completion[long_cohorts_total != 0.]= long_cohorts[long_cohorts_total != 0.]/long_cohorts_total[long_cohorts_total != 0.]
         self._short_cohorts= short_cohorts
         self._short_cohorts_total= short_cohorts_total
@@ -229,12 +229,19 @@ class apogeeSelect:
                             dtype='|S17')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
+        plateIncomplete= 0
         for ii in range(len(specdata)):
             avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
             indx= visits == avisit
+            if numpy.sum(indx) == 0.:
+                #Hasn't happened so far
+                print "Warning: no visit found", specdata['VISITS'][ii]
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
             tplatesIndx= (self._plates == avisitsplate)
+            if numpy.sum(tplatesIndx) == 0.:
+                plateIncomplete+= 1
+                continue
             avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
             #Determine which cohort this star is in
             if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
@@ -248,12 +255,15 @@ class apogeeSelect:
                 cohortnum= avisitsDesign['LONG_COHORT_VERSION']
             else:
                 tcohort= '???'
+                plateIncomplete+= 1
+#                print "Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate
             locIndx= specdata['LOCATION_ID'][ii] == self._locations
             if cohortnum > 0 and tcohort != '???' and \
                     ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] == 1.) \
                          or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
                          or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
                 statIndx[ii]= True
+        self._specdata_plateIncomplete= plateIncomplete
         print numpy.sum(statIndx)
         specdata= specdata[statIndx]
         self._specdata= specdata
@@ -267,6 +277,7 @@ class apogeeSelect:
            plot_obs_progress
         PURPOSE:
            plot the observational progress of a specific cohort
+           This progress only includes *completed* plates
         INPUT:
            cohort= ('short') cohort to consider
            xrange, yrange= ranges in l and b for plot
