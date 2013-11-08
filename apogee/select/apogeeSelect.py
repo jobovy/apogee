@@ -271,7 +271,8 @@ class apogeeSelect:
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
-                          ms=30.):
+                          ms=30.,
+                          add_mean_label=False):
         """
         NAME:
            plot_obs_progress
@@ -282,6 +283,7 @@ class apogeeSelect:
            cohort= ('short') cohort to consider
            xrange, yrange= ranges in l and b for plot
            ms= (30) marker size
+           add_mean_label= add a label with the mean completeness
         OUTPUT:
            plot to output device
         HISTORY:
@@ -338,9 +340,12 @@ class apogeeSelect:
                             vmin=0.,vmax=1.,
                             crange=[0.,1.],
                             zorder=1)
+        if add_mean_label:
+            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
+                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
+                                bottom_right=True,size=16.)
         return None
-        
-            
+                    
 def _append_field_recarray(recarray, name, new):
     new = numpy.asarray(new)
     newdtype = numpy.dtype(recarray.dtype.descr + [(name, new.dtype)])
