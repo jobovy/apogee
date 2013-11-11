@@ -49,7 +49,15 @@ def allStar(rmcommissioning=True,
         indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
         data= data[True-indx]
     if main:
-        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
+            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
+            *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
@@ -127,7 +135,15 @@ def allVisit(rmcommissioning=True,
         indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
         data= data[True-indx]
     if main:
-        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
+            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
+            *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
@@ -206,7 +222,15 @@ def rcsample(main=False):
     data= fitsio.read(path.rcsamplePath())
     #Some cuts
     if main:
-        indx= ((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0)
+        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
+            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
+            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
+            *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     return data
         
