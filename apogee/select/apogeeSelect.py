@@ -364,14 +364,13 @@ class apogeeSelect:
             location= self._locations
         elif isinstance(location,str) and location.lower() == 'short':
             cohort= 'short'
-            location= self._locations[numpy.nanmax(self._short_completion,axis=1) == 1.]
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) == 1.)*(self._nspec_short > 0.)]
         elif isinstance(location,str) and location.lower() == 'medium':
             cohort= 'medium'
-            location= self._locations[numpy.nanmax(self._medium_completion,axis=1) == 1.]
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) == 1.)*(self._nspec_medium > 0.)]
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
-            location= self._locations[numpy.nanmax(self._long_completion,axis=1) == 1.]
-        print location
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) == 1.)*(self._nspec_long > 0.)]
         if isinstance(location,(numpy.int16,int)): #Scalar input
             location= [location]
             scalarOut= True
@@ -382,12 +381,46 @@ class apogeeSelect:
         elif isinstance(location,numpy.ndarray): return numpy.array(out)
         else: return out
 
+    def plot_Hcdf(self,location,cohort='all',
+                  overplot=False,xrange=None,yrange=None,
+                  photcolor='k',speccolor='r'):
+        """
+        NAME:
+           plot_Hcdf
+        PURPOSE:
+           plot the H-band magnitude CDF for the photometric sample * selection
+           function model and for the spectroscopic sample
+        INPUT:
+           location - location_id
+           cohort= ('all') cohorts to show
+           overplot= of True, overplot
+           xrange=, yrange=
+           photcolor=, speccolor= color to use
+        OUTPUT:
+           plot
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        photr,specr,fn1,fn2= self._location_Hcdfs(location,cohort)
+        if numpy.all(numpy.isnan(photr)):
+            print "Location %i has no spectroscopic data in the statistical sample ..." % location
+            print "Returning ..."
+            return None           
+        if xrange is None: xrange= [numpy.amin([numpy.amin(photr),numpy.amin(specr)])-0.1,
+                                    numpy.amax([numpy.amax(photr),numpy.amax(specr)])+0.1]
+        if yrange is None: yrange= [0.,1.1]
+        bovy_plot.bovy_plot(photr,fn1,photcolor+'-',overplot=overplot,
+                            xlabel=r'$H\,(\mathrm{mag})$',
+                            ylabel=r'$\mathrm{cumulative\ distribution}$')
+        bovy_plot.bovy_plot(specr,fn2,speccolor+'-',overplot=True)
+        return None
+
     def _check_consistency_single(self,location,cohort):
         """check_consistency for a single field
         location: location_id
         cohort: cohort ('all', 'short', 'medium', 'long'"""
-        photH,specH,fn1,fn2= self._plate_Hcdfs(location,cohort)
-        if photH is None:
+        photH,specH,fn1,fn2= self._location_Hcdfs(location,cohort)
+        if numpy.all(numpy.isnan(photH)):
             return -1
         j1, j2, i= 0, 0, 0
         id1= range(len(photH)+len(specH))
@@ -406,7 +439,7 @@ class apogeeSelect:
         neff= len(photH)*len(specH)/float(len(photH)+len(specH))
         return stats.ksone.sf(D,neff)
 
-    def _plate_Hcdfs(self,location,cohort):
+    def _location_Hcdfs(self,location,cohort):
         """Internal function that creates the cumulative H-band distribution
         for a given field/cohort
         location: location_id
@@ -437,6 +470,8 @@ class apogeeSelect:
                 *(thisspecdata['H'] <= self._long_hmax[locIndx])
         thisphotdata= thisphotdata[pindx]
         thisspecdata= thisspecdata[sindx]
+        if numpy.sum(sindx) == 0.:
+            return (numpy.nan,numpy.nan,numpy.nan,numpy.nan)
         #Calculate selection function weights for the photometry
         w= numpy.zeros(len(thisphotdata['H']))
         for ii in range(len(w)):
