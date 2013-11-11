@@ -280,7 +280,8 @@ class apogeeSelect:
                      bins=None,specbins=None,
                      onedhistsbins=None,
                      onedhistsspecbins=None,
-                     cntrSmooth=None):
+                     cntrSmooth=None,
+                     speccolor='r',reweightcolor='b'):
         """
         NAME:
            plotColorMag
@@ -406,8 +407,8 @@ class apogeeSelect:
             speclevels.append(1.01)#HACK TO REMOVE OUTLIERS
             bovy_plot.scatterplot(specxs,specys,symb,onedhists=True,
                                   levels=speclevels,
-                                  onedhistec='r',
-                                  cntrcolors='r',
+                                  onedhistec=speccolor,
+                                  cntrcolors=speccolor,
                                   onedhistls='dashed',
                                   cntrls='--',
                                   cntrlw=2.,
@@ -426,8 +427,8 @@ class apogeeSelect:
                                   xrange=xrange,yrange=yrange,bins=bins,
                                   overplot=spec,
                                   levels=speclevels,
-                                  cntrcolors='b',
-                                  onedhistec='b',
+                                  cntrcolors=reweightcolor,
+                                  onedhistec=reweightcolor,
                                   cntrlw=2.,
                                   onedhistls='dashdot',
                                   cntrls='-.',
