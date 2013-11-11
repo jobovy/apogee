@@ -56,15 +56,40 @@ class apogeeSelect:
         sys.stdout.flush()
         #Load the underlying photometric sample for the locations/cohorts in 
         #the statistical sample
-
+        #self._load_phot_data(sample=sample)
         return None
 
     def _load_spec_data(self,sample='rcsample'):
-        """Internal function to load the spectroscopic data set and cut it 
-        down to the statistical sample"""
+        """Internal function to load the full spectroscopic data set and 
+        cut it down to the statistical sample"""
+        allStar= apread.allStar(main=True,akvers='targ')
+        jko= allStar['J0']-allStar['K0']
         if sample.lower() == 'rcsample':
-            specdata= apread.rcsample(main=True)
-        #Also read the allVisit file to match back to plates
+            indx=(jko >= 0.5)*(jko < 0.8)
+        else:
+            indx= jko >= 0.5
+        print len(allStar), numpy.sum(indx)
+        allStar= allStar[indx]
+        statIndx= self.determine_statistical(allStar)
+        self._specdata= allStar[statIndx]
+        return None
+
+    def determine_statistical(self,specdata):
+        """
+        NAME:
+           determine_statistical
+        PURPOSE:
+           Determine the subsample that is part of the statistical sample
+           described by this selection function object
+        INPUT:
+           specdata - a spectroscopic subsample (e.g., a red-clump sample)
+        OUTPUT:
+           index array into specdata that has True for members of the 
+           statistical sample
+        HISTORY:
+           2013-11-10 - Written - Bovy (IAS)
+        """
+        #Read the allVisit file to match back to plates
         allVisit= apread.allVisit() #no need to cut to main
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
                  allVisit['PLATE'][ii]+'-'+
@@ -107,10 +132,8 @@ class apogeeSelect:
                          or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
                          or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
                 statIndx[ii]= True
-        self._specdata_plateIncomplete= plateIncomplete
-        print numpy.sum(statIndx)
-        specdata= specdata[statIndx]
-        self._specdata= specdata
+        #self._specdata_plateIncomplete= plateIncomplete
+        return statIndx
                      
     def _process_obslog(self,locations=None,year=2):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
