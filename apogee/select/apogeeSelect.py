@@ -1,9 +1,13 @@
 import sys
 import copy
 import numpy
-from scipy import stats
+from scipy import stats, special
 from galpy.util import bovy_plot, bovy_coords
+import matplotlib
 from matplotlib import cm
+import warnings
+warnings.filterwarnings('ignore','.*All-NaN.*',) #turn-off All-NaN warnings
+warnings.filterwarnings('ignore','.*invalid value encountered in .*',) #turn-off NaN warnings
 ##APOGEE TOOLS
 import apogee.tools.read as apread
 #Commissioning plates
@@ -270,7 +274,177 @@ class apogeeSelect:
                             clabel=clabel,
                             zorder=10)
         return None
-                    
+
+    def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
+                     spec=True,reweight=True,
+                     bins=None,specbins=None,
+                     onedhistsbins=None,
+                     onedhistsspecbins=None,
+                     cntrSmooth=None):
+        """
+        NAME:
+           plotColorMag
+        PURPOSE:
+           plot the distribution of photometric/spectroscopic objects in 
+           color and magnitude
+        INPUT:
+           x= ('JK0') what to plot on the X-axis
+           y= ('H') what to plot on the Y-axis
+           location= location_id(s), or 'all'
+           cohort= ('all') cohorts to plot
+           spec= if True, overlay spectroscopic objects as white contours
+           reweight= if True, also plot the re-weighted photometric 
+                     histograms in 1D
+           bins= number of bins to use in the histograms
+           specbins= number of bins to use in the spectroscopic histograms
+           onedhistsbins= number of bins to use in the 1D histograms
+           onedhistsspecbins= number of bins to use in the 1D histograms (spec.)
+           cntrSmooth= cntrSmooth keyword of scatterplot
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        if isinstance(location,str) and location.lower() == 'all':
+            location= self._locations
+        elif isinstance(location,str) and location.lower() == 'short':
+            cohort= 'short'
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) == 1.)*(self._nspec_short > 0.)]
+        elif isinstance(location,str) and location.lower() == 'medium':
+            cohort= 'medium'
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) == 1.)*(self._nspec_medium > 0.)]
+        elif isinstance(location,str) and location.lower() == 'long':
+            cohort= 'long'
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) == 1.)*(self._nspec_long > 0.)]
+        if isinstance(location,(numpy.int16,int)): #Scalar input
+            location= [location]
+        #Gather data from all requested locations and cohorts
+        photxs= []
+        photys= []
+        if spec:
+            specxs= []
+            specys= []
+        if reweight:
+            w= []
+        for ii in range(len(location)):
+            tphotdata= self._photdata['%i' % location[ii]]
+            locIndx= self._locations == location[ii]
+            if cohort.lower() == 'short':
+                indx= (tphotdata['H'] >= self._short_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._short_hmax[locIndx])
+            elif cohort.lower() == 'medium':
+                indx= (tphotdata['H'] > self._medium_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._medium_hmax[locIndx])
+            elif cohort.lower() == 'long':
+                indx= (tphotdata['H'] > self._long_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._long_hmax[locIndx])
+            else:
+                indx= numpy.ones(len(tphotdata),dtype='bool')
+            tphotdata= tphotdata[indx]
+            if x == 'JK0':
+                photxs.extend(tphotdata['J0']-tphotdata['K0'])
+            if y == 'H':
+                photys.extend(tphotdata['H'])
+            #weights
+            if reweight:
+                w.extend(self(location[ii],tphotdata['H']))
+            #spec
+            if spec:
+                tspecdata= self._specdata['%i' % location[ii]]
+                if cohort.lower() == 'short':
+                    indx= (tspecdata['H'] >= self._short_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._short_hmax[locIndx])
+                elif cohort.lower() == 'medium':
+                    indx= (tspecdata['H'] > self._medium_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._medium_hmax[locIndx])
+                elif cohort.lower() == 'long':
+                    indx= (tspecdata['H'] > self._long_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._long_hmax[locIndx])
+                else:
+                    indx= numpy.ones(len(tspecdata),dtype='bool')
+                tspecdata= tspecdata[indx]
+                if x == 'JK0':
+                    specxs.extend(tspecdata['J0']-tspecdata['K0'])
+                if y == 'H':
+                    specys.extend(tspecdata['H'])
+        photxs= numpy.array(photxs)
+        photys= numpy.array(photys)
+        if reweight:
+            w= numpy.array(w)
+        if spec:
+            specxs= numpy.array(specxs)
+            specys= numpy.array(specys)
+        if x == 'JK0':
+            xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
+            xrange= [0.4,1.4]
+        if y == 'H':
+            ylabel=r'$H\, (\mathrm{mag})$'
+            yrange=[6.,14.]
+        if matplotlib.pyplot.get_backend().lower() == 'macosx':
+            #Bug in matplotlib
+            xlabel= None
+            ylabel= None
+        #Plot
+        if bins is None:
+            bins= int(numpy.ceil(0.3*numpy.sqrt(len(photxs))))
+        if onedhistsbins is None: onedhistsbins= bins
+        if spec and specbins is None:
+            specbins= int(numpy.ceil(0.3*numpy.sqrt(len(specxs))))
+        if spec and onedhistsspecbins is None: onedhistsspecbins= specbins
+        if len(photxs) > 100000: symb= 'w,'
+        else: symb= 'k,'
+        if spec:
+            #First plot spectroscopic sample
+            cdict = {'red': ((.0, 1.0, 1.0),
+                             (1.0, 1.0, 1.0)),
+                     'green': ((.0, 1.0, 1.0),
+                               (1.0, 1.0, 1.0)),
+                     'blue': ((.0, 1.0, 1.0),
+                              (1.0, 1.0, 1.0))}
+            allwhite = matplotlib.colors.LinearSegmentedColormap('allwhite',cdict,256)
+            speclevels= list(special.erf(0.5*numpy.arange(1,4)))
+            speclevels.append(1.01)#HACK TO REMOVE OUTLIERS
+            bovy_plot.scatterplot(specxs,specys,symb,onedhists=True,
+                                  levels=speclevels,
+                                  onedhistec='r',
+                                  cntrcolors='r',
+                                  onedhistls='dashed',
+                                  cntrls='--',
+                                  cntrlw=2.,
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,
+                                  bins=specbins,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsspecbins)
+        if reweight:
+            bovy_plot.scatterplot(photxs,photys,symb,
+                                  weights=w,
+                                  onedhists=True,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,bins=bins,
+                                  overplot=spec,
+                                  levels=speclevels,
+                                  cntrcolors='b',
+                                  onedhistec='b',
+                                  cntrlw=2.,
+                                  onedhistls='dashdot',
+                                  cntrls='-.',
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsbins)
+        bovy_plot.scatterplot(photxs,photys,symb,onedhists=True,
+                              levels=speclevels,
+                              xlabel=xlabel,ylabel=ylabel,
+                              cntrlw=1.5,
+                              xrange=xrange,yrange=yrange,bins=bins,
+                              overplot=spec or reweight,
+                              cntrSmooth=cntrSmooth,
+                              onedhistsbins=onedhistsbins)
+        return None                
+
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
@@ -349,7 +523,7 @@ class apogeeSelect:
                                 bottom_right=True,size=16.)
         return None
                     
-    def check_consistency(self,location,cohort=None):
+    def check_consistency(self,location,cohort='all'):
         """
         NAME:
            check_consistency
@@ -367,7 +541,6 @@ class apogeeSelect:
         """
         #Handle input
         scalarOut= False
-        if cohort is None: cohort= 'all'
         if isinstance(location,str) and location.lower() == 'all':
             location= self._locations
         elif isinstance(location,str) and location.lower() == 'short':
@@ -558,7 +731,10 @@ class apogeeSelect:
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
                 photdata['%i' % self._locations[ii]]= None
-            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            else: #this avoids a warning
+                thmin= numpy.nan
             #print numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax
             indx= (tapogeeObject['H'] >= thmin)\
                 *(tapogeeObject['H'] <= thmax)
