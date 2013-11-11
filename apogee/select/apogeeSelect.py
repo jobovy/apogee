@@ -214,6 +214,8 @@ class apogeeSelect:
               - nspec: number of spectroscopic objects
               - hmin: minimum H of cohort
               - hmax: maximum H of cohort
+              - ks: KS probability that the spectro data was drawn from the 
+                    underlying photo sample x selection function
         OUTPUT:
            plot to output device
         HISTORY:
@@ -248,6 +250,12 @@ class apogeeSelect:
             clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
             if vmin is None: vmin= 7.
             if vmax is None: vmax= 13.8
+        elif type.lower() == 'ks':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self.check_consistency(self._locations[ii],cohort=cohort)
+            clabel=r'$\mathrm{KS\ probability\ that\ spec.\ is\ drawn}$'+'\n'+r'$\mathrm{from\ phot.} \times \mathrm{sel.\ func.\ (%s\ cohort)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 1.
         bovy_plot.bovy_print(fig_width=8.)
         bovy_plot.bovy_plot(self._apogeeField['GLON'],
                             self._apogeeField['GLAT'],
