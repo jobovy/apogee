@@ -124,6 +124,61 @@ class apogeeSelect:
         #self._specdata_plateIncomplete= plateIncomplete
         return statIndx
                      
+    def plot_selfunc_lb(self,cohort='short',
+                        xrange=[0.,360.],
+                        yrange=[-90.,90.],
+                        ms=30.,
+                        type='selfunc'):
+        """
+        NAME:
+           plot_selfunc_lb
+        PURPOSE:
+           plot the selection function as a function of l,b for a specific 
+           cohort
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           type= ('selfunc') type of plot to make:
+              - selfunc: the selection function
+              - nphot: number of photometric potential targets
+              - nspec: number of spectroscopic objects
+              - hmin: minimum H of cohort
+              - hmax: maximum H of cohort
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-11 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        plotSF= numpy.zeros(len(self._locations))
+        if type == 'nphot':
+            plotSF= self.__dict__['_nphot_%s' % cohort]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
+            vmin, vmax= 0., numpy.nanmax(plotSF)
+        elif type == 'hmin':
+            plotSF= self.__dict__['_%s_hmin' % cohort]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
+            vmin, vmax= 7., 13.8
+        elif type == 'hmax':
+            plotSF= self.__dict__['_%s_hmax' % cohort]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
+            vmin, vmax= 7., 13.8
+        bovy_plot.bovy_print(fig_width=8.)
+        bovy_plot.bovy_plot(self._apogeeField['GLON'],
+                            self._apogeeField['GLAT'],
+                            c=plotSF,s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            vmin=vmin,vmax=vmax,crange=[vmin,vmax],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=clabel,
+                            zorder=10)
+        return None
+                    
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
@@ -210,9 +265,9 @@ class apogeeSelect:
         sys.stdout.flush()
         for ii in range(len(self._locations)):
             field_name= self._apogeeField[ii]['FIELD_NAME']
-            #sys.stdout.write('\r'+_ERASESTR+'\r')
-            #sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
-            #sys.stdout.flush()
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
+            sys.stdout.flush()
             tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
                                                ak=True,akvers='targ')
             #Cut to relevant color range
@@ -227,27 +282,47 @@ class apogeeSelect:
             if numpy.nanmax(self._long_completion[ii,:]) == 1.:
                 #There is a completed long cohort
                 thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
-                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             elif numpy.nanmax(self._medium_completion[ii,:]) == 1.:
                 #There is a completed medium cohort
                 thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
-                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             elif numpy.nanmax(self._short_completion[ii,:]) == 1.:
                 #There is a completed short cohort
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
-                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             else:
                 photdata['%i' % self._locations[ii]]= None
+            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             #print numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax
             indx= (tapogeeObject['H'] >= thmin)\
                 *(tapogeeObject['H'] <= thmax)
             #print numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
             tapogeeObject= tapogeeObject[indx]
             photdata['%i' % self._locations[ii]]= tapogeeObject
-            print "BOVY: SAVE LESS DATA"
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         self._photdata= photdata
+        #Now record the number of photometric objects in each cohort
+        nphot_short= numpy.zeros(len(self._locations))+numpy.nan
+        nphot_medium= numpy.zeros(len(self._locations))+numpy.nan
+        nphot_long= numpy.zeros(len(self._locations))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                #There is a completed short cohort
+                nphot_short[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+            if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                #There is a completed medium cohort
+                nphot_medium[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                #There is a completed long cohort
+                nphot_long[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+        self._nphot_short= nphot_short
+        self._nphot_medium= nphot_medium
+        self._nphot_long= nphot_long
         return None
 
     def _load_spec_data(self,sample='rcsample'):
@@ -418,6 +493,13 @@ class apogeeSelect:
         self._medium_cohorts_hmax= medium_cohorts_hmax
         self._long_cohorts_hmin= long_cohorts_hmin
         self._long_cohorts_hmax= long_cohorts_hmax
+        #Also store the overall hmin and hmax for each location/cohort
+        self._short_hmin= numpy.nanmin(self._short_cohorts_hmin,axis=1)
+        self._short_hmax= numpy.nanmax(self._short_cohorts_hmax,axis=1)
+        self._medium_hmin= numpy.nanmin(self._medium_cohorts_hmin,axis=1)
+        self._medium_hmax= numpy.nanmax(self._medium_cohorts_hmax,axis=1)
+        self._long_hmin= numpy.nanmin(self._long_cohorts_hmin,axis=1)
+        self._long_hmax= numpy.nanmax(self._long_cohorts_hmax,axis=1)
         #Read apogeeField for location info
         apogeeField= apread.apogeeField(dr=self._dr)
         indx= numpy.ones(len(apogeeField),dtype='bool')
