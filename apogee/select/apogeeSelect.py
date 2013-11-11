@@ -29,7 +29,8 @@ class apogeeSelect:
     def __init__(self,sample='rcsample',
                  locations=None,
                  year=2,
-                 sftype='constant'):
+                 sftype='constant',
+                 minnspec=1):
         """
         NAME:
            __init__
@@ -41,6 +42,7 @@ class apogeeSelect:
            year= (2) load up to this year 
            sftype= ('constant') selection function type:
               - constant: selection function is # spec / # phot within a cohort
+           minnspec= (1) minimum number of spectra in a field/cohort to be included
         OUTPUT:
         HISTORY:
            2013-11-04 - Start - Bovy (IAS)
@@ -67,10 +69,65 @@ class apogeeSelect:
         #Determine the selection function
         sys.stdout.write('\r'+"Determining selection function ...\r")
         sys.stdout.flush()
-        self._determine_selection(sample=sample,sftype=sftype)
+        self._determine_selection(sample=sample,sftype=sftype,
+                                  minnspec=minnspec)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         return None
+
+    def __call__(self,location,H=None):
+        """
+        NAME:
+           __call__
+        PURPOSE:
+           evaluate the selection function
+        INPUT:
+           location - location_id (single location)
+           H - H-band magnitude (can be array or list)
+        OUTPUT:
+           selection function
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location
+        #Handle input
+        if isinstance(location,(numpy.int16,int)) \
+                and (isinstance(H,(int,float)) or H is None): #Scalar input
+            H= [H]
+            scalarOut= True
+        elif isinstance(location,(numpy.int16,int)) \
+                and isinstance(H,(list,numpy.ndarray)) \
+                and self._sftype.lower() == 'constant': #special case this for speed
+            out= numpy.zeros_like(H)
+            #short
+            sindx= (H >= self._short_hmin[locIndx])\
+                *(H <= self._short_hmax[locIndx])
+            out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx]) #constant
+            #medium
+            mindx= (H > self._medium_hmin[locIndx])\
+                *(H <= self._medium_hmax[locIndx])
+            out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx]) #constant
+            #long
+            lindx= (H > self._long_hmin[locIndx])\
+                *(H <= self._long_hmax[locIndx])
+            out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx]) #constant
+            out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+            return out
+        out= numpy.zeros(len(H))
+        for ii in range(len(H)):
+            if H[ii] >= self._short_hmin[locIndx] \
+                    and H[ii] <= self._short_hmax[locIndx]:
+                out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])
+            elif H[ii] > self._medium_hmin[locIndx] \
+                    and H[ii] <= self._medium_hmax[locIndx]:
+                out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])
+            elif H[ii] > self._long_hmin[locIndx] \
+                    and H[ii] <= self._long_hmax[locIndx]:
+                out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])
+        if scalarOut:
+            return out[0]
+        else:
+            return out        
 
     def determine_statistical(self,specdata):
         """
@@ -284,22 +341,80 @@ class apogeeSelect:
                                 bottom_right=True,size=16.)
         return None
                     
-    def _determine_selection(self,sample='rcsample',sftype='constant'):
+    def _plate_Hcdfs(self,location,cohort):
+        """Internal function that creates the cumulative H-band distribution
+        for a given field/cohort
+        location: location_id
+        cohort: short, medium, long, or all"""
+        locIndx= self._locations == location
+        #Load photometry and spectroscopy for this plate
+        thisphotdata= self._photdata['%i' % location]
+        thisspecdata= self._specdata['%i' % location]
+        if cohort.lower() == 'all':
+            pindx= (thisphotdata['H'] >= self._short_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._long_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._short_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._long_hmax[locIndx])
+        elif cohort.lower() == 'short':
+            pindx= (thisphotdata['H'] >= self._short_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._short_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._short_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._short_hmax[locIndx])
+        elif cohort.lower() == 'medium':
+            pindx= (thisphotdata['H'] > self._medium_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._medium_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._medium_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._medium_hmax[locIndx])
+        elif cohort.lower() == 'long':
+            pindx= (thisphotdata['H'] > self._long_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._long_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._long_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._long_hmax[locIndx])
+        thisphotdata= thisphotdata[pindx]
+        thisspecdata= thisspecdata[pindx]
+        #Calculate selection function weights for the photometry
+        w= numpy.zeros(len(thisplatephot['H']))
+        for ii in range(len(w)):
+            w[ii]= self(plate,r=thisplatephot[ii].r)
+
+
+
+
+
+        #Calculate KS test statistic
+        sortindx_phot= numpy.argsort(thisplatephot.r)
+        sortindx_spec= numpy.argsort(thisplatespec.dered_r)
+        sortphot= thisplatephot[sortindx_phot]
+        sortspec= thisplatespec[sortindx_spec]
+        w= w[sortindx_phot]
+        fn1= numpy.cumsum(w)/numpy.sum(w)
+        fn2= numpy.ones(len(sortindx_spec))
+        fn2= numpy.cumsum(fn2)
+        fn2/= fn2[-1]
+        return (sortphot.r,sortspec.dered_r,fn1,fn2)    
+
+    def _determine_selection(self,sample='rcsample',sftype='constant',
+                             minnspec=10):
         """Internal function to determine the selection function"""
         selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
-        if sftype.lower() == 'constant':
+        self._minnspec= minnspec
+        self._sftype= sftype
+        if self._sftype.lower() == 'constant':
             for ii in range(len(self._locations)):
-                if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                if numpy.nanmax(self._short_completion[ii,:]) == 1. \
+                        and self._nspec_short[ii] >= minnspec:
                     #There is a short cohort
                     selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
                 else:
                     selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                if numpy.nanmax(self._medium_completion[ii,:]) == 1. \
+                        and self._nspec_medium[ii] >= minnspec:
                     #There is a medium cohort
                     selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
                 else:
                     selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                if numpy.nanmax(self._long_completion[ii,:]) == 1. \
+                        and self._nspec_long[ii] >= minnspec:
                     #There is a long cohort
                     selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
                 else:
