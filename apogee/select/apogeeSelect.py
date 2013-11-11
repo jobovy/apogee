@@ -59,21 +59,6 @@ class apogeeSelect:
         #self._load_phot_data(sample=sample)
         return None
 
-    def _load_spec_data(self,sample='rcsample'):
-        """Internal function to load the full spectroscopic data set and 
-        cut it down to the statistical sample"""
-        allStar= apread.allStar(main=True,akvers='targ')
-        jko= allStar['J0']-allStar['K0']
-        if sample.lower() == 'rcsample':
-            indx=(jko >= 0.5)*(jko < 0.8)
-        else:
-            indx= jko >= 0.5
-        print len(allStar), numpy.sum(indx)
-        allStar= allStar[indx]
-        statIndx= self.determine_statistical(allStar)
-        self._specdata= allStar[statIndx]
-        return None
-
     def determine_statistical(self,specdata):
         """
         NAME:
@@ -135,6 +120,99 @@ class apogeeSelect:
         #self._specdata_plateIncomplete= plateIncomplete
         return statIndx
                      
+    def plot_obs_progress(self,cohort='short',
+                          xrange=[0.,360.],
+                          yrange=[-90.,90.],
+                          ms=30.,
+                          add_mean_label=False):
+        """
+        NAME:
+           plot_obs_progress
+        PURPOSE:
+           plot the observational progress of a specific cohort
+           This progress only includes *completed* plates
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           add_mean_label= add a label with the mean completeness
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-05 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        progress= numpy.zeros(len(self._locations))
+        for ii in range(len(self._locations)):
+            if cohort == 'short':
+                progress[ii]= numpy.mean(self._short_completion[ii,True-numpy.isnan(self._short_completion[ii,:])])
+            elif cohort == 'medium':
+                progress[ii]= numpy.mean(self._medium_completion[ii,True-numpy.isnan(self._medium_completion[ii,:])])
+            if cohort == 'long':
+                progress[ii]= numpy.mean(self._long_completion[ii,True-numpy.isnan(self._long_completion[ii,:])])
+        bovy_plot.bovy_print(fig_width=8.)
+        bovy_plot.bovy_plot(self._apogeeField['GLON'],
+                            self._apogeeField['GLAT'],
+                            c=progress,s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
+                            zorder=10)
+        #Then plot *all* locations as zero progress, to include the ones that 
+        #haven't been started yet
+        apF= apread.apogeeField(dr=self._dr)
+        apD= apread.apogeeDesign(dr=self._dr)
+        #Remove fields that don't have this cohort
+        has_cohort= numpy.ones(len(apF),dtype='bool')
+        for ii in range(len(apF)):
+            dindx= apD['LOCATION_ID'] == apF['LOCATION_ID'][ii]
+            if cohort == 'short':
+                if numpy.all(apD['SHORT_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'medium':
+                if numpy.all(apD['MEDIUM_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'long':
+                if numpy.all(apD['LONG_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+        apF= apF[has_cohort]
+        apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
+        colormap = cm.jet
+        bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
+                            s=ms,overplot=True,
+                            c=colormap(0.),
+                            edgecolor='none',
+                            scatter=True,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            zorder=1)
+        if add_mean_label:
+            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
+                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
+                                bottom_right=True,size=16.)
+        return None
+                    
+    def _load_spec_data(self,sample='rcsample'):
+        """Internal function to load the full spectroscopic data set and 
+        cut it down to the statistical sample"""
+        allStar= apread.allStar(main=True,akvers='targ')
+        jko= allStar['J0']-allStar['K0']
+        if sample.lower() == 'rcsample':
+            indx=(jko >= 0.5)*(jko < 0.8)
+        else:
+            indx= jko >= 0.5
+        print len(allStar), numpy.sum(indx)
+        allStar= allStar[indx]
+        statIndx= self.determine_statistical(allStar)
+        self._specdata= allStar[statIndx]
+        return None
+
     def _process_obslog(self,locations=None,year=2):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
@@ -301,84 +379,6 @@ class apogeeSelect:
         self._apogeeField= apogeeField
         return None
 
-    def plot_obs_progress(self,cohort='short',
-                          xrange=[0.,360.],
-                          yrange=[-90.,90.],
-                          ms=30.,
-                          add_mean_label=False):
-        """
-        NAME:
-           plot_obs_progress
-        PURPOSE:
-           plot the observational progress of a specific cohort
-           This progress only includes *completed* plates
-        INPUT:
-           cohort= ('short') cohort to consider
-           xrange, yrange= ranges in l and b for plot
-           ms= (30) marker size
-           add_mean_label= add a label with the mean completeness
-        OUTPUT:
-           plot to output device
-        HISTORY:
-           2011-11-05 - Written - Bovy (IAS)
-        """
-        #Plot progress
-        progress= numpy.zeros(len(self._locations))
-        for ii in range(len(self._locations)):
-            if cohort == 'short':
-                progress[ii]= numpy.mean(self._short_completion[ii,True-numpy.isnan(self._short_completion[ii,:])])
-            elif cohort == 'medium':
-                progress[ii]= numpy.mean(self._medium_completion[ii,True-numpy.isnan(self._medium_completion[ii,:])])
-            if cohort == 'long':
-                progress[ii]= numpy.mean(self._long_completion[ii,True-numpy.isnan(self._long_completion[ii,:])])
-        bovy_plot.bovy_print(fig_width=8.)
-        bovy_plot.bovy_plot(self._apogeeField['GLON'],
-                            self._apogeeField['GLAT'],
-                            c=progress,s=ms,
-                            scatter=True,
-                            edgecolor='none',
-                            colorbar=True,
-                            vmin=0.,vmax=1.,
-                            crange=[0.,1.],
-                            xrange=xrange,yrange=yrange,
-                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
-                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
-                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
-                            zorder=10)
-        #Then plot *all* locations as zero progress, to include the ones that 
-        #haven't been started yet
-        apF= apread.apogeeField(dr=self._dr)
-        apD= apread.apogeeDesign(dr=self._dr)
-        #Remove fields that don't have this cohort
-        has_cohort= numpy.ones(len(apF),dtype='bool')
-        for ii in range(len(apF)):
-            dindx= apD['LOCATION_ID'] == apF['LOCATION_ID'][ii]
-            if cohort == 'short':
-                if numpy.all(apD['SHORT_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-            elif cohort == 'medium':
-                if numpy.all(apD['MEDIUM_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-            elif cohort == 'long':
-                if numpy.all(apD['LONG_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-        apF= apF[has_cohort]
-        apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
-        colormap = cm.jet
-        bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
-                            s=ms,overplot=True,
-                            c=colormap(0.),
-                            edgecolor='none',
-                            scatter=True,
-                            vmin=0.,vmax=1.,
-                            crange=[0.,1.],
-                            zorder=1)
-        if add_mean_label:
-            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
-                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
-                                bottom_right=True,size=16.)
-        return None
-                    
 def _append_field_recarray(recarray, name, new):
     new = numpy.asarray(new)
     newdtype = numpy.dtype(recarray.dtype.descr + [(name, new.dtype)])
