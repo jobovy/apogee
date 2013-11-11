@@ -49,14 +49,18 @@ class apogeeSelect:
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         #Load spectroscopic data and cut to the statistical sample
-        sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
-        sys.stdout.flush()
-        self._load_spec_data(sample=sample)
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
+        #sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
+        #sys.stdout.flush()
+        #self._load_spec_data(sample=sample)
+        #sys.stdout.write('\r'+_ERASESTR+'\r')
+        #sys.stdout.flush()
         #Load the underlying photometric sample for the locations/cohorts in 
         #the statistical sample
-        #self._load_phot_data(sample=sample)
+        sys.stdout.write('\r'+"Reading and parsing photometric data ...\r")
+        sys.stdout.flush()
+        self._load_phot_data(sample=sample)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
         return None
 
     def determine_statistical(self,specdata):
@@ -198,6 +202,54 @@ class apogeeSelect:
                                 bottom_right=True,size=16.)
         return None
                     
+    def _load_phot_data(self,sample='rcsample'):
+        """Internal function to load the full, relevant photometric data set
+        for the statistical sample"""
+        photdata= {} #we're going to arrange this by location
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        for ii in range(len(self._locations)):
+            field_name= self._apogeeField[ii]['FIELD_NAME']
+            #sys.stdout.write('\r'+_ERASESTR+'\r')
+            #sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
+            #sys.stdout.flush()
+            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                               ak=True,akvers='targ')
+            #Cut to relevant color range
+            jko= tapogeeObject['J0']-tapogeeObject['K0']
+            if sample.lower() == 'rcsample':
+                indx=(jko >= 0.5)*(jko < 0.8)
+            else:
+                indx= jko >= 0.5
+            #print field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
+            tapogeeObject= tapogeeObject[indx]
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            elif numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            elif numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            else:
+                photdata['%i' % self._locations[ii]]= None
+            #print numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax
+            indx= (tapogeeObject['H'] >= thmin)\
+                *(tapogeeObject['H'] <= thmax)
+            #print numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
+            tapogeeObject= tapogeeObject[indx]
+            photdata['%i' % self._locations[ii]]= tapogeeObject
+            print "BOVY: SAVE LESS DATA"
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        self._photdata= photdata
+        return None
+
     def _load_spec_data(self,sample='rcsample'):
         """Internal function to load the full spectroscopic data set and 
         cut it down to the statistical sample"""
@@ -316,10 +368,16 @@ class apogeeSelect:
         #Now figure out how much of each cohort has been observed
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
+        short_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
+        short_cohorts_hmax= numpy.zeros((len(self._locations),20))+numpy.nan
         medium_cohorts= numpy.zeros((len(self._locations),4))
         medium_cohorts_total= numpy.zeros((len(self._locations),4))
+        medium_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
+        medium_cohorts_hmax= numpy.zeros((len(self._locations),20))+numpy.nan
         long_cohorts= numpy.zeros((len(self._locations),1))
         long_cohorts_total= numpy.zeros((len(self._locations),1))
+        long_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
+        long_cohorts_hmax= numpy.zeros((len(self._locations),20))+numpy.nan
         for ii in range(len(self._locations)):
             for jj in range(self._locPlatesIndx.shape[1]):
                 if self._locDesignsIndx[ii,jj] == -1: continue
@@ -332,10 +390,16 @@ class apogeeSelect:
                 if apogeePlate['PLATE_ID'][self._locPlatesIndx[ii,jj]] in self._plates:
                     if apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         short_cohorts[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                        short_cohorts_hmin[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['SHORT_COHORT_MIN_H'][self._locDesignsIndx[ii,jj]]
+                        short_cohorts_hmax[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['SHORT_COHORT_MAX_H'][self._locDesignsIndx[ii,jj]]
                     if apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         medium_cohorts[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                        medium_cohorts_hmin[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['MEDIUM_COHORT_MIN_H'][self._locDesignsIndx[ii,jj]]
+                        medium_cohorts_hmax[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['MEDIUM_COHORT_MAX_H'][self._locDesignsIndx[ii,jj]]
                     if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         long_cohorts[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
+                        long_cohorts_hmin[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['LONG_COHORT_MIN_H'][self._locDesignsIndx[ii,jj]]
+                        long_cohorts_hmax[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['LONG_COHORT_MAX_H'][self._locDesignsIndx[ii,jj]]
         self._short_completion= numpy.zeros_like(short_cohorts)+numpy.nan
         self._short_completion[short_cohorts_total != 0.]= short_cohorts[short_cohorts_total != 0.]/short_cohorts_total[short_cohorts_total != 0.]
         self._medium_completion= numpy.zeros_like(medium_cohorts)+numpy.nan
@@ -348,6 +412,12 @@ class apogeeSelect:
         self._medium_cohorts_total= medium_cohorts_total
         self._long_cohorts= long_cohorts
         self._long_cohorts_total= long_cohorts_total
+        self._short_cohorts_hmin= short_cohorts_hmin
+        self._short_cohorts_hmax= short_cohorts_hmax
+        self._medium_cohorts_hmin= medium_cohorts_hmin
+        self._medium_cohorts_hmax= medium_cohorts_hmax
+        self._long_cohorts_hmin= long_cohorts_hmin
+        self._long_cohorts_hmax= long_cohorts_hmax
         #Read apogeeField for location info
         apogeeField= apread.apogeeField(dr=self._dr)
         indx= numpy.ones(len(apogeeField),dtype='bool')
@@ -369,6 +439,7 @@ class apogeeSelect:
             reorderapField[ii]= dummyIndxArray[apogeeField['LOCATION_ID'][ii] == self._locations]
         apogeeField= apogeeField[numpy.argsort(reorderapField)]
         apogeeField= apogeeField.view(numpy.recarray)
+        #apogeeField is now ordered the same as locations
         fieldlb= bovy_coords.radec_to_lb(apogeeField['RA'],apogeeField['DEC'],
                                          degree=True)
         apogeeField= _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])

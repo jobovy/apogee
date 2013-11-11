@@ -14,6 +14,7 @@
 #             - allVisitPath: the path of the allStar file
 #             - apogeeDesignPath: path of the apogeeDesign file
 #             - apogeeFieldPath: path of the apogeeField file
+#             - apogeeObjectPath: path of an apogeeObject file
 #             - apogeePlatePlate: path of the apogeePlate file
 #             - apokascPath: path of the APOKASC catalog
 #             - distPath: path of the file that has M. Hayden's distances
@@ -281,3 +282,28 @@ def apogeeFieldPath(dr='X'):
         platename= 'apogeeField_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         platename)
+
+def apogeeObjectPath(field_name,dr='X'):
+    """
+    NAME:
+       apogeeObjectPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       field_name - name of the field
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2012-01-02 - Written - Bovy (IAS)
+       2012-11-04 - Edited for apogeeObject - Bovy (IAS)
+    """
+    if dr == 'X':
+        filename= 'apogeeObject_%s.fits' % field_name.strip()
+    else:
+        filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
+    return os.path.join(apogeeTargetDirPath(dr=dr),
+                        filename)

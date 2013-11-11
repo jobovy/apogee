@@ -7,6 +7,7 @@
 #             - allStar: read the allStar.fits file
 #             - apogeeDesign: read the apogeeDesign file
 #             - apogeeField: read the apogeeField file
+#             - apogeeObject: read an apogeeObject file
 #             - apogeePlate: read the apogeePlate file
 #             - apokasc: read the APOKASC catalog
 #             - obslog: read the observation log
@@ -271,9 +272,9 @@ def apogeePlate(dr='X'):
 def apogeeDesign(dr='X'):
     """
     NAME:
-       apogeePlate
+       apogeeDesign
     PURPOSE:
-       read the apogeePlate file
+       read the apogeeDesign file
     INPUT:
        dr= return the file corresponding to this data release
     OUTPUT:
@@ -286,9 +287,9 @@ def apogeeDesign(dr='X'):
 def apogeeField(dr='X'):
     """
     NAME:
-       apogeePlate
+       apogeeField
     PURPOSE:
-       read the apogeePlate file
+       read the apogeeField file
     INPUT:
        dr= return the file corresponding to this data release
     OUTPUT:
@@ -297,3 +298,42 @@ def apogeeField(dr='X'):
        2013-11-04 - Written - Bovy (IAS)
     """
     return fitsio.read(path.apogeeFieldPath(dr=dr))
+
+def apogeeObject(field_name,dr='X',
+                 ak=True,
+                 akvers='targ'):
+    """
+    NAME:
+       apogeePlate
+    PURPOSE:
+       read the apogeePlate file
+    INPUT:
+       field_name - name of the field
+       dr= return the file corresponding to this data release
+       ak= (default: True) only use objects for which dereddened mags exist
+       akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
+    OUTPUT:
+       apogeeObject file
+    HISTORY:
+       2013-11-04 - Written - Bovy (IAS)
+    """
+    data= fitsio.read(path.apogeeObjectPath(field_name,dr=dr))
+    if akvers.lower() == 'targ':
+        aktag= 'AK_TARG'
+    elif akvers.lower() == 'wise':
+        aktag= 'AK_WISE'
+    if ak:
+        data= data[(data[aktag] > -50.)]
+    #Add dereddened J, H, and Ks
+    aj= data[aktag]*2.5
+    ah= data[aktag]*1.55
+    data= esutil.numpy_util.add_fields(data,[('J0', float),
+                                             ('H0', float),
+                                             ('K0', float)])
+    data['J0']= data['J']-aj
+    data['H0']= data['H']-ah
+    data['K0']= data['K']-data[aktag]
+    data['J0'][(data[aktag] <= -50.)]= -9999.9999
+    data['H0'][(data[aktag] <= -50.)]= -9999.9999
+    data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    return data
