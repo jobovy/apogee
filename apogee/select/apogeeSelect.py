@@ -42,6 +42,78 @@ class apogeeSelect:
         HISTORY:
            2013-11-04 - Start - Bovy (IAS)
         """
+        #Figure out what's been observed and what's complete
+        sys.stdout.write('\r'+"Reading and parsing observation log and design/plate/field files ...\r")
+        sys.stdout.flush()
+        self._process_obslog(locations=locations,year=year)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        #Load spectroscopic data and cut to the statistical sample
+        sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
+        sys.stdout.flush()
+        self._load_spec_data(sample=sample)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        #Load the underlying photometric sample for the locations/cohorts in 
+        #the statistical sample
+
+        return None
+
+    def _load_spec_data(self,sample='rcsample'):
+        """Internal function to load the spectroscopic data set and cut it 
+        down to the statistical sample"""
+        if sample.lower() == 'rcsample':
+            specdata= apread.rcsample(main=True)
+        #Also read the allVisit file to match back to plates
+        allVisit= apread.allVisit() #no need to cut to main
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                 allVisit['PLATE'][ii]+'-'+
+                 '%05i' % allVisit['MJD'][ii] + '-'
+                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S17')
+        statIndx= numpy.zeros(len(specdata),dtype='bool')
+        #Go through the spectroscopic sample and check that it is in a full cohort
+        plateIncomplete= 0
+        for ii in range(len(specdata)):
+            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
+            indx= visits == avisit
+            if numpy.sum(indx) == 0.:
+                #Hasn't happened so far
+                print "Warning: no visit found", specdata['VISITS'][ii]
+            avisitsplate= int(allVisit['PLATE'][indx][0])
+            #Find the design corresponding to this plate
+            tplatesIndx= (self._plates == avisitsplate)
+            if numpy.sum(tplatesIndx) == 0.:
+                plateIncomplete+= 1
+                continue
+            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
+            #Determine which cohort this star is in
+            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
+                tcohort= 'short'
+                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
+                tcohort= 'medium'
+                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
+                tcohort= 'long'
+                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
+            else:
+                tcohort= '???'
+                plateIncomplete+= 1
+#                print "Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate
+            locIndx= specdata['LOCATION_ID'][ii] == self._locations
+            if cohortnum > 0 and tcohort != '???' and \
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] == 1.) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
+                statIndx[ii]= True
+        self._specdata_plateIncomplete= plateIncomplete
+        print numpy.sum(statIndx)
+        specdata= specdata[statIndx]
+        self._specdata= specdata
+                     
+    def _process_obslog(self,locations=None,year=2):
+        """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
         origobslog= apread.obslog(year=year)
         #Remove plates that only have pre-commissioning data
@@ -204,70 +276,8 @@ class apogeeSelect:
         self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
-        #Load spectroscopic data and cut to the statistical sample
-        sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
-        sys.stdout.flush()
-        self._load_spec_data(sample=sample)
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
-        #Load the underlying photometric sample for the locations/cohorts in 
-        #the statistical sample
-
         return None
 
-    def _load_spec_data(self,sample='rcsample'):
-        """Internal function to load the spectroscopic data set and cut it 
-        down to the statistical sample"""
-        if sample.lower() == 'rcsample':
-            specdata= apread.rcsample(main=True)
-        #Also read the allVisit file to match back to plates
-        allVisit= apread.allVisit() #no need to cut to main
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
-                 allVisit['PLATE'][ii]+'-'+
-                 '%05i' % allVisit['MJD'][ii] + '-'
-                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S17')
-        statIndx= numpy.zeros(len(specdata),dtype='bool')
-        #Go through the spectroscopic sample and check that it is in a full cohort
-        plateIncomplete= 0
-        for ii in range(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
-            indx= visits == avisit
-            if numpy.sum(indx) == 0.:
-                #Hasn't happened so far
-                print "Warning: no visit found", specdata['VISITS'][ii]
-            avisitsplate= int(allVisit['PLATE'][indx][0])
-            #Find the design corresponding to this plate
-            tplatesIndx= (self._plates == avisitsplate)
-            if numpy.sum(tplatesIndx) == 0.:
-                plateIncomplete+= 1
-                continue
-            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
-            #Determine which cohort this star is in
-            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
-                tcohort= 'short'
-                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
-            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
-                tcohort= 'medium'
-                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
-            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
-                tcohort= 'long'
-                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
-            else:
-                tcohort= '???'
-                plateIncomplete+= 1
-#                print "Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate
-            locIndx= specdata['LOCATION_ID'][ii] == self._locations
-            if cohortnum > 0 and tcohort != '???' and \
-                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] == 1.) \
-                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
-                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
-                statIndx[ii]= True
-        self._specdata_plateIncomplete= plateIncomplete
-        print numpy.sum(statIndx)
-        specdata= specdata[statIndx]
-        self._specdata= specdata
-                     
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
