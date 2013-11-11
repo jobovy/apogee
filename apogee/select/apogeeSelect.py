@@ -1,6 +1,7 @@
 import sys
 import copy
 import numpy
+from scipy import stats
 from galpy.util import bovy_plot, bovy_coords
 from matplotlib import cm
 ##APOGEE TOOLS
@@ -75,7 +76,7 @@ class apogeeSelect:
         sys.stdout.flush()
         return None
 
-    def __call__(self,location,H=None):
+    def __call__(self,location,H):
         """
         NAME:
            __call__
@@ -91,8 +92,7 @@ class apogeeSelect:
         """
         locIndx= self._locations == location
         #Handle input
-        if isinstance(location,(numpy.int16,int)) \
-                and (isinstance(H,(int,float)) or H is None): #Scalar input
+        if isinstance(H,(int,float,numpy.float32,numpy.float64)): #Scalar input
             H= [H]
             scalarOut= True
         elif isinstance(location,(numpy.int16,int)) \
@@ -341,6 +341,71 @@ class apogeeSelect:
                                 bottom_right=True,size=16.)
         return None
                     
+    def check_consistency(self,location,cohort=None):
+        """
+        NAME:
+           check_consistency
+        PURPOSE:
+           calculate the KS probability that this field is consistent with 
+           being drawn from the underlying photometric sample using our model
+           for the selection function
+        INPUT:
+           location - location_id: numbers, 'all', 'short', 'medium', 'long'
+           cohort= type(s) of cohorts to consider ('all' by default, except for location='short', 'medium', or 'long'
+        OUTPUT:
+           KS probability or list/array of such numbers
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        #Handle input
+        scalarOut= False
+        if cohort is None: cohort= 'all'
+        if isinstance(location,str) and location.lower() == 'all':
+            location= self._locations
+        elif isinstance(location,str) and location.lower() == 'short':
+            cohort= 'short'
+            location= self._locations[numpy.nanmax(self._short_completion,axis=1) == 1.]
+        elif isinstance(location,str) and location.lower() == 'medium':
+            cohort= 'medium'
+            location= self._locations[numpy.nanmax(self._medium_completion,axis=1) == 1.]
+        elif isinstance(location,str) and location.lower() == 'long':
+            cohort= 'long'
+            location= self._locations[numpy.nanmax(self._long_completion,axis=1) == 1.]
+        print location
+        if isinstance(location,(numpy.int16,int)): #Scalar input
+            location= [location]
+            scalarOut= True
+        out= []
+        for loc in location:
+            out.append(self._check_consistency_single(loc,cohort))
+        if scalarOut: return out[0]
+        elif isinstance(location,numpy.ndarray): return numpy.array(out)
+        else: return out
+
+    def _check_consistency_single(self,location,cohort):
+        """check_consistency for a single field
+        location: location_id
+        cohort: cohort ('all', 'short', 'medium', 'long'"""
+        photH,specH,fn1,fn2= self._plate_Hcdfs(location,cohort)
+        if photH is None:
+            return -1
+        j1, j2, i= 0, 0, 0
+        id1= range(len(photH)+len(specH))
+        id2= range(len(photH)+len(specH))
+        while j1 < len(photH) and j2 < len(specH):
+            d1= photH[j1]
+            d2= specH[j2]
+            if d1 <= d2: j1+= 1
+            if d2 <= d1: j2+= 1
+            id1[i]= j1
+            id2[i]= j2
+            i+= 1
+        id1= id1[0:i-1]
+        id2= id2[0:i-1]
+        D= numpy.amax(numpy.fabs(fn1[id1]-fn2[id2]))
+        neff= len(photH)*len(specH)/float(len(photH)+len(specH))
+        return stats.ksone.sf(D,neff)
+
     def _plate_Hcdfs(self,location,cohort):
         """Internal function that creates the cumulative H-band distribution
         for a given field/cohort
@@ -371,27 +436,22 @@ class apogeeSelect:
             sindx= (thisspecdata['H'] >= self._long_hmin[locIndx])\
                 *(thisspecdata['H'] <= self._long_hmax[locIndx])
         thisphotdata= thisphotdata[pindx]
-        thisspecdata= thisspecdata[pindx]
+        thisspecdata= thisspecdata[sindx]
         #Calculate selection function weights for the photometry
-        w= numpy.zeros(len(thisplatephot['H']))
+        w= numpy.zeros(len(thisphotdata['H']))
         for ii in range(len(w)):
-            w[ii]= self(plate,r=thisplatephot[ii].r)
-
-
-
-
-
+            w[ii]= self(location,H=thisphotdata['H'][ii])
         #Calculate KS test statistic
-        sortindx_phot= numpy.argsort(thisplatephot.r)
-        sortindx_spec= numpy.argsort(thisplatespec.dered_r)
-        sortphot= thisplatephot[sortindx_phot]
-        sortspec= thisplatespec[sortindx_spec]
+        sortindx_phot= numpy.argsort(thisphotdata['H'])
+        sortindx_spec= numpy.argsort(thisspecdata['H'])
+        sortphot= thisphotdata[sortindx_phot]
+        sortspec= thisspecdata[sortindx_spec]
         w= w[sortindx_phot]
         fn1= numpy.cumsum(w)/numpy.sum(w)
         fn2= numpy.ones(len(sortindx_spec))
         fn2= numpy.cumsum(fn2)
         fn2/= fn2[-1]
-        return (sortphot.r,sortspec.dered_r,fn1,fn2)    
+        return (sortphot['H'],sortspec['H'],fn1,fn2)    
 
     def _determine_selection(self,sample='rcsample',sftype='constant',
                              minnspec=10):
@@ -629,7 +689,7 @@ class apogeeSelect:
         #Now match plates and designs with fields
         if locations is None:
             locations= list(set(apogeeDesign[self._designsIndx]['LOCATION_ID']))
-        self._locations= locations        
+        self._locations= numpy.array(locations)
         locPlatesIndx= numpy.zeros((len(self._locations),20),dtype='int')-1 #There can be more than 8 plates bc of redrilling
         locDesignsIndx= numpy.zeros((len(self._locations),20),dtype='int')-1 #At most 8 designs / location, but we match to plates
         dummyIndxArray= numpy.arange(len(apogeePlate['PLATE_ID']),dtype='int')
