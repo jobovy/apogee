@@ -49,11 +49,11 @@ class apogeeSelect:
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         #Load spectroscopic data and cut to the statistical sample
-        #sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
-        #sys.stdout.flush()
-        #self._load_spec_data(sample=sample)
-        #sys.stdout.write('\r'+_ERASESTR+'\r')
-        #sys.stdout.flush()
+        sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
+        sys.stdout.flush()
+        self._load_spec_data(sample=sample)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
         #Load the underlying photometric sample for the locations/cohorts in 
         #the statistical sample
         sys.stdout.write('\r'+"Reading and parsing photometric data ...\r")
@@ -155,6 +155,10 @@ class apogeeSelect:
         if type == 'nphot':
             plotSF= self.__dict__['_nphot_%s' % cohort]
             clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
+            vmin, vmax= 0., numpy.nanmax(plotSF)
+        elif type == 'nspec':
+            plotSF= self.__dict__['_nspec_%s' % cohort]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
             vmin, vmax= 0., numpy.nanmax(plotSF)
         elif type == 'hmin':
             plotSF= self.__dict__['_%s_hmin' % cohort]
@@ -329,15 +333,63 @@ class apogeeSelect:
         """Internal function to load the full spectroscopic data set and 
         cut it down to the statistical sample"""
         allStar= apread.allStar(main=True,akvers='targ')
+        #Only keep stars in locations for which we are loading the 
+        #selection function
+        indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations 
+                           for ii in range(len(allStar))],dtype='bool')
+        allStar= allStar[indx]
         jko= allStar['J0']-allStar['K0']
         if sample.lower() == 'rcsample':
             indx=(jko >= 0.5)*(jko < 0.8)
         else:
             indx= jko >= 0.5
-        print len(allStar), numpy.sum(indx)
         allStar= allStar[indx]
         statIndx= self.determine_statistical(allStar)
-        self._specdata= allStar[statIndx]
+        allStar= allStar[statIndx]
+        #Save spectroscopic data by location
+        specdata= {}
+        for ii in range(len(self._locations)):
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+            elif numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+            elif numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+            else:
+                specdata['%i' % self._locations[ii]]= None
+            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            indx= (allStar['LOCATION_ID'] == self._locations[ii])\
+                *(allStar['H'] >= thmin)\
+                *(allStar['H'] <= thmax)
+            specdata['%i' % self._locations[ii]]= allStar[indx]
+        self._specdata= specdata     
+        #Now record the number of spectroscopic objects in each cohort
+        nspec_short= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_long= numpy.zeros(len(self._locations))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                #There is a completed short cohort
+                nspec_short[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+            if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                #There is a completed medium cohort
+                nspec_medium[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                #There is a completed long cohort
+                nspec_long[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+        self._nspec_short= nspec_short
+        self._nspec_medium= nspec_medium
+        self._nspec_long= nspec_long
         return None
 
     def _process_obslog(self,locations=None,year=2):
