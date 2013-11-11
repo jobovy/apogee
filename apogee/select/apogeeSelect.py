@@ -28,7 +28,8 @@ class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
     def __init__(self,sample='rcsample',
                  locations=None,
-                 year=2):
+                 year=2,
+                 sftype='constant'):
         """
         NAME:
            __init__
@@ -38,6 +39,8 @@ class apogeeSelect:
            sample= ('rcsample') sample to consider
            locations= locations to load the selection function for
            year= (2) load up to this year 
+           sftype= ('constant') selection function type:
+              - constant: selection function is # spec / # phot within a cohort
         OUTPUT:
         HISTORY:
            2013-11-04 - Start - Bovy (IAS)
@@ -59,6 +62,12 @@ class apogeeSelect:
         sys.stdout.write('\r'+"Reading and parsing photometric data ...\r")
         sys.stdout.flush()
         self._load_phot_data(sample=sample)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        #Determine the selection function
+        sys.stdout.write('\r'+"Determining selection function ...\r")
+        sys.stdout.flush()
+        self._determine_selection(sample=sample,sftype=sftype)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         return None
@@ -128,7 +137,9 @@ class apogeeSelect:
                         xrange=[0.,360.],
                         yrange=[-90.,90.],
                         ms=30.,
-                        type='selfunc'):
+                        type='selfunc',
+                        vmin=None,vmax=None):
+        
         """
         NAME:
            plot_selfunc_lb
@@ -139,6 +150,7 @@ class apogeeSelect:
            cohort= ('short') cohort to consider
            xrange, yrange= ranges in l and b for plot
            ms= (30) marker size
+           vmin, vmax= colorbar range
            type= ('selfunc') type of plot to make:
               - selfunc: the selection function
               - nphot: number of photometric potential targets
@@ -152,22 +164,33 @@ class apogeeSelect:
         """
         #Plot progress
         plotSF= numpy.zeros(len(self._locations))
-        if type == 'nphot':
+        if type.lower() == 'selfunc':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self._selfunc['%i%s' % (self._locations[ii],
+                                                    cohort[0])](self.__dict__['_%s_hmax' % cohort])*100.
+            clabel=r'$\mathrm{%s\ cohort\ selection\ fraction\ (\%%)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 100.
+        elif type.lower() == 'nphot':
             plotSF= self.__dict__['_nphot_%s' % cohort]
             clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
-            vmin, vmax= 0., numpy.nanmax(plotSF)
-        elif type == 'nspec':
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'nspec':
             plotSF= self.__dict__['_nspec_%s' % cohort]
             clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
-            vmin, vmax= 0., numpy.nanmax(plotSF)
-        elif type == 'hmin':
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'hmin':
             plotSF= self.__dict__['_%s_hmin' % cohort]
             clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
-            vmin, vmax= 7., 13.8
-        elif type == 'hmax':
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
+        elif type.lower() == 'hmax':
             plotSF= self.__dict__['_%s_hmax' % cohort]
             clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
-            vmin, vmax= 7., 13.8
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
         bovy_plot.bovy_print(fig_width=8.)
         bovy_plot.bovy_plot(self._apogeeField['GLON'],
                             self._apogeeField['GLAT'],
@@ -261,6 +284,29 @@ class apogeeSelect:
                                 bottom_right=True,size=16.)
         return None
                     
+    def _determine_selection(self,sample='rcsample',sftype='constant'):
+        """Internal function to determine the selection function"""
+        selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
+        if sftype.lower() == 'constant':
+            for ii in range(len(self._locations)):
+                if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                    #There is a short cohort
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
+                else:
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                    #There is a medium cohort
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
+                else:
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                    #There is a long cohort
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
+                else:
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
+        self._selfunc= selfunc
+        return None
+
     def _load_phot_data(self,sample='rcsample'):
         """Internal function to load the full, relevant photometric data set
         for the statistical sample"""
@@ -339,6 +385,7 @@ class apogeeSelect:
                            for ii in range(len(allStar))],dtype='bool')
         allStar= allStar[indx]
         jko= allStar['J0']-allStar['K0']
+        self._sample= sample
         if sample.lower() == 'rcsample':
             indx=(jko >= 0.5)*(jko < 0.8)
         else:
