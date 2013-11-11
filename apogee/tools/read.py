@@ -64,6 +64,7 @@ def allStar(rmcommissioning=True,
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
+        data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
@@ -150,6 +151,7 @@ def allVisit(rmcommissioning=True,
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
+        data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
@@ -347,6 +349,7 @@ def apogeeObject(field_name,dr='X',
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
+        data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
