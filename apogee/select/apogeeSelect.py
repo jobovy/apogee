@@ -616,7 +616,8 @@ class apogeeSelect:
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
                           ms=30.,
-                          add_mean_label=False):
+                          add_mean_label=False,
+                          add_cohort_label=False):
         """
         NAME:
            plot_obs_progress
@@ -628,6 +629,7 @@ class apogeeSelect:
            xrange, yrange= ranges in l and b for plot
            ms= (30) marker size
            add_mean_label= add a label with the mean completeness
+           add_cohort_label= add a label with the cohort
         OUTPUT:
            plot to output device
         HISTORY:
@@ -687,6 +689,16 @@ class apogeeSelect:
             bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
                                 (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
                                 bottom_right=True,size=16.)
+        if add_cohort_label:
+            if cohort.lower() == 'short':
+                bovy_plot.bovy_text(r'$7.0 \leq H \leq 12.2$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'medium':
+                bovy_plot.bovy_text(r'$12.2 \leq H \leq 12.8$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'long':
+                bovy_plot.bovy_text(r'$12.8 \leq H \leq 13.3\ \mathrm{or}\ 13.8$',
+                                    bottom_right=True,size=16.)
         return None
                     
     def check_consistency(self,location,cohort='all'):
