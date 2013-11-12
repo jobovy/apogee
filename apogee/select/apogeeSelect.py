@@ -642,7 +642,6 @@ class apogeeSelect:
                 progress[ii]= numpy.mean(self._medium_completion[ii,True-numpy.isnan(self._medium_completion[ii,:])])
             if cohort == 'long':
                 progress[ii]= numpy.mean(self._long_completion[ii,True-numpy.isnan(self._long_completion[ii,:])])
-        bovy_plot.bovy_print(fig_width=8.)
         bovy_plot.bovy_plot(self._apogeeField['GLON'],
                             self._apogeeField['GLAT'],
                             c=progress,s=ms,
