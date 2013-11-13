@@ -24,12 +24,11 @@ This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
 This code depends on a number of data files and environment
 variables. The environment variables are
 
-APOGEE_DATA: top-level directory with APOGEE data
+*APOGEE_DATA*: top-level directory with APOGEE data
 
+*APOGEE_REDUX*: APOGEE reduction version (e.g., v304 for DR10)
 
-APOGEE_REDUX: APOGEE reduction version (e.g., v304 for DR10)
-
-APOGEE_APOKASC_REDUX: APOKASC catalog version (e.g., v6.2a)
+*APOGEE_APOKASC_REDUX*: APOKASC catalog version (e.g., v6.2a)
 
 Most data files live in the $APOGEE_DATA directory. For example,
 allStar-$APOGEE_REDUX.fits, allVisit-$APOGEE_REDUX.fits, and
