@@ -274,8 +274,6 @@ class apogeeSelect:
                      
     def plot_selfunc_xy(self,cohort='all',
                         mh=-1.49,
-                        xrange=[0.,360.],
-                        yrange=[-90.,90.],
                         type='xy',
                         vmin=None,vmax=None):
         
@@ -288,7 +286,6 @@ class apogeeSelect:
         INPUT:
            cohort= ('all') cohort to consider
            mh= (-1.49) absolute magnitude to use to go to distance
-           xrange, yrange= ranges in X and Y for plot
            vmin, vmax= colorbar range
            type= ('xy') type of plot to make:
               - xy: X vs. Y
