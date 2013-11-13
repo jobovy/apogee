@@ -179,7 +179,7 @@ as well as that of the spectroscopic sample and the photometric sample re-weight
 apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)
 ```
 
-<img src="_readme_files/_colormag.png" alt="Color--magnitude distribution of the photometric and spectroscopic sample" width="600" />
+<img src="_readme_files/_colormag.png" alt="Color--magnitude distribution of the photometric and spectroscopic sample" width="450" />
 
 This allows one to see that the spectroscopic sample (red) is a fair
 sampling of the underlying photometric sample (black), after
