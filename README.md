@@ -173,14 +173,22 @@ The photometric sample's color--magnitude distribution can be shown,
 as well as that of the spectroscopic sample and the photometric sample re-weighted using the selection function
 
 ```
-apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=10
-1,cntrSmooth=.75)
+apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)
 ```
 
 This allows one to see that the spectroscopic sample is a fair
 sampling of the underlying photometric sample, after correcting for
-the (simple) selection function.
+the (simple) selection function. For individual plates, the cumulative
+distribution in *H* can be compared for the photometric and
+spectroscopic samples (correcting for the selection fraction) using
 
+```
+apo.plot_Hcdf(4242)
+```
+
+which shows this for all completed cohorts in field 4242 (*090+00*):
+
+![Alt text](_readme_files/_hcdf_4242.png)
 
 The selection function instance also has a function that will
 determine which stars in a given sample are part of the
@@ -188,7 +196,8 @@ determine which stars in a given sample are part of the
 *allStar* sample and performed some spectroscopic cuts, you can run
 this sample through this function to see which stars are part of the
 statistical sample, so that their relative frequency in the sample can
-be adjust to represent that o the underlying sample. For example,
+be adjust to reflect that of the underlying photometric sample. For
+example,
 
 ```
 import apogee.tools.read as apread
@@ -199,8 +208,8 @@ allStar= allStar[various cuts]
 statIndx= apo.determine_statistical(allStar)
 ```
 
-*statIndx* now is an index array that identifies the stars that are in
- the statistical sample.
+*statIndx* now is an boolean index array that identifies the stars
+ that are in the statistical sample.
 
 
 
