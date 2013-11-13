@@ -130,3 +130,77 @@ apo(4242,12.9)
 
 The latter is zero, because the long cohort for this field has not
 been completed yet (as of year1+2).
+
+To get a list of all locations that are part of the statistical sample (i.e., that have at least a single completed cohort), do
+
+```
+locs= apo.list_fields(cohort='all') #to get all locations
+locs= apo.list_fields(cohort='short') #to get all locations with a completed short cohort
+locs= apo.list_fields(cohort='medium') #to get all locations with a completed medium cohort
+locs= apo.list_fields(cohort='long') #to get all locations with a completed long cohort
+```
+
+To get the H-band limits for a field's cohort do
+```
+apo.Hmin(4240,cohort='short')
+apo.Hmax(4240,cohort='short')
+```
+
+and similar for medium and long cohorts.
+
+The selection function can be plotted using
+
+```
+apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
+apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
+```
+
+which gives a sense of the spatial dependence of the selection
+function (which is really a function of *H* and not distance). The
+selection function for a given cohort can also be plotted as a
+function of Galactic longitude and latitude
+
+```
+apo.plot_selfunc_lb(cohort='short',type='selfunc')
+```
+
+This function can also show the number of photometric and
+spectroscopic targets, the H-band limits for each cohort, and the
+probability that the spectroscopic sample was drawn from the
+photometric sample (through use of the *type=* keyword).
+
+The photometric sample's color--magnitude distribution can be shown,
+as well as that of the spectroscopic sample and the photometric sample re-weighted using the selection function
+
+```
+apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=10
+1,cntrSmooth=.75)
+```
+
+This allows one to see that the spectroscopic sample is a fair
+sampling of the underlying photometric sample, after correcting for
+the (simple) selection function.
+
+
+The selection function instance also has a function that will
+determine which stars in a given sample are part of the
+**statistical** sample. For example, if one has started from the
+*allStar* sample and performed some spectroscopic cuts, you can run
+this sample through this function to see which stars are part of the
+statistical sample, so that their relative frequency in the sample can
+be adjust to represent that o the underlying sample. For example,
+
+```
+import apogee.tools.read as apread
+allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
+#Do some cuts to the sample
+allStar= allStar[various cuts]
+#Now which part of the sample is statistical?
+statIndx= apo.determine_statistical(allStar)
+```
+
+*statIndx* now is an index array that identifies the stars that are in
+ the statistical sample.
+
+
+
