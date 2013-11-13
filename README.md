@@ -188,6 +188,8 @@ apo.plot_Hcdf(4242)
 
 which shows this for all completed cohorts in field 4242 (*090+00*):
 
+<img src="_readme_files/_hcdf_4242.png" alt="Cumulative H distribution for field 4242" width="150" height="100" />
+
 ![Cumulative H distribution for field 4242](_readme_files/_hcdf_4242.png?raw=true? =10x10)
 
 The red line is the spectroscopic sample and the black line the
