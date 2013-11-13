@@ -14,5 +14,6 @@ setup(name='apogee',
       package_dir = {'apogee/': ''},
       packages=['apogee','apogee.tools','apogee.select','apogee.test'],
       dependency_links = ['https://github.com/jobovy/galpy/tarball/master#egg=galpy'],
-      install_requires=['numpy','scipy','fitsio','esutil','galpy']
+      install_requires=['numpy','scipy','matplotlib',
+                        'fitsio','esutil','galpy']
       )
