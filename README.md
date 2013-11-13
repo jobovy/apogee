@@ -1,6 +1,7 @@
 #apogee
 
-Tools for dealing with APOGEE data.
+Tools for dealing with [SDSS-III] (http://sdss3.org/) [APOGEE]
+(http://www.sdss3.org/surveys/apogee.php) data.
 
 ##AUTHOR
 
@@ -35,7 +36,7 @@ to the target selection live in a sub-directory **dr/**. This
 sub-directory mirrors the directory structure of targeting-related
 files on the SDSS-III [SAS] (http://data.sdss3.org/sas/dr10/):
 
-$APOGEE_DATA/dr/apogee/target/
+* $APOGEE_DATA/dr/apogee/target/
 
 with sub-directories in that last *target/* directory
 
