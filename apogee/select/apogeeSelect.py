@@ -309,7 +309,7 @@ class apogeeSelect:
         cbar.set_clim((omin,omax))
         cbar.set_label(r'$\mathrm{selection\, fraction}\, (\%)$')
         #Add arrow pointing to the Galactic Center
-        from matplotlib.patches import Arrow, FancyArrowPatch
+        from matplotlib.patches import FancyArrowPatch
         _legendsize= 16
         if type.lower() == 'xy':
             xarr, dx= 6.2, 2.2
