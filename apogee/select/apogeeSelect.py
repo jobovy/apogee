@@ -31,7 +31,7 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
 _ERASESTR= "                                                                                "
 class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
-    def __init__(self,sample='rcsample',
+    def __init__(self,sample='main',
                  locations=None,
                  year=2,
                  sftype='constant',
@@ -42,7 +42,14 @@ class apogeeSelect:
         PURPOSE:
            load the selection function for this sample
         INPUT:
-           sample= ('rcsample') sample to consider
+           sample= ('main') sample to consider:
+
+                   main: main (J-Ks)_0 > 0.5 sample
+                   rcsample: red clump subsample
+
+                   The selection functions of these are the same (since the RC
+                   sample is defined after observations), so main is typically
+                   the better choice, since it has better statistics)
            locations= locations to load the selection function for
            year= (2) load up to this year 
            sftype= ('constant') selection function type:
