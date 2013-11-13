@@ -133,6 +133,76 @@ class apogeeSelect:
         else:
             return out        
 
+    def list_fields(self,cohort='short'):
+        """
+        NAME:
+           list_fields
+        PURPOSE:
+           return a list of all of the fields in the statistical sample
+        INPUT:
+           cohort= ('short') only return fields for which this cohort is in
+                   the statistical sample ['short','medium','long']
+        OUTPUT:
+           list of fiel (location_ids)
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        out= []
+        for ii in range(len(self._locations)):
+            if cohort.lower() == 'all' and \
+                    (numpy.nanmax(self._short_completion[ii,:]) == 1. \
+                         or numpy.nanmax(self._medium_completion[ii,:]) == 1. \
+                         or numpy.nanmax(self._long_completion[ii,:]) == 1.):
+                #There is a completed cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'short' and \
+                    numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                #There is a completed short cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'medium' and \
+                    numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                #There is a completed medium cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'long' and \
+                    numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                #There is a completed long cohort
+                out.append(self._locations[ii])
+        return out
+
+    def Hmin(self,location_id,cohort='short'):
+        """
+        NAME:
+          Hmin
+        PURPOSE:
+           return the minimum H of a field/cohort combination
+        INPUT:
+           location_id - field location ID
+           cohort= ('short') cohort ['short','medium','long']
+        OUTPUT:
+           Hmin (NaN if the cohort does not exist)
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return self.__dict__['_%s_hmin' % cohort][locIndx]
+
+    def Hmax(self,location_id,cohort='short'):
+        """
+        NAME:
+          Hmax
+        PURPOSE:
+           return the maximum H of a field/cohort combination
+        INPUT:
+           location_id - field location ID
+           cohort= ('short') cohort ['short','medium','long']
+        OUTPUT:
+           Hmax
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return self.__dict__['_%s_hmax' % cohort][locIndx]
+
     def determine_statistical(self,specdata):
         """
         NAME:
