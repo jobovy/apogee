@@ -52,3 +52,34 @@ without the *_DR10*).
 For the target selection code to work, the allStar-$APOGEE_REDUX.fits,
 allVisit-$APOGEE_REDUX.fits files need to be present, as well as the
 targeting files in the *dr/* directory.
+
+Routines in the *apogee.tools.path* module keep track of all of the
+paths to the different files.
+
+##BASIC USE
+
+The most basic capability of the code is to read various data produces
+and apply cuts (in *apogee.tools.read*). For example
+
+```
+import apogee.tools.read as apread
+allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
+```
+
+will read the allStar file corresponding to the $APOGEE_REDUX version,
+remove stars only observed on commissioning plates
+(*rmcommissioning=True*), only keep stars with a valid extinction
+estimate (*ak=True*), and use the original extinction estimate used to
+define the targeting sample (*akvers='targ'*). The output
+numpy.recarray has additional tags containing the extinction-corrected
+*J*, *H*, and *Ks* magnitudes.
+
+```
+apokasc= apread.apokasc()
+```
+
+read the APOKASC catalog and matches and combines it with the allStar
+catalog.
+
+*apogee.tools.read* also contains routines to read the various
+ targeting-related files (see above).
