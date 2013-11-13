@@ -188,7 +188,10 @@ apo.plot_Hcdf(4242)
 
 which shows this for all completed cohorts in field 4242 (*090+00*):
 
-![Alt text](_readme_files/_hcdf_4242.png)
+![Alt text](_readme_files/_hcdf_4242.png?raw=true)
+
+The red line is the spectroscopic sample and the black line the
+photometric sample.
 
 The selection function instance also has a function that will
 determine which stars in a given sample are part of the
