@@ -199,7 +199,16 @@ which shows this for all completed cohorts in field 4242 (*090+00*):
 <img src="_readme_files/_hcdf_4242.png" alt="Cumulative H distribution for field 4242" width="600" />
 
 The red line is the spectroscopic sample and the black line the
-photometric sample.
+photometric sample. We can calculate the K-S probability that the red
+and black distributions are the same
+
+```
+apo.check_consistency(4242)
+0.76457183071108814
+```
+
+Thus, there is a very high probability that these two distributions
+are the same.
 
 The selection function instance also has a function that will
 determine which stars in a given sample are part of the
