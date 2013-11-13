@@ -694,10 +694,10 @@ class apogeeSelect:
                 bovy_plot.bovy_text(r'$7.0 \leq H \leq 12.2$',
                                     bottom_right=True,size=16.)
             elif cohort.lower() == 'medium':
-                bovy_plot.bovy_text(r'$12.2 \leq H \leq 12.8$',
+                bovy_plot.bovy_text(r'$12.2 < H \leq 12.8$',
                                     bottom_right=True,size=16.)
             elif cohort.lower() == 'long':
-                bovy_plot.bovy_text(r'$12.8 \leq H \leq 13.3\ \mathrm{or}\ 13.8$',
+                bovy_plot.bovy_text(r'$12.8 < H \leq 13.3\ \mathrm{or}\ 13.8$',
                                     bottom_right=True,size=16.)
         return None
                     
