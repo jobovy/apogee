@@ -179,11 +179,14 @@ as well as that of the spectroscopic sample and the photometric sample re-weight
 apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)
 ```
 
-This allows one to see that the spectroscopic sample is a fair
-sampling of the underlying photometric sample, after correcting for
-the (simple) selection function. For individual plates, the cumulative
-distribution in *H* can be compared for the photometric and
-spectroscopic samples (correcting for the selection fraction) using
+<img src="_readme_files/_colormag.png" alt="Color--magnitude distribution of the photometric and spectroscopic sample" width="600" />
+
+This allows one to see that the spectroscopic sample (red) is a fair
+sampling of the underlying photometric sample (black), after
+correcting for the (simple) selection function (blue). For individual
+plates, the cumulative distribution in *H* can be compared for the
+photometric and spectroscopic samples (correcting for the selection
+fraction) using
 
 ```
 apo.plot_Hcdf(4242)
