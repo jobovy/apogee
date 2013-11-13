@@ -36,12 +36,12 @@ to the target selection live in a sub-directory **dr/**. This
 sub-directory mirrors the directory structure of targeting-related
 files on the SDSS-III [SAS] (http://data.sdss3.org/sas/dr10/):
 
-* $APOGEE_DATA/dr/apogee/target/
+* **$APOGEE_DATA/dr/apogee/target/**
 
 with sub-directories in that last *target/* directory
 
-* apogee_DR10
-* apogee_DRX
+* **apogee_DR10**
+* **apogee_DRX**
 
 These directories contain the apogeeDesign_DR10.fits,
 apogeeField_DR10.fits, apogeePlate_DR10.fits, and
