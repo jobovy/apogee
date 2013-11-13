@@ -12,7 +12,7 @@ setup(name='apogee',
       long_description=longDescription,
       url='https://github.com/jobovy/apogee',
       package_dir = {'apogee/': ''},
-      packages=['apogee'],
+      packages=['apogee','apogee.tools','apogee.select','apogee.test'],
       dependency_links = ['https://github.com/jobovy/galpy/tarball/master#egg=galpy'],
       install_requires=['numpy','scipy','fitsio','esutil','galpy']
       )
