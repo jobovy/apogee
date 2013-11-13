@@ -164,8 +164,10 @@ selection function for a given cohort can also be plotted as a
 function of Galactic longitude and latitude
 
 ```
-apo.plot_selfunc_lb(cohort='short',type='selfunc')
+apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
 ```
+
+<img src="_readme_files/_selfunc_lb_short.png" alt="Selection function as a function of Galactic longitude and latitude" width="450" />
 
 This function can also show the number of photometric and
 spectroscopic targets, the H-band limits for each cohort, and the
