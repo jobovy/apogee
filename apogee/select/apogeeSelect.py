@@ -135,6 +135,7 @@ class apogeeSelect:
             elif H[ii] > self._long_hmin[locIndx] \
                     and H[ii] <= self._long_hmax[locIndx]:
                 out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])
+        out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
         if scalarOut:
             return out[0]
         else:
