@@ -159,9 +159,11 @@ apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
 <img src="_readme_files/_selfunc_rz.png" alt="Selection function as a function of Galactocentric R and Z" width="350" />
 
 which gives a sense of the spatial dependence of the selection
-function (which is really a function of *H* and not distance). The
-selection function for a given cohort can also be plotted as a
-function of Galactic longitude and latitude
+function (which is really a function of *H* and not distance; *H* is
+converted to distance here assuming a red-clump like absolute
+magnitude and a fiducial extinction model). The selection function for
+a given cohort can also be plotted as a function of Galactic longitude
+and latitude
 
 ```
 apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
