@@ -35,7 +35,8 @@ class apogeeSelect:
                  locations=None,
                  year=2,
                  sftype='constant',
-                 minnspec=3):
+                 minnspec=3,
+                 frac4complete=1.):
         """
         NAME:
            __init__
@@ -55,6 +56,7 @@ class apogeeSelect:
            sftype= ('constant') selection function type:
               - constant: selection function is # spec / # phot within a cohort
            minnspec= (3) minimum number of spectra in a field/cohort to be included
+           frac4complete= (1.) fractional completeness of a cohort necessary to count as 'complete'
         OUTPUT:
         HISTORY:
            2013-11-04 - Start - Bovy (IAS)
@@ -62,7 +64,8 @@ class apogeeSelect:
         #Figure out what's been observed and what's complete
         sys.stdout.write('\r'+"Reading and parsing observation log and design/plate/field files ...\r")
         sys.stdout.flush()
-        self._process_obslog(locations=locations,year=year)
+        self._process_obslog(locations=locations,year=year,
+                             frac4complete=frac4complete)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         #Load spectroscopic data and cut to the statistical sample
@@ -158,21 +161,21 @@ class apogeeSelect:
         out= []
         for ii in range(len(self._locations)):
             if cohort.lower() == 'all' and \
-                    (numpy.nanmax(self._short_completion[ii,:]) == 1. \
-                         or numpy.nanmax(self._medium_completion[ii,:]) == 1. \
-                         or numpy.nanmax(self._long_completion[ii,:]) == 1.):
+                    (numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
+                         or numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
+                         or numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete):
                 #There is a completed cohort
                 out.append(self._locations[ii])
             elif cohort.lower() == 'short' and \
-                    numpy.nanmax(self._short_completion[ii,:]) == 1.:
+                    numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
                 out.append(self._locations[ii])
             elif cohort.lower() == 'medium' and \
-                    numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+                    numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
                 out.append(self._locations[ii])
             elif cohort.lower() == 'long' and \
-                    numpy.nanmax(self._long_completion[ii,:]) == 1.:
+                    numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
                 out.append(self._locations[ii])
         return out
@@ -265,9 +268,9 @@ class apogeeSelect:
 #                print "Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate
             locIndx= specdata['LOCATION_ID'][ii] == self._locations
             if cohortnum > 0 and tcohort != '???' and \
-                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] == 1.) \
-                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] == 1.) \
-                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] == 1.)):
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
                 statIndx[ii]= True
         #self._specdata_plateIncomplete= plateIncomplete
         return statIndx
@@ -301,13 +304,13 @@ class apogeeSelect:
         select= numpy.zeros((len(self._locations),nHs))+numpy.nan
         for ii in range(len(self._locations)):
             if cohort.lower() == 'all':
-                if numpy.nanmax(self._long_completion[ii,:]) == 1. \
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_long[ii] >= self._minnspec:
                     #There is a long cohort
                     Hs= numpy.linspace(self._short_hmin[ii],
                                        self._long_hmax[ii],
                                        nHs)
-                elif numpy.nanmax(self._medium_completion[ii,:]) == 1. \
+                elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_medium[ii] >= self._minnspec:
                     #There is a medium cohort
                     Hs= numpy.linspace(self._short_hmin[ii],
@@ -551,13 +554,13 @@ class apogeeSelect:
             location= self._locations
         elif isinstance(location,str) and location.lower() == 'short':
             cohort= 'short'
-            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) == 1.)*(self._nspec_short > 0.)]
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short > 0.)]
         elif isinstance(location,str) and location.lower() == 'medium':
             cohort= 'medium'
-            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) == 1.)*(self._nspec_medium > 0.)]
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium > 0.)]
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
-            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) == 1.)*(self._nspec_long > 0.)]
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long > 0.)]
         if isinstance(location,(numpy.int16,int)): #Scalar input
             location= [location]
         #Gather data from all requested locations and cohorts
@@ -798,13 +801,13 @@ class apogeeSelect:
             location= self._locations
         elif isinstance(location,str) and location.lower() == 'short':
             cohort= 'short'
-            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) == 1.)*(self._nspec_short > 0.)]
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short > 0.)]
         elif isinstance(location,str) and location.lower() == 'medium':
             cohort= 'medium'
-            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) == 1.)*(self._nspec_medium > 0.)]
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium > 0.)]
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
-            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) == 1.)*(self._nspec_long > 0.)]
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long > 0.)]
         if isinstance(location,(numpy.int16,int)): #Scalar input
             location= [location]
             scalarOut= True
@@ -930,19 +933,19 @@ class apogeeSelect:
         self._sftype= sftype
         if self._sftype.lower() == 'constant':
             for ii in range(len(self._locations)):
-                if numpy.nanmax(self._short_completion[ii,:]) == 1. \
+                if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_short[ii] >= minnspec:
                     #There is a short cohort
                     selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
                 else:
                     selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._medium_completion[ii,:]) == 1. \
+                if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_medium[ii] >= minnspec:
                     #There is a medium cohort
                     selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
                 else:
                     selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._long_completion[ii,:]) == 1. \
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_long[ii] >= minnspec:
                     #There is a long cohort
                     selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
@@ -973,13 +976,13 @@ class apogeeSelect:
             #print field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
             tapogeeObject= tapogeeObject[indx]
             #Cut to relevant magnitude range
-            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
                 thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
-            elif numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
                 thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
-            elif numpy.nanmax(self._short_completion[ii,:]) == 1.:
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
@@ -1002,17 +1005,17 @@ class apogeeSelect:
         nphot_medium= numpy.zeros(len(self._locations))+numpy.nan
         nphot_long= numpy.zeros(len(self._locations))+numpy.nan
         for ii in range(len(self._locations)):
-            if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
                 nphot_short[ii]= numpy.sum(\
                     (self._photdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
                         *(self._photdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
-            if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
                 nphot_medium[ii]= numpy.sum(\
                     (self._photdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
                         *(self._photdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
-            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
                 nphot_long[ii]= numpy.sum(\
                     (self._photdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
@@ -1044,13 +1047,13 @@ class apogeeSelect:
         specdata= {}
         for ii in range(len(self._locations)):
             #Cut to relevant magnitude range
-            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
                 thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
-            elif numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
                 thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
-            elif numpy.nanmax(self._short_completion[ii,:]) == 1.:
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
@@ -1066,17 +1069,17 @@ class apogeeSelect:
         nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
         nspec_long= numpy.zeros(len(self._locations))+numpy.nan
         for ii in range(len(self._locations)):
-            if numpy.nanmax(self._short_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
                 nspec_short[ii]= numpy.sum(\
                     (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
                         *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
-            if numpy.nanmax(self._medium_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
                 nspec_medium[ii]= numpy.sum(\
                     (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
                         *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
-            if numpy.nanmax(self._long_completion[ii,:]) == 1.:
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
                 nspec_long[ii]= numpy.sum(\
                     (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
@@ -1086,7 +1089,7 @@ class apogeeSelect:
         self._nspec_long= nspec_long
         return None
 
-    def _process_obslog(self,locations=None,year=2):
+    def _process_obslog(self,locations=None,year=2,frac4complete=1.):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
         origobslog= apread.obslog(year=year)
@@ -1187,6 +1190,7 @@ class apogeeSelect:
         #locPlatesIndx has the corresponding indices into apogeePlate
         #locDesignsIndx has the corresponding indices into apogeeDesign
         #Now figure out how much of each cohort has been observed
+        self._frac4complete= frac4complete
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
         short_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
