@@ -10,6 +10,7 @@
 #             - apogeeObject: read an apogeeObject file
 #             - apogeePlate: read the apogeePlate file
 #             - apokasc: read the APOKASC catalog
+#             - mainIndx: return the index of main targets in a data set
 #             - obslog: read the observation log
 #             - rcsample: read the red clump sample
 #
@@ -49,11 +50,7 @@ def allStar(rmcommissioning=True,
         indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
         data= data[True-indx]
     if main:
-        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
-            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
-            *((data['APOGEE_TARGET2'] & 2**9) == 0)
+        indx= mainIndx(data)
         data= data[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
@@ -132,11 +129,7 @@ def allVisit(rmcommissioning=True,
         indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
         data= data[True-indx]
     if main:
-        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
-            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
-            *((data['APOGEE_TARGET2'] & 2**9) == 0)
+        indx= mainIndx(data)
         data= data[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
@@ -216,11 +209,7 @@ def rcsample(main=False):
     data= fitsio.read(path.rcsamplePath())
     #Some cuts
     if main:
-        indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
-            *((data['APOGEE_TARGET1'] & 2**7) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**8) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**17) == 0)\
-            *((data['APOGEE_TARGET2'] & 2**9) == 0)
+        indx= mainIndx(data)
         data= data[indx]
     return data
         
@@ -352,3 +341,23 @@ def apogeeObject(field_name,dr='X',
     data['H0'][(data[aktag] <= -50.)]= -9999.9999
     data['K0'][(data[aktag] <= -50.)]= -9999.9999
     return data
+
+def mainIndx(data):
+    """
+    NAME:
+       mainIndx
+    PURPOSE:
+       apply 'main' flag cuts and return the index of 'main' targets
+    INPUT:
+       data- data sample (with APOGEE_TARGET1 and APOGEE_TARGET2 flags)
+    OUTPUT:
+       index of 'main' targets in data
+    HISTORY:
+       2013-11-19 - Written - Bovy (IAS)
+    """
+    indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
+        *((data['APOGEE_TARGET1'] & 2**17) == 0)\
+        *((data['APOGEE_TARGET1'] & 2**7) == 0)\
+        *((data['APOGEE_TARGET1'] & 2**8) == 0)\
+        *((data['APOGEE_TARGET2'] & 2**9) == 0)
+    return indx
