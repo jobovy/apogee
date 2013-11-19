@@ -79,7 +79,7 @@ numpy.recarray has additional tags containing the extinction-corrected
 apokasc= apread.apokasc()
 ```
 
-read the APOKASC catalog and matches and combines it with the allStar
+reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
 
 *apogee.tools.read* also contains routines to read the various
