@@ -53,10 +53,6 @@ def allStar(rmcommissioning=True,
             *((data['APOGEE_TARGET1'] & 2**17) == 0)\
             *((data['APOGEE_TARGET1'] & 2**7) == 0)\
             *((data['APOGEE_TARGET1'] & 2**8) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
             *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     if akvers.lower() == 'targ':
@@ -140,10 +136,6 @@ def allVisit(rmcommissioning=True,
             *((data['APOGEE_TARGET1'] & 2**17) == 0)\
             *((data['APOGEE_TARGET1'] & 2**7) == 0)\
             *((data['APOGEE_TARGET1'] & 2**8) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
             *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     if akvers.lower() == 'targ':
@@ -228,10 +220,6 @@ def rcsample(main=False):
             *((data['APOGEE_TARGET1'] & 2**7) == 0)\
             *((data['APOGEE_TARGET1'] & 2**8) == 0)\
             *((data['APOGEE_TARGET1'] & 2**17) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**26) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**27) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**28) == 0)\
-            *((data['APOGEE_TARGET1'] & 2**30) == 0)\
             *((data['APOGEE_TARGET2'] & 2**9) == 0)
         data= data[indx]
     return data
