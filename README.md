@@ -112,7 +112,7 @@ are identified using their location_id.
 The basic algorithm to determine the selection function is very simple:
 
 * Only completed plates are considered
-* Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample
+* Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sample (within the color and magnitude limits of the cohort).
 
 The selection function can be evaluated (as a function) by calling the instance. For example, 
