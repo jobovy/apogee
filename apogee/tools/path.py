@@ -148,8 +148,12 @@ def distPath(redux=None):
     """
     if redux is None:
         redux= _APOGEE_REDUX
-    return os.path.join(_APOGEE_DATA,
-                        'distmagall-'+redux+'.fits')
+    if redux.lower() == 'v402':
+        return os.path.join(_APOGEE_DATA,
+                            'allStar+-v402.121114.fits')
+    elif redux.lower() == 'v302':
+        return os.path.join(_APOGEE_DATA,
+                            'distmagall-'+redux+'.fits')
 
 def rcsamplePath():
     """

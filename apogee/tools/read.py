@@ -80,26 +80,36 @@ def allStar(rmcommissioning=True,
                              2./3600.,maxmatch=1)
         data= data[m2]
         dist= dist[m1]
-        data= esutil.numpy_util.add_fields(data,[('DM05', float),
-                                                 ('DM16', float),
-                                                 ('DM50', float),
-                                                 ('DM84', float),
-                                                 ('DM95', float),
-                                                 ('DMPEAK', float),
-                                                 ('DMAVG', float),
-                                                 ('SIG_DM', float),
-                                                 ('DIST_SOL', float),
-                                                 ('SIG_DISTSOL', float)])
-        data['DM05']= dist['DM05']
-        data['DM16']= dist['DM16']
-        data['DM50']= dist['DM50']
-        data['DM84']= dist['DM84']
-        data['DM95']= dist['DM95']
-        data['DMPEAK']= dist['DMPEAK']
-        data['DMAVG']= dist['DMAVG']
-        data['SIG_DM']= dist['SIG_DM']
-        data['DIST_SOL']= dist['DIST_SOL']/1000.
-        data['SIG_DISTSOL']= dist['SIG_DISTSOL']/1000.
+        if distredux.lower() == 'v302':
+            data= esutil.numpy_util.add_fields(data,[('DM05', float),
+                                                     ('DM16', float),
+                                                     ('DM50', float),
+                                                     ('DM84', float),
+                                                     ('DM95', float),
+                                                     ('DMPEAK', float),
+                                                     ('DMAVG', float),
+                                                     ('SIG_DM', float),
+                                                     ('DIST_SOL', float),
+                                                     ('SIG_DISTSOL', float)])
+            data['DM05']= dist['DM05']
+            data['DM16']= dist['DM16']
+            data['DM50']= dist['DM50']
+            data['DM84']= dist['DM84']
+            data['DM95']= dist['DM95']
+            data['DMPEAK']= dist['DMPEAK']
+            data['DMAVG']= dist['DMAVG']
+            data['SIG_DM']= dist['SIG_DM']
+            data['DIST_SOL']= dist['DIST_SOL']/1000.
+            data['SIG_DISTSOL']= dist['SIG_DISTSOL']/1000.
+        elif distredux.lower() == 'v402':
+            data= esutil.numpy_util.add_fields(data,[('DISO', float),
+                                                     ('DMASS', float),
+                                                     ('DISO_GAL', float),
+                                                     ('DMASS_GAL', float)])
+            data['DISO']= dist['DISO'][:,1]
+            data['DMASS']= dist['DMASS'][:,1]
+            data['DISO_GAL']= dist['DISO_GAL'][:,1]
+            data['DMASS_GAL']= dist['DMASS_GAL'][:,1]
     return data
         
 def allVisit(rmcommissioning=True,
