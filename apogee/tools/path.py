@@ -149,8 +149,10 @@ def distPath(redux=None):
     if redux is None:
         redux= _APOGEE_REDUX
     if redux.lower() == 'v402':
+        #return os.path.join(_APOGEE_DATA,
+        #                    'allStar+-v402.121114.fits')
         return os.path.join(_APOGEE_DATA,
-                            'allStar+-v402.121114.fits')
+                            'allStar+-v402.130103.fits')
     elif redux.lower() == 'v302':
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
