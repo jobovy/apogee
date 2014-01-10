@@ -11,6 +11,14 @@ Jo Bovy - bovy at ias dot edu
 
 Standard python setup.py build/install
 
+Either
+
+``sudo python setup.py install``
+
+or 
+
+``python setup.py install --prefix=/some/directory/``
+
 ##DEPENDENCIES
 
 This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
