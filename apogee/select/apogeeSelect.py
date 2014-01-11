@@ -180,6 +180,23 @@ class apogeeSelect:
                 out.append(self._locations[ii])
         return out
 
+    def glonGlat(self,location_id):
+        """
+        NAME:
+           glonGlat
+        PURPOSE:
+           return the longitude and latitude corresponding to a location_id
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           Galactic longitude and latitude in degrees
+        HISTORY:
+           2014-01-11 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return (self._apogeeField['GLON'][locIndx],
+                self._apogeeField['GLAT'][locIndx])
+
     def Hmin(self,location_id,cohort='short'):
         """
         NAME:
