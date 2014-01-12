@@ -202,6 +202,21 @@ class apogeeSelect:
         """
         return self._plates
 
+    def plateComplete(self,plate):
+        """
+        NAME:
+           plateComplete
+        PURPOSE:
+           return whether a plate is complete or not
+        INPUT:
+           plate - plate ID
+        OUTPUT:
+           True or False
+        HISTORY:
+           2014-01-12 - Written - Bovy (IAS)
+        """
+        return plate in self._plates
+        
     def glonGlat(self,location_id):
         """
         NAME:
