@@ -36,7 +36,9 @@ class apogeeSelect:
                  year=2,
                  sftype='constant',
                  minnspec=3,
-                 frac4complete=1.):
+                 frac4complete=1.,
+                 _dontcutcolorplates=False,
+                 _justprocessobslog=False):
         """
         NAME:
            __init__
@@ -57,6 +59,10 @@ class apogeeSelect:
               - constant: selection function is # spec / # phot within a cohort
            minnspec= (3) minimum number of spectra in a field/cohort to be included
            frac4complete= (1.) fractional completeness of a cohort necessary to count as 'complete'
+
+           _dontcutcolorplates= (False) if True, don't cut to plates that have the (J-Ks)_0 >= 0.5 color cut (useful for getting observation summaries out, NOT USEFUL FOR ACTUAL SELECTION FUNCTION)
+           _justprocessobslog= (False)  if True, only process the observation log (useful for getting observation summaries out, NOT USEFUL FOR ACTUAL SELECTION FUNCTION)
+
         OUTPUT:
         HISTORY:
            2013-11-04 - Start - Bovy (IAS)
@@ -65,9 +71,11 @@ class apogeeSelect:
         sys.stdout.write('\r'+"Reading and parsing observation log and design/plate/field files ...\r")
         sys.stdout.flush()
         self._process_obslog(locations=locations,year=year,
-                             frac4complete=frac4complete)
+                             frac4complete=frac4complete,
+                             dontcutcolorplates=_dontcutcolorplates)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
+        if _justprocessobslog: return None
         #Load spectroscopic data and cut to the statistical sample
         sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
         sys.stdout.flush()
@@ -154,7 +162,7 @@ class apogeeSelect:
            cohort= ('short') only return fields for which this cohort is in
                    the statistical sample ['short','medium','long']
         OUTPUT:
-           list of fiel (location_ids)
+           list of field (location_ids)
         HISTORY:
            2013-11-13 - Written - Bovy (IAS)
         """
@@ -179,6 +187,20 @@ class apogeeSelect:
                 #There is a completed long cohort
                 out.append(self._locations[ii])
         return out
+
+    def list_plates(self):
+        """
+        NAME:
+           list_plates
+        PURPOSE:
+           return a list of all of the plates that are complete
+        INPUT:
+        OUTPUT:
+           list of plate ids
+        HISTORY:
+           2014-01-12 - Written - Bovy (IAS)
+        """
+        return self._plates
 
     def glonGlat(self,location_id):
         """
@@ -1106,7 +1128,8 @@ class apogeeSelect:
         self._nspec_long= nspec_long
         return None
 
-    def _process_obslog(self,locations=None,year=2,frac4complete=1.):
+    def _process_obslog(self,locations=None,year=2,frac4complete=1.,
+                        dontcutcolorplates=False):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
         origobslog= apread.obslog(year=year)
@@ -1164,16 +1187,17 @@ class apogeeSelect:
         self._platesIndx= platesIndx
         self._designsIndx= designsIndx
         #Remove plates that do not have the main sample color cut (J-Ks > 0.5)
-        indx= numpy.ones(nplates,dtype='bool')
-        for ii in range(nplates):
-            if not apogeeDesign[self._designsIndx[ii]]['DEREDDENED_MIN_J_KS_COLOR'] == 0.5:
-                indx[ii]= False
-        self._plates= self._plates[indx]
-        nplates= len(self._plates)
-        self._obslog= self._obslog[indx]
-        self._designs= self._designs[indx]
-        self._platesIndx= self._platesIndx[indx]
-        self._designsIndx= self._designsIndx[indx]
+        if not dontcutcolorplates:
+            indx= numpy.ones(nplates,dtype='bool')
+            for ii in range(nplates):
+                if not apogeeDesign[self._designsIndx[ii]]['DEREDDENED_MIN_J_KS_COLOR'] == 0.5:
+                    indx[ii]= False
+            self._plates= self._plates[indx]
+            nplates= len(self._plates)
+            self._obslog= self._obslog[indx]
+            self._designs= self._designs[indx]
+            self._platesIndx= self._platesIndx[indx]
+            self._designsIndx= self._designsIndx[indx]
         #plates has the list of plates
         #designs has the corresponding list of designs
         #platesIndx has the index into apogeePlate for the list of plates
