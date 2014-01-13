@@ -851,17 +851,8 @@ class apogeeSelect:
         """
         #Handle input
         scalarOut= False
-        if isinstance(location,str) and location.lower() == 'all':
-            location= self._locations
-        elif isinstance(location,str) and location.lower() == 'short':
-            cohort= 'short'
-            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short >= self._minnspec)]
-        elif isinstance(location,str) and location.lower() == 'medium':
-            cohort= 'medium'
-            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium >= self._minnspec)]
-        elif isinstance(location,str) and location.lower() == 'long':
-            cohort= 'long'
-            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long >= self._minnspec)]
+        if isinstance(location,str):
+            location= self.list_fields(cohort=cohort)
         if isinstance(location,(numpy.int16,int)): #Scalar input
             location= [location]
             scalarOut= True
