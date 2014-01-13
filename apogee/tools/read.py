@@ -375,8 +375,8 @@ def mainIndx(data):
        2013-11-19 - Written - Bovy (IAS)
     """
     indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
-        *((data['APOGEE_TARGET1'] & 2**17) == 0)\
         *((data['APOGEE_TARGET1'] & 2**7) == 0)\
         *((data['APOGEE_TARGET1'] & 2**8) == 0)\
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
+        #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     return indx
