@@ -23,7 +23,7 @@ def allStar(rmcommissioning=True,
             main=False,
             ak=True,
             akvers='targ',
-            rmnovisits=True,
+            rmnovisits=False,
             adddist=False,
             distredux='v302'):
     """
@@ -36,7 +36,7 @@ def allStar(rmcommissioning=True,
        main= (default: False) if True, only select stars in the main survey
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
-       rmnovisits= (True) if True, remove stars with no good visits (to go into the combined spectrum)
+       rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
        adddist= (default: False) add distances from Michael Hayden
        distredux= (default: v302) reduction on which the distances are based
     OUTPUT:
