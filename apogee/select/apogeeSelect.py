@@ -298,7 +298,9 @@ class apogeeSelect:
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
-                print "Warning: no visit found for data point %s" % specdata['APSTAR_ID'][ii]            
+                print "Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            
+                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
+                indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
             tplatesIndx= (self._plates == avisitsplate)
