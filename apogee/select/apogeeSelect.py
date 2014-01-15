@@ -152,13 +152,37 @@ class apogeeSelect:
         else:
             return out        
 
-    def nphot(location_id,cohort='short'):
+    def nphot(self,location_id,cohort='short'):
         """
         NAME:
-        
+           nphot
+        PURPOSE:
+           Return the number of photometric objects in a given field and cohort
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           number of objects in 2MASS
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
         """
-            plotSF= self.__dict__['_nspec_%s' % cohort]
+        locIndx= self._locations == location_id
+        return int(self.__dict__['_nphot_%s' % cohort][locIndx])
 
+    def nspec(self,location_id,cohort='short'):
+        """
+        NAME:
+           nspec
+        PURPOSE:
+           Return the number of objects in the statstical spectroscopic sample a given field and cohort
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           number of objects in the statistical sample
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return int(self.__dict__['_nspec_%s' % cohort][locIndx])
 
     def list_fields(self,cohort='short'):
         """
@@ -232,13 +256,11 @@ class apogeeSelect:
         PURPOSE:
            return the longitude and latitude corresponding to a location_id
         INPUT:
-           location_id - field location ID
         OUTPUT:
            Galactic longitude and latitude in degrees
         HISTORY:
            2014-01-11 - Written - Bovy (IAS)
         """
-        locIndx= self._locations == location_id
         return (self._apogeeField['GLON'][locIndx],
                 self._apogeeField['GLAT'][locIndx])
 
