@@ -156,7 +156,12 @@ apo.Hmin(4240,cohort='short')
 apo.Hmax(4240,cohort='short')
 ```
 
-and similar for medium and long cohorts.
+and similar for medium and long cohorts. We can also get the center of the plate in longitude and latitude and the radius within which targets are drawn for each field
+
+```
+apo.glonGlat(4240)
+apo.radius(4240)
+```
 
 The selection function can be plotted using
 
