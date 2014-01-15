@@ -182,7 +182,9 @@ class apogeeSelect:
            2014-01-15 - Written - Bovy (IAS)
         """
         locIndx= self._locations == location_id
-        return int(self.__dict__['_nspec_%s' % cohort][locIndx])
+        out= self.__dict__['_nspec_%s' % cohort][locIndx]
+        if numpy.isnan(out): return 0
+        else: return int(out)
 
     def list_fields(self,cohort='short'):
         """
