@@ -261,6 +261,7 @@ class apogeeSelect:
         HISTORY:
            2014-01-11 - Written - Bovy (IAS)
         """
+        locIndx= self._locations == location_id
         return (self._apogeeField['GLON'][locIndx],
                 self._apogeeField['GLAT'][locIndx])
 
