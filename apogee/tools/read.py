@@ -199,6 +199,7 @@ def apokasc(rmcommissioning=True,
                                                      ('LOGG', float),
                                                      ('TEFF', float),
                                                      ('METALS', float),
+                                                     ('ALPHAFE', float),
                                                      ('FNFE', float),
                                                      ('FCFE', float)])
     kascdata['J0']= data['J0']
@@ -207,6 +208,7 @@ def apokasc(rmcommissioning=True,
     kascdata['LOGG']= data['LOGG']
     kascdata['TEFF']= data['TEFF']
     kascdata['METALS']= data['METALS']
+    kascdata['ALPHAFE']= data['ALPHAFE']
     kascdata['FNFE']= data['FPARAM'][:,5]
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
