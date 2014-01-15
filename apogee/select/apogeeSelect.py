@@ -152,6 +152,14 @@ class apogeeSelect:
         else:
             return out        
 
+    def nphot(location_id,cohort='short'):
+        """
+        NAME:
+        
+        """
+            plotSF= self.__dict__['_nspec_%s' % cohort]
+
+
     def list_fields(self,cohort='short'):
         """
         NAME:
@@ -233,6 +241,26 @@ class apogeeSelect:
         locIndx= self._locations == location_id
         return (self._apogeeField['GLON'][locIndx],
                 self._apogeeField['GLAT'][locIndx])
+
+    def radius(self,location_id):
+        """
+        NAME:
+           radius
+        PURPOSE:
+           return the radius around glonGlat from which targets were drawn for this field
+        INPUT:
+           location_id - field location ID          
+        OUTPUT:
+           radius in deg
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        radii= self._loc_design_radius[locIndx]
+        radii= radii[True-numpy.isnan(radii)]
+        if len(set(radii)) > 1:
+            warnings.warn("Different designs for this field have different radii; returning the first of these...")
+        return radii[0]
 
     def Hmin(self,location_id,cohort='short'):
         """
@@ -1299,6 +1327,13 @@ class apogeeSelect:
         self._medium_hmax= numpy.nanmax(self._medium_cohorts_hmax,axis=1)
         self._long_hmin= numpy.nanmin(self._long_cohorts_hmin,axis=1)
         self._long_hmax= numpy.nanmax(self._long_cohorts_hmax,axis=1)
+        #Go through the designs and store the radius from which targets were drawn
+        loc_design_radius= numpy.zeros((len(self._locations),20))+numpy.nan
+        for ii in range(len(self._locations)):
+            for jj in range(self._locDesignsIndx.shape[1]):
+                if self._locDesignsIndx[ii,jj] == -1: continue
+                loc_design_radius[ii,jj]= apogeeDesign['RADIUS'][self._locDesignsIndx[ii,jj]]
+        self._loc_design_radius= loc_design_radius
         #Read apogeeField for location info
         apogeeField= apread.apogeeField(dr=self._dr)
         indx= numpy.ones(len(apogeeField),dtype='bool')
