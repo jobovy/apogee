@@ -27,4 +27,9 @@ class volumeSelect:
            2014-01-15 - Started - Bovy (IAS)
         """
         #Nothing to see here so far...
+        self._apoSel= apoSel
+        self._densmodel= densmodel
+        self._mwd= mwd
+        self._dmcolormetal= dmcolormetal
+        self._pcolormetal= pcolormetal
         return None
