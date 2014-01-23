@@ -196,6 +196,9 @@ def apokasc(rmcommissioning=True,
     kascdata= esutil.numpy_util.add_fields(kascdata,[('J0', float),
                                                      ('H0', float),
                                                      ('K0', float),
+                                                     ('APOGEE_TARGET1','>i4'),
+                                                     ('APOGEE_TARGET2','>i4'),
+                                                     ('APOGEE_ID', 'S18'),
                                                      ('LOGG', float),
                                                      ('TEFF', float),
                                                      ('METALS', float),
@@ -205,6 +208,9 @@ def apokasc(rmcommissioning=True,
     kascdata['J0']= data['J0']
     kascdata['H0']= data['H0']
     kascdata['K0']= data['K0']
+    kascdata['APOGEE_ID']= data['APOGEE_ID']
+    kascdata['APOGEE_TARGET1']= data['APOGEE_TARGET1']
+    kascdata['APOGEE_TARGET2']= data['APOGEE_TARGET2']
     kascdata['LOGG']= data['LOGG']
     kascdata['TEFF']= data['TEFF']
     kascdata['METALS']= data['METALS']
