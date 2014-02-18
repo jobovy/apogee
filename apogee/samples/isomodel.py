@@ -198,8 +198,6 @@ class isomodel:
                                     kernel='biweight',
                                     variable=True,variablenitt=3,
                                     variableexp=0.5)
-        self._jkmin, self._jkmax= 0.5,0.8
-        self._hmin, self._hmax= -3.,0.
         return None
 
     def __call__(self,jk,h):
@@ -431,7 +429,8 @@ class isomodel:
         m= numpy.sum(pdf[indx]*xs[indx])/numpy.sum(pdf[indx])
         return numpy.sqrt(numpy.sum(pdf[indx]*xs[indx]**2.)/numpy.sum(pdf[indx])-m**2.)/0.773741 #this factor to get a 'Gaussian' sigma
     
-    def plot(self,log=False,conditional=False,nbins=None):
+    def plot(self,log=False,conditional=False,nbins=None,
+             overlay_mode=False,nmodebins=21):
         """
         NAME:
            plot
@@ -442,6 +441,8 @@ class isomodel:
            conditional= (default: False) if True, plot conditional distribution
                         of H given J-Ks
            nbins= if set, set the number of bins
+           overlay_mode= False, if True, plot the mode and half-maxs
+           nmodebins= (21) number of bins to calculate the mode etc. at
         OUTPUT:
            plot to output device
         HISTORY:
@@ -481,14 +482,33 @@ class isomodel:
         elif self._band == 'Ks':
             ylabel= r'$M_{K_s}$'
             ylim=[0.,-3.]
-        return bovy_plot.bovy_dens2d(plotthis.T,origin='lower',cmap='gist_yarg',
+        out= bovy_plot.bovy_dens2d(plotthis.T,origin='lower',cmap='gist_yarg',
                                      xrange=[self._jkmin,self._jkmax],
                                      yrange=ylim,
                                      aspect=(self._jkmax-self._jkmin)/(self._hmax-self._hmin),
                                      xlabel=r'$(J-K_s)_0$',
                                      ylabel=ylabel,
                                      interpolation='nearest')
-    
+        if overlay_mode:
+            #Calculate mode and hm
+            njks= nmodebins
+            jks= numpy.linspace(self._jkmin,self._jkmax,njks)
+            modes= numpy.array([self.mode(jk) for jk in jks])
+            hms= numpy.zeros((njks,2))
+            for ii in range(njks):
+                try:
+                    minhm, maxhm= self.sigmafwhm(jks[ii],straight=True)
+                except ValueError:
+                    minhm, maxhm= numpy.nan, numpy.nan
+                hms[ii,0]= minhm
+                hms[ii,1]= maxhm
+            bovy_plot.bovy_plot(jks,modes,'w-',lw=2.,overplot=True)
+            bovy_plot.bovy_plot(jks,hms[:,0],'-',lw=2.,color='0.85',
+                                overplot=True)
+            bovy_plot.bovy_plot(jks,hms[:,1],'-',lw=2.,color='0.85',
+                                overplot=True)
+        return out
+
     def plot_samples(self):
         """
         NAME:
@@ -516,7 +536,7 @@ class isomodel:
             ylabel= r'$M_{K_s}$'
             ylim=[0.,-3.]
         return bovy_plot.bovy_plot(self._sample[:,0],self._sample[:,1],
-                                   xrange=[0.5,0.8],
+                                   xrange=[self._jkmin,self._jkmax],
                                    yrange=ylim,
                                    xlabel=r'$(J-K_s)_0$',
                                    ylabel=ylabel,

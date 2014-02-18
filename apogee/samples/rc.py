@@ -1,6 +1,11 @@
 import os, os.path
 import pickle
 from scipy import optimize, interpolate
+try:
+    from galpy.util import bovy_plot
+    _BOVY_PLOT_LOADED= True
+except ImportError:
+    _BOVY_PLOT_LOADED= False
 import isodist
 from apogee.samples.isomodel import isomodel
 def jkzcut(jk,upper=False):
@@ -157,5 +162,43 @@ class rcmodel(isomodel):
                           basti=basti,
                           parsec=parsec,
                           stage=stage)
+        self._jkmin, self._jkmax= 0.5,0.8
+        self._hmin, self._hmax= -3.,0.
         return None
 
+    def plot(self,log=False,conditional=False,nbins=None,
+             overlay_mode=False,nmodebins=21,
+             overlay_cuts=False):
+        """
+        NAME:
+           plot
+        PURPOSE:
+           plot the resulting (J-Ks,H) distribution
+        INPUT:
+           log= (default: False) if True, plot log
+           conditional= (default: False) if True, plot conditional distribution
+                        of H given J-Ks
+           nbins= if set, set the number of bins
+           overlay_mode= False, if True, plot the mode and half-maxs
+           nmodebins= (21) number of bins to calculate the mode etc. at
+           overlay_cuts= False, if True, plot the RC cuts
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2012-02-17 - Written - Bovy (IAS)
+        """
+        if not _BOVY_PLOT_LOADED:
+            raise ImportError("galpy.util.bovy_plot could not be imported")
+        out= isomodel.plot(self,log=log,conditional=conditional,nbins=nbins,
+                           overlay_mode=overlay_mode)
+        if overlay_cuts:
+            bovy_plot.bovy_plot([zjkcut(self._Z),
+                                 zjkcut(self._Z)],
+                                [0.,-3.],'k--',lw=2.,overplot=True)
+            bovy_plot.bovy_plot([zjkcut(self._Z,upper=True),
+                                 zjkcut(self._Z,upper=True)],
+                                [0.,-3.],'k--',lw=2.,overplot=True)
+        zstr= r'$Z = %.3f$' % self._Z
+        bovy_plot.bovy_text(zstr,
+                            bottom_right=True,size=20.)
+        return out
