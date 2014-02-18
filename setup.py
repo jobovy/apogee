@@ -1,7 +1,6 @@
 from setuptools import setup #, Extension
 
-with open('README.md') as dfile:
-    long_description = dfile.read()
+long_description = "Tools for APOGEE data analysis; see `here <https://github.com/jobovy/apogee>`__ for further documentation"
 
 
 setup(name='apogee',
