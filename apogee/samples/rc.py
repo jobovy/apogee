@@ -1,5 +1,6 @@
 import os, os.path
 import pickle
+import numpy
 from scipy import optimize, interpolate
 try:
     from galpy.util import bovy_plot
@@ -116,6 +117,9 @@ class rcdist:
         HISTORY:
            2012-11-15 - Written - Bovy (IAS)
         """
+        #Check that this color and Z lies between the bounds
+        if jk > zjkcut(Z) or jk < zjkcut(Z,upper=True) or jk < 0.5 or Z > 0.06:
+            return numpy.nan
         if appmag is None:
             return self._interpMag.ev(jk,Z)+dk
         else:
