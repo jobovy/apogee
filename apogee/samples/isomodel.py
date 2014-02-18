@@ -202,7 +202,7 @@ class isomodel:
         self._hmin, self._hmax= -3.,0.
         return None
 
-    def __call__(self,jk,h,sjk=None):
+    def __call__(self,jk,h):
         """
         NAME:
            __call__
@@ -211,15 +211,14 @@ class isomodel:
         INPUT:
            jk - color
            h - magnitude (set by 'band' in __init__)
-           sjk= if not None, error
         OUTPUT:
            -
         HISTORY:
            2012-11-07 - Skeleton - Bovy (IAS)
         """
-        return self.logpjkh(jk,h,sjk=sjk)
+        return self.logpjkh(jk,h)
 
-    def logpjkh(self,jk,h,sjk=None):
+    def logpjkh(self,jk,h):
         """
         NAME:
            logpjkh
@@ -228,7 +227,6 @@ class isomodel:
         INPUT:
            jk - J-Ks
            h - M_H (absolute magnitude)
-           sjk= if not None, error
         OUTPUT:
            log of the probability
         HISTORY:
@@ -238,22 +236,12 @@ class isomodel:
             testxs= numpy.empty((len(jk),2))
             testxs[:,0]= jk
             testxs[:,1]= h
-            if not sjk is None:
-                sjk2= numpy.zeros((len(jk),2))
-                sjk2[:,0]= sjk**2.
-            else:
-                sjk2= None
-            return self._kde(testxs,log=True,sx2=sjk2)
+            return self._kde(testxs,log=True)
         else:
-            if not sjk is None:
-                sjk2= numpy.reshape(numpy.array([sjk**2.,0.]),
-                                    (1,2))
-            else:
-                sjk2= None
             return self._kde(numpy.reshape(numpy.array([jk,h]),
-                                           (1,2)),log=True,sx2=sjk2)
+                                           (1,2)),log=True)
 
-    def plot_pdf(self,jk,sjk=None,**kwargs):
+    def plot_pdf(self,jk,**kwargs):
         """
         NAME:
            plot_pdf
@@ -261,7 +249,6 @@ class isomodel:
            plot the conditioned PDF
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
            +bovy_plot.bovy_plot kwargs
         OUTPUT:
            plot to output
@@ -270,7 +257,7 @@ class isomodel:
         """
         if not _BOVY_PLOT_LOADED:
             raise ImportError("galpy.util.bovy_plot could not be imported")
-        xs, lnpdf= self.calc_pdf(jk,sjk=sjk)
+        xs, lnpdf= self.calc_pdf(jk)
         if self._band == 'J':
             xlabel= r'$M_J$'
             xlim=[0.,-2.]
@@ -289,7 +276,7 @@ class isomodel:
                                            1.1*numpy.amax(numpy.exp(lnpdf))],
                                    xlabel=xlabel,**kwargs)       
 
-    def calc_pdf(self,jk,sjk=None,nxs=1001):
+    def calc_pdf(self,jk,nxs=1001):
         """
         NAME:
            calc_pdf
@@ -297,7 +284,6 @@ class isomodel:
            calculate the conditioned PDF
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
            nxs= number of M_X
         OUTPUT:
            (xs,lnpdf)
@@ -311,7 +297,7 @@ class isomodel:
         lnpdf-= misc.logsumexp(lnpdf)+numpy.log(xs[1]-xs[0])
         return (xs,lnpdf)
     
-    def calc_invcumul(self,jk,sjk=None):
+    def calc_invcumul(self,jk):
         """
         NAME:
            calc_invcumul
@@ -319,20 +305,19 @@ class isomodel:
            calculate the inverse of the cumulative distribution
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
         OUTPUT:
            interpolated inverse cumulative distribution
         HISTORY:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the PDF
-        xs, lnpdf= self.calc_pdf(jk,sjk=sjk,nxs=1001)
+        xs, lnpdf= self.calc_pdf(jk,nxs=1001)
         pdf= numpy.exp(lnpdf)
         pdf= numpy.cumsum(pdf)
         pdf/= pdf[-1]
         return scipy.interpolate.InterpolatedUnivariateSpline(pdf,xs,k=3)
 
-    def median(self,jk,sjk=None):
+    def median(self,jk):
         """
         NAME:
            median
@@ -340,17 +325,16 @@ class isomodel:
            return the median of the M_x distribution at this J-K
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
         OUTPUT:
            median
         HISTORY:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the inverse cumulative distribution
-        interpInvCumul= self.calc_invcumul(jk,sjk=sjk)
+        interpInvCumul= self.calc_invcumul(jk)
         return interpInvCumul(0.5)
 
-    def quant(self,q,jk,sjk=None,sigma=True):
+    def quant(self,q,jk,sigma=True):
         """
         NAME:
            quant
@@ -359,7 +343,6 @@ class isomodel:
         INPUT:
            q - desired quantile in terms of 'sigma'
            jk - J-Ks
-           sjk - error in J-K
            sigma= if False, the quantile is the actual quantile
         OUTPUT:
            quantile
@@ -367,7 +350,7 @@ class isomodel:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the inverse cumulative distribution
-        interpInvCumul= self.calc_invcumul(jk,sjk=sjk)
+        interpInvCumul= self.calc_invcumul(jk)
         if not sigma:
             return interpInvCumul(q)
         else:
@@ -377,7 +360,7 @@ class isomodel:
                 arg= (1.-special.erf(-q/numpy.sqrt(2.)))/2.
             return interpInvCumul(arg)
 
-    def mode(self,jk,sjk=None):
+    def mode(self,jk):
         """
         NAME:
            mode
@@ -385,17 +368,16 @@ class isomodel:
            return the moden of the M_x distribution at this J-K
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
         OUTPUT:
            mode
         HISTORY:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the PDF
-        xs, lnpdf= self.calc_pdf(jk,sjk=sjk,nxs=1001)
+        xs, lnpdf= self.calc_pdf(jk,nxs=1001)
         return xs[numpy.argmax(lnpdf)]
     
-    def sigmafwhm(self,jk,sjk=None,straight=False):
+    def sigmafwhm(self,jk,straight=False):
         """
         NAME:
            sigmafwhm
@@ -403,7 +385,6 @@ class isomodel:
            return the sigma of the M_X distribution based on the FWHM
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
            straight= (False) if True, return actual hm points
         OUTPUT:
            FWHM/2.35...
@@ -411,7 +392,7 @@ class isomodel:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the PDF
-        xs, lnpdf= self.calc_pdf(jk,sjk=None,nxs=1001)
+        xs, lnpdf= self.calc_pdf(jk,nxs=1001)
         tmode= xs[numpy.argmax(lnpdf)]
         lnpdf_mode= numpy.amax(lnpdf)
         lnpdf_hm= lnpdf_mode-numpy.log(2.)
@@ -426,7 +407,7 @@ class isomodel:
         else:
             return (maxhm-minhm)/2.*numpy.sqrt(2.*numpy.log(2.))
     
-    def sigma2sigma(self,jk,sjk=None):
+    def sigma2sigma(self,jk):
         """
         NAME:
            sigma2sigma
@@ -434,14 +415,13 @@ class isomodel:
            return the sigma obtained by integrating out to 2 sigma
         INPUT:
            jk - J-Ks
-           sjk - error in J-K
         OUTPUT:
            2 sigma
         HISTORY:
            2012-11-09 - Written - Bovy (IAS)
         """
         #First calculate the PDF
-        xs, lnpdf= self.calc_pdf(jk,sjk=sjk,nxs=1001)
+        xs, lnpdf= self.calc_pdf(jk,nxs=1001)
         pdf= numpy.exp(lnpdf)
         cpdf= numpy.cumsum(pdf)
         cpdf/= cpdf[-1]
@@ -451,7 +431,7 @@ class isomodel:
         m= numpy.sum(pdf[indx]*xs[indx])/numpy.sum(pdf[indx])
         return numpy.sqrt(numpy.sum(pdf[indx]*xs[indx]**2.)/numpy.sum(pdf[indx])-m**2.)/0.773741 #this factor to get a 'Gaussian' sigma
     
-    def plot(self,log=False,conditional=False,nbins=None,sjk=None):
+    def plot(self,log=False,conditional=False,nbins=None):
         """
         NAME:
            plot
@@ -462,7 +442,6 @@ class isomodel:
            conditional= (default: False) if True, plot conditional distribution
                         of H given J-Ks
            nbins= if set, set the number of bins
-           sjk= error
         OUTPUT:
            plot to output device
         HISTORY:
@@ -484,7 +463,7 @@ class isomodel:
         plotthis= numpy.zeros((nbins,nbins))
         for ii in range(nbins):
             for jj in range(nbins):
-                plotthis[ii,jj]= self(jks[ii],hs[jj],sjk=sjk)
+                plotthis[ii,jj]= self(jks[ii],hs[jj])
         if not log:
             plotthis= numpy.exp(plotthis)
         if conditional: #normalize further
