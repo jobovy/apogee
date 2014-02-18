@@ -30,7 +30,7 @@ class isomodel:
            loggmax= if set, cut logg at this maximum, if 'rc', then this is the function of teff and z appropriate for the APOGEE RC sample
            imfmodel= (default: 'lognormalChabrier2001') IMF model to use (see isodist.imf code for options)
            band= band to use for M_X (JHK)
-           expsfh= if True, use an exponentially-declining star-formation history
+           expsfh= if True, use an exponentially-declining star-formation history (can be set to a decay time-scale in Gyr)
            dontgather= if True, don't gather surrounding Zs
            basti= if True, use Basti isochrones (if False, use PARSEC)
            parsec= if True (=default), use PARSEC isochrones, if False, use Padova
@@ -43,7 +43,12 @@ class isomodel:
         self._band= band
         self._loggmin= loggmin
         self._loggmax= loggmax
-        self._expsfh= expsfh
+        if isinstance(expsfh,(int,float,numpy.float32,numpy.float64)):
+            self._expsfh= expsfh
+        elif expsfh:
+            self._expsfh= 8.
+        else:
+            self._expsfh= False
         self._Z= Z
         self._imfmodel= imfmodel
         self._basti= basti
@@ -148,23 +153,23 @@ class isomodel:
                         pjks.append(JK)
                         if basti: #BaSTI is sampled uniformly in age, not logage, but has a finer sampling below 1 Gyr
                             if logage < 9.:
-                                if expsfh:
-                                    weights.append(dN[ii]/5.*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
-                                    massweights.append(dmass[ii]/5.*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
+                                if self._expsfh:
+                                    weights.append(dN[ii]/5.*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
+                                    massweights.append(dmass[ii]/5.*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
                                 else:
                                     weights.append(dN[ii]/5.)
                                     massweights.append(dmass[ii]/5.)
                             else:
-                                if expsfh:
-                                    weights.append(dN[ii]*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
-                                    massweights.append(dmass[ii]*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
+                                if self._expsfh:
+                                    weights.append(dN[ii]*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
+                                    massweights.append(dmass[ii]*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
                                 else:
                                     weights.append(dN[ii])
                                     massweights.append(dmass[ii])
                         else:
-                            if expsfh:
-                                weights.append(dN[ii]*10**(logage-7.)*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
-                                massweights.append(dmass[ii]*10**(logage-7.)*numpy.exp((10.**(logage-7.))/800.)) #e.g., Binney (2010)
+                            if self._expsfh:
+                                weights.append(dN[ii]*10**(logage-7.)*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
+                                massweights.append(dmass[ii]*10**(logage-7.)*numpy.exp((10.**(logage-7.))/self._expsfh/100.)) #e.g., Binney (2010)
                             else:
                                 weights.append(dN[ii]*10**(logage-7.))
                                 massweights.append(dmass[ii]*10**(logage-7.))
