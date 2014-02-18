@@ -69,15 +69,19 @@ class rcdist:
         HISTORY:
            2012-11-15 - Written - Bovy (IAS)
         """
-        if isinstance(args[0],str):
-            if os.path.exists(args[0]):
-                savefile= open(args[0],'rb')
+        if len(args) < 1 or isinstance(args[0],str):
+            if len(args) < 1:
+                savefilename= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_mode_jkz_ks_parsec_newlogg.sav')
+            else:
+                savefilename= args[0]
+            if os.path.exists(savefilename):
+                savefile= open(savefilename,'rb')
                 self._meanmag= pickle.load(savefile)
                 self._jks= pickle.load(savefile)
                 self._zs= pickle.load(savefile)
                 savefile.close()
             else:
-                raise IOError(args[0]+' file does not exist')
+                raise IOError(savefilename+' file does not exist')
         else:
             self._meanmag= args[0]
             self._jks= args[1]
