@@ -1,6 +1,7 @@
 from setuptools import setup #, Extension
 
-longDescription= ""
+with open('README.md') as dfile:
+    long_description = dfile.read()
 
 
 setup(name='apogee',
@@ -9,7 +10,7 @@ setup(name='apogee',
       author='Jo Bovy',
       author_email='bovy@ias.edu',
       license='New BSD',
-      long_description=longDescription,
+      long_description=long_description,
       url='https://github.com/jobovy/apogee',
       package_dir = {'apogee/': ''},
       packages=['apogee','apogee/tools','apogee/select','apogee/test',
