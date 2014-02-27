@@ -472,13 +472,14 @@ class apogeeSelect:
             omax= vmax
         colormap = cm.jet
         plotthis= colormap(_squeeze(select,omin,omax))
-        bovy_plot.bovy_print(fig_width=6.)
         if type.lower() == 'xy':
+            bovy_plot.bovy_print(fig_width=6.,fig_height=3.888888)
             bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
-                                xrange=[8.99,-8.99],yrange=[8.99,-8.99],
+                                xrange=[8.99,-8.99],yrange=[8.99,-5.],
                                 xlabel=r'$X\, (\mathrm{kpc})$',
                                 ylabel=r'$Y\, (\mathrm{kpc})$')
         else:
+            bovy_plot.bovy_print(fig_width=6.)
             bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
                                 xrange=[0.,18.],yrange=[-4.,4.],
                                 xlabel=r'$R\, (\mathrm{kpc})$',
