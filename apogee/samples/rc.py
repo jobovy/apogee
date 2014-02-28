@@ -451,11 +451,13 @@ class rcmodel(isomodel):
     def __init__(self,
                  imfmodel='lognormalChabrier2001',
                  Z=None,
-                 interpolate=False,
-                 expsfh=False,band='H',
+                 expsfh=False,
+                 band='H',
                  dontgather=False,
                  basti=False,
-                 parsec=False,stage=None):
+                 parsec=True,
+                 maxage=10.,
+                 stage=None):
         """
         NAME:
            __init__
@@ -472,6 +474,7 @@ class rcmodel(isomodel):
            basti= if True, use Basti isochrones (if False, use Padova)
            parsec= if True, use PARSEC isochrones
            stage= if True, only use this evolutionary stage
+           maxage= (10.) maximum log10 of age
         OUTPUT:
            object
         HISTORY:
@@ -525,6 +528,46 @@ class rcmodel(isomodel):
         zstr= r'$Z = %.3f$' % self._Z
         bovy_plot.bovy_text(zstr,
                             bottom_right=True,size=20.)
+        return out
+
+    def avgmass(self,lages=None):
+        """
+        NAME:
+           avgmass
+        PURPOSE:
+           calculate the average mass as a function of age for this set of 
+           models
+        INPUT:
+           lages= array of log10 ages
+        OUTPUT:
+        HISTORY:
+           2014-02-28 - Written in this form - Bovy (IAS)
+        """
+        if lages is None:
+            lages= numpy.linspace(-1.,1.,16)
+            lages= lages[lages > numpy.log10(0.8)]
+        nages= len(lages)
+        dlages= lages[1]-lages[0]
+        out= numpy.zeros(nages)
+        for jj in range(nages):
+            jk= self._jks
+            aindx= (self._lages <= lages[jj]+dlages)\
+                *(self._lages > lages[jj]-dlages)
+            #For RC, cut to objects close to RC locus
+            rcd= rcdist()
+            predH= numpy.array([rcd(j,self._Z) for j in jk])
+            predH= numpy.reshape(predH,len(jk))
+            aindx*= (jk < 0.8)*(jk > 0.5)\
+                *(self._Z <= jkzcut(jk,upper=True))\
+                *(self._Z >= jkzcut(jk))\
+                *(self._Z <= 0.06)\
+                *(self._sample[:,1] > (predH-0.4))\
+                *(self._sample[:,1] < (predH+0.4))\
+                *(self._sample[:,1] > -3.)
+            try:
+                out[jj]= numpy.sum(self._masses[aindx]*self._weights[aindx])/numpy.sum(self._weights[aindx])
+            except ValueError:
+                out[jj]= numpy.nan
         return out
 
 def dummy_page(a,func):
