@@ -25,8 +25,9 @@ This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
 (http://www.scipy.org/), [Matplotlib]
 (http://matplotlib.sourceforge.net/), [fitsio]
 (http://github.com/esheldon/fitsio), [esutil]
-(http://code.google.com/p/esutil/), and [galpy]
-(http://github.com/jobovy/galpy).
+(http://code.google.com/p/esutil/), [galpy]
+(http://github.com/jobovy/galpy), and [isodist]
+(http://github.com/jobovy/isodist).
 
 ##DATA FILES AND ENVIRONMENT VARIABLES
 
@@ -250,3 +251,69 @@ statIndx= apo.determine_statistical(allStar)
 
 
 
+##TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
+
+This codebase contains tools to characterize the properties of
+different subsamples of the APOGEE data using stellar-evolution
+models. In particular, it contains methods to reproduce the selection
+of red clump (RC) stars as in (Bovy et al. 2014, in preparation), to
+calculate the mean *Ks* magnitude along the RC as a function of
+metallity and color (Fig. 3 in that paper). The code also allows the
+average RC mass, the amount of stellar-population mass represented by
+each RC star, and the age distribution (Figs. 12, 13, and 14 in the
+above paper) to be computed. The tools in this package are kept
+general such that they can also be useful in defining other subsamples
+in APOGEE.
+
+#RC catalog tools
+
+The RC catalog is constructed by inspecting the properties of stellar
+isochrones computed by stellar-evolution codes and finding the region
+in surface-gravity--effective-temperature--color--metallicity space in
+which the absolute magnitude distribution is extremely narrow
+(allowing precise distances to be derived). The *apogee* toolbox can
+load different stellar-isochrone models and compute their
+properties. This is implemented in a general *apogee.samples.isomodel*
+class; the code particular to the RC lives in *apogee.samples.rc*,
+with *rcmodel* being the equivalent of the more general
+*isomodel*. This code requires the [isodist]
+(http://github.com/jobovy/isodist) library with accompanying data
+files; see the *isodist* website for info on how to obtain this.
+
+For example, we can load solar metallicity isochrones from the
+[PARSEC](http://stev.oapd.inaf.it/cgi-bin/cmd) library for the RC using
+
+```
+from apogee.samples.rc import rcmodel
+rc= rcmodel(Z=0.017)
+```
+
+This command will take about a minute to execute. We can then plot the
+isochrones, similar to Fig. 2 in the APOGEE-RC paper
+
+```
+rc.plot(nbins=101,conditional=True)
+```
+
+which gives
+
+<img src="_readme_files/_rc_cmd.png" alt="RC CMD for solar metallicity" width="600" />
+
+We can also calculate properties of the absolute magnitude distribution as a function of color:
+
+```
+rc.mode(0.65)
+-1.5780000000000001
+rc.sigmafwhm(0.65)
+0.12716028243167124
+```
+
+and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution
+
+```
+rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)
+```
+
+(this takes a while) which shows
+
+<img src="_readme_files/_rc_cmd_wmode.png" alt="RC CMD for solar metallicity, with mode, FWHM, and cuts" width="600" />
