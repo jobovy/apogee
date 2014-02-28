@@ -187,7 +187,7 @@ class rcpop:
             raise IOError(savefilename+' file does not exist')
         return None      
  
-    def calc_avgmass(self,feh,lage):
+    def avgmass(self,feh,lage):
         """
         NAME:
            calc_avgmass
@@ -228,7 +228,7 @@ class rcpop:
         plotthis= numpy.empty((len(fehs),len(lages)))
         for ii in range(len(fehs)):
             for jj in range(len(lages)):
-                plotthis[ii,jj]= self.calc_avgmass(fehs[ii],lages[jj])
+                plotthis[ii,jj]= self.avgmass(fehs[ii],lages[jj])
         fig= pyplot.gcf()
         left, bottom, width, height= 0.1, 0.1, 0.8, 0.6
         axBottom= pyplot.axes([left,bottom,width,height])
@@ -279,6 +279,98 @@ class rcpop:
         thisax.xaxis.set_major_formatter(nullfmt)
         bovy_plot._add_ticks()
         pyplot.ylabel(zlabel)
+        return out
+
+    def popmass(self,feh,lage):
+        """
+        NAME:
+           calc_popmass
+        PURPOSE:
+           calculate the mass represented by each RC star
+        INPUT:
+           feh - metallicity
+           lage - log10 age
+        OUTPUT:
+           stellar-pop mass for each RC star
+        HISTORY:
+           2014-02-28 - Written in this form - Bovy (IAS)
+        """
+        if lage < numpy.log10(0.8):
+            return numpy.nan
+        z= isodist.FEH2Z(feh,zsolar=zsolar())
+        zindx= numpy.argmin(numpy.fabs(z-self._zs))
+        aindx= numpy.argmin((numpy.fabs(lage-self._coarselages)))
+        return self._coarsemass[zindx,aindx]/self._omega[zindx,aindx]
+
+    def plot_popmass(self):
+        """
+        NAME:
+           plot_popmass
+        PURPOSE:
+           plot the stellar-population mass for each RC star
+        INPUT:
+            bovy_plot.bovy_plot **kwargs
+        OUTPUT:
+           bovy_plot.bovy_plot output
+        HISTORY:
+           2014-02-28 - Written in this form - Bovy (IAS)
+        """
+        if not _BOVY_PLOT_LOADED:
+            raise ImportError("galpy.util.bovy_plot could not be imported")
+        fehs= numpy.linspace(-1.,0.5,101)
+        lages= self._coarselages
+        plotthis= numpy.empty((len(fehs),len(lages)))
+        for ii in range(len(fehs)):
+            for jj in range(len(lages)):
+                plotthis[ii,jj]= self.popmass(fehs[ii],lages[jj])
+        fig= pyplot.gcf()
+        left, bottom, width, height= 0.1, 0.1, 0.8, 0.6
+        axBottom= pyplot.axes([left,bottom,width,height])
+        fig.sca(axBottom)
+        xlimits= [fehs[0],fehs[-1]]
+        dlages= (lages[1]-lages[0])
+        ylimits= [lages[0]-dlages,lages[-1]+dlages]
+        vmin, vmax= 0.,50000.
+        vmin2, vmax2= 0.,25000.
+        zlabel= r'$\mathrm{Stellar\ population\ mass\ per\ RC\ star}\,(M_\odot)$'
+        xlabel= r'$[\mathrm{Fe/H}]\,(\mathrm{dex})$'
+        out= bovy_plot.bovy_dens2d(plotthis.T,origin='lower',cmap='jet',
+                                   xrange=xlimits,
+                                   yrange=ylimits,
+                                   vmin=vmin,vmax=vmax,
+                                   interpolation='nearest',
+                                   colorbar=True,
+                                   shrink=.9,
+                                   zlabel=zlabel,
+                                   overplot=True)
+        extent= xlimits+ylimits
+        pyplot.axis(extent)
+        bovy_plot._add_axislabels(xlabel,
+                                  r'$\log_{10}\,\mathrm{Age} / 1\,\mathrm{Gyr}$')
+        bovy_plot._add_ticks()
+        left, bottom, width, height= 0.1, 0.68, 0.64, 0.2
+        axTop= pyplot.axes([left,bottom,width,height])
+        fig.sca(axTop)
+        #Plot the average over SFH
+        lages= numpy.linspace(-1.,1.,16)
+        mtrend= numpy.zeros(len(self._zs))
+        exppage= 10.**self._coarselages*numpy.exp((10.**(self._coarselages+2.))/800.) #e.g., Binney (2010)
+        exexppage= 10.**self._coarselages*numpy.exp((10.**(self._coarselages+2.))/100.) #e.g., Binney (2010)
+        page= 10.**self._coarselages
+        plotthis= self._coarsemass[:-1,:]/self._omega[:-1,:]
+        mtrend= 1./(numpy.sum(page*1./plotthis,axis=1)/numpy.sum(page))
+        expmtrend= 1./(numpy.sum(exppage*1./plotthis,axis=1)/numpy.sum(exppage))
+        exexpmtrend= 1./(numpy.sum(exexppage*1./plotthis,axis=1)/numpy.sum(exexppage))
+        fehs= isodist.Z2FEH(self._zs[:-1],zsolar=zsolar())
+        pyplot.plot(fehs,mtrend,'k-')
+        pyplot.plot(fehs,expmtrend,'k--')
+        pyplot.plot(fehs,exexpmtrend,'k-.')
+        pyplot.ylim(vmin2,vmax2)
+        pyplot.xlim(xlimits[0],xlimits[1])
+        nullfmt   = NullFormatter()         # no labels
+        thisax= pyplot.gca()
+        thisax.xaxis.set_major_formatter(nullfmt)
+        bovy_plot._add_ticks()
         return out
 
     def calc_age_pdf(self,fehdist='casagrande'):
