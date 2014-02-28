@@ -14,7 +14,7 @@ class isomodel:
                  loggmin=None,loggmax=None,
                  imfmodel='lognormalChabrier2001',
                  Z=None,
-                 expsfh=False,band='H',
+                 expsfh=False,band='Ks',
                  dontgather=False,
                  basti=False,
                  parsec=True,
@@ -141,7 +141,7 @@ class isomodel:
                         else:
                             H= thisiso.Ks[ii]
                     if JK < 0.3 \
-                            or (isinstance(loggmax,str) and loggmax == 'rc' and (thisiso['logg'][ii] > loggteffcut(10.**thisiso['logTe'][ii],Zs[zz],upper=True) or thisiso['logg'][ii] > 3.5)) \
+                            or (isinstance(loggmax,str) and loggmax == 'rc' and (thisiso['logg'][ii] > loggteffcut(10.**thisiso['logTe'][ii],Zs[zz],upper=True))) \
                             or (not isinstance(loggmax,str) and not loggmax is None and thisiso['logg'][ii] > loggmax) \
                             or (not loggmin is None and thisiso['logg'][ii] < loggmin):
                         continue
