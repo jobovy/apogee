@@ -304,9 +304,9 @@ We can also calculate properties of the absolute magnitude distribution as a fun
 
 ```
 rc.mode(0.65)
--1.641
+-1.659
 rc.sigmafwhm(0.65)
-0.047685105911876829
+0.086539636654887273
 ```
 
 and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution
