@@ -245,8 +245,9 @@ class rcpop:
         plages= numpy.linspace(0.8,10.,1001)
         plpostage= page(plages)
         plpostage/= numpy.nansum(plpostage)*(plages[1]-plages[0])
+        kwargs['color']= kwargs.get('color',"k")
         out= bovy_plot.bovy_plot(plages,plpostage,
-                                 'k-',lw=2.,
+                                 '-',lw=2.,
                                  xlabel=r'$\mathrm{Age}\,(\mathrm{Gyr})$',
                                  ylabel=r'$p(\mathrm{RC | population\ Age})$',
                                  xrange=[0.,10.],
