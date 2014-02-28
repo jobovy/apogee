@@ -1,4 +1,5 @@
 import os, os.path
+import copy
 import pickle
 import numpy
 from scipy import optimize, interpolate
@@ -9,6 +10,7 @@ except ImportError:
     _BOVY_PLOT_LOADED= False
 import isodist
 from apogee.samples.isomodel import isomodel
+from apogee.util import localfehdist
 def jkzcut(jk,upper=False):
     """Return the cut in jk-Z"""
     if upper:
@@ -126,6 +128,135 @@ class rcdist:
             absmag= self._interpMag.ev(jk,Z)
             return 10.**((appmag-absmag-dk)/5-2.)
 
+class rcpop:
+    """Class that holds functions relating the RC to the full stellar pop"""
+    def __init__(self,*args,**kwargs):
+        """
+        NAME:
+           __init__
+        PURPOSE:
+           initialize rcpop
+        INPUT:
+           filenames of files that hold a pickle:
+              1) rcmodel_mass_agez.sav
+              2) rcmodel_mass_agez_coarseage.sav
+              3) rcmodel_omega_agez.sav
+        OUTPUT:
+           object
+        HISTORY:
+           2014-02-27 - Written - Bovy (IAS)
+        """
+        #Mass of RC star on a fine grid in Z,age
+        if len(args) < 1:
+            savefilename= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_mass_agez.sav')
+        else:
+            savefilename= args[0]
+        if os.path.exists(savefilename):
+            savefile= open(savefilename,'rb')
+            self._finemass= pickle.load(savefile)
+            self._zs= pickle.load(savefile)
+            self._finelages= pickle.load(savefile)
+            savefile.close()
+        else:
+            raise IOError(savefilename+' file does not exist')
+        #Mass of RC star on a coarse grid in Z,age (used to marginalize over age)
+        if len(args) < 2:
+            savefilename= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_mass_agez_coarseage.sav')
+        else:
+            savefilename= args[0]
+        if os.path.exists(savefilename):
+            savefile= open(savefilename,'rb')
+            self._coarsemass= pickle.load(savefile)
+            dum= pickle.load(savefile)
+            self._coarselages= pickle.load(savefile)
+            savefile.close()
+        else:
+            raise IOError(savefilename+' file does not exist')
+        #Mass fraction in RC stars on a coarse grid in Z,age
+        if len(args) < 2:
+            savefilename= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_omega_agez.sav')
+        else:
+            savefilename= args[0]
+        if os.path.exists(savefilename):
+            savefile= open(savefilename,'rb')
+            self._omega= pickle.load(savefile)
+            savefile.close()
+        else:
+            raise IOError(savefilename+' file does not exist')
+        return None      
+
+    def calc_age_pdf(self,fehdist='casagrande'):
+        """
+        NAME:
+           calc_age_pdf
+        PURPOSE:
+           calculate the age PDF for a uniform SFH for a given metallicity 
+           distribution
+        INPUT:
+           fehdist= either:
+              1) a single metallicity 
+              2) 'casagrande': local metallicity distribution following Casagrande et al. (2011)
+              3) a function giving
+        OUTPUT:
+            a function between 800 Myr and 10 Gyr giving the age distribution
+        HISTORY:
+           2014-02-27 - Written in this form - Bovy (IAS)
+        """
+        if isinstance(fehdist,(int,float,numpy.float32,numpy.float64)):
+            pz= numpy.zeros(len(self._zs))
+            pz[numpy.argmin(numpy.fabs(self._zs-isodist.FEH2Z(fehdist,zsolar=0.017)))]= 1.
+        elif isinstance(fehdist,str) and fehdist.lower() == 'casagrande':
+            pz= numpy.array([localfehdist(isodist.Z2FEH(z,zsolar=0.017))/z for z in self._zs])
+        else:
+            pz= numpy.array([fehdist(isodist.Z2FEH(z,zsolar=0.017))/z for z in self._zs])
+        pz/= numpy.sum(pz)
+        agezdist= self._omega/self._coarsemass
+        pz= numpy.tile(pz,(len(self._coarselages),1)).T
+        postage= numpy.nansum(pz*agezdist,axis=0)/numpy.nansum(pz,axis=0)/10.**self._coarselages
+        postage= postage[self._coarselages > numpy.log10(0.8)]
+        postage/= numpy.nanmax(postage)
+        lages= self._coarselages[self._coarselages > numpy.log10(0.8)]
+        postage_spline= interpolate.InterpolatedUnivariateSpline(lages,
+                                                                 numpy.log(postage),
+                                                                 k=3)
+        return lambda x: dummy_page(x,copy.copy(postage_spline))
+
+    def plot_age_pdf(self,fehdist='casagrande',**kwargs):
+        """
+        NAME:
+           plot_age_pdf
+        PURPOSE:
+           plot the age PDF for a uniform SFH for a given metallicity 
+           distribution
+        INPUT:
+           fehdist= either:
+              1) a single metallicity 
+              2) 'casagrande': local metallicity distribution following Casagrande et al. (2011)
+              3) a function giving
+            bovy_plot.bovy_plot **kwargs
+        OUTPUT:
+           bovy_plot.bovy_plot output
+        HISTORY:
+           2014-02-27 - Written in this form - Bovy (IAS)
+        """
+        if not _BOVY_PLOT_LOADED:
+            raise ImportError("galpy.util.bovy_plot could not be imported")
+        page= self.calc_age_pdf(fehdist)
+        plages= numpy.linspace(0.8,10.,1001)
+        plpostage= page(plages)
+        plpostage/= numpy.nansum(plpostage)*(plages[1]-plages[0])
+        out= bovy_plot.bovy_plot(plages,plpostage,
+                                 'k-',lw=2.,
+                                 xlabel=r'$\mathrm{Age}\,(\mathrm{Gyr})$',
+                                 ylabel=r'$p(\mathrm{RC | population\ Age})$',
+                                 xrange=[0.,10.],
+                                 yrange=[0.,0.4],
+                                 **kwargs)
+        #Baseline
+        bovy_plot.bovy_plot(plages,1./9.2*numpy.ones(len(plages)),
+                            '-',color='0.4',overplot=True,zorder=3,lw=2.)
+        return out        
+
 class rcmodel(isomodel):
     """rcmodel: isochrone model for the distribution in (J-Ks,M_H) of red-clump like stars"""
     def __init__(self,
@@ -206,3 +337,9 @@ class rcmodel(isomodel):
         bovy_plot.bovy_text(zstr,
                             bottom_right=True,size=20.)
         return out
+
+def dummy_page(a,func):
+    indx= (a >= 0.8)*(a <= 10.)
+    out= numpy.zeros(len(a))
+    out[indx]= numpy.exp(func(numpy.log10(a[indx])))
+    return out
