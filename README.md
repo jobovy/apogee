@@ -341,5 +341,5 @@ popmass= rc.popmass(lages)
 plot(lages,popmass,'k-')
 ```
 
-<img src="_readme_files/_rc_avgmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
+<img src="_readme_files/_rc_popmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
 
