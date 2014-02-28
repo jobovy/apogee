@@ -265,7 +265,7 @@ above paper) to be computed. The tools in this package are kept
 general such that they can also be useful in defining other subsamples
 in APOGEE.
 
-#RC catalog tools
+###RC catalog tools
 
 The RC catalog is constructed by inspecting the properties of stellar
 isochrones computed by stellar-evolution codes and finding the region
@@ -280,12 +280,13 @@ with *rcmodel* being the equivalent of the more general
 (http://github.com/jobovy/isodist) library with accompanying data
 files; see the *isodist* website for info on how to obtain this.
 
-For example, we can load solar metallicity isochrones from the
-[PARSEC](http://stev.oapd.inaf.it/cgi-bin/cmd) library for the RC using
+For example, we can load near-solar metallicity isochrones from the
+[PARSEC](http://stev.oapd.inaf.it/cgi-bin/cmd) library for the RC
+using
 
 ```
 from apogee.samples.rc import rcmodel
-rc= rcmodel(Z=0.017)
+rc= rcmodel(Z=0.02)
 ```
 
 This command will take about a minute to execute. We can then plot the
@@ -297,15 +298,15 @@ rc.plot(nbins=101,conditional=True)
 
 which gives
 
-<img src="_readme_files/_rc_cmd.png" alt="RC CMD for solar metallicity" width="600" />
+<img src="_readme_files/_rc_cmd.png" alt="RC CMD for solar metallicity" width="450" />
 
 We can also calculate properties of the absolute magnitude distribution as a function of color:
 
 ```
 rc.mode(0.65)
--1.5780000000000001
+-1.641
 rc.sigmafwhm(0.65)
-0.12716028243167124
+0.047685105911876829
 ```
 
 and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution
@@ -316,4 +317,29 @@ rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)
 
 (this takes a while) which shows
 
-<img src="_readme_files/_rc_cmd_wmode.png" alt="RC CMD for solar metallicity, with mode, FWHM, and cuts" width="600" />
+<img src="_readme_files/_rc_cmd_wmode.png" alt="RC CMD for solar metallicity, with mode, FWHM, and cuts" width="450" />
+
+We can also compute the average mass of an RC star, the fraction of a
+stellar population's mass is present in the RC, and the amount of
+stellar population mass per RC star. These are all calculated as a
+function of log10(age), so a grid of those needs to be specified
+
+```
+lages= numpy.linspace(numpy.log10(0.8),1.,20)
+amass= rc.avgmass(lages)
+plot(lages,amass,'k-')
+```
+
+which gives
+
+<img src="_readme_files/_rc_avgmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
+
+and
+
+```
+popmass= rc.popmass(lages)
+plot(lages,popmass,'k-')
+```
+
+<img src="_readme_files/_rc_avgmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
+
