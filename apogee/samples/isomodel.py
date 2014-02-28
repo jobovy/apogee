@@ -18,6 +18,7 @@ class isomodel:
                  dontgather=False,
                  basti=False,
                  parsec=True,
+                 maxage=10.,
                  stage=None):
         """
         NAME:
@@ -35,6 +36,7 @@ class isomodel:
            basti= if True, use Basti isochrones (if False, use PARSEC)
            parsec= if True (=default), use PARSEC isochrones, if False, use Padova
            stage= if True, only use this evolutionary stage
+           maxage= (10.) maximum log10 of age
         OUTPUT:
            object
         HISTORY:
@@ -79,7 +81,6 @@ class isomodel:
             p= isodist.BastiIsochrone(Z=Zs)
         else:
             p= isodist.PadovaIsochrone(Z=Zs,parsec=parsec)
-        maxage= 9.+numpy.log10(10.) #BaSTI goes too old, so does Padova
         if basti:
             #Force BaSTI to have equal age sampling
             lages= list(numpy.log10(numpy.arange(0.1,1.,0.1))+9.)
