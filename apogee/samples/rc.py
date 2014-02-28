@@ -122,7 +122,7 @@ class rcdist:
            2012-11-15 - Written - Bovy (IAS)
         """
         #Check that this color and Z lies between the bounds
-        if jk > zjkcut(Z) or jk < zjkcut(Z,upper=True) or jk < 0.5 or Z > 0.06:
+        if Z < jkzcut(jk) or Z > jkzcut(jk,upper=True) or jk < 0.5 or Z > 0.06:
             return numpy.nan
         if appmag is None:
             return self._interpMag.ev(jk,Z)+dk
@@ -452,7 +452,7 @@ class rcmodel(isomodel):
                  imfmodel='lognormalChabrier2001',
                  Z=None,
                  expsfh=False,
-                 band='H',
+                 band='Ks',
                  dontgather=False,
                  basti=False,
                  parsec=True,
@@ -488,6 +488,7 @@ class rcmodel(isomodel):
                           dontgather=dontgather,
                           basti=basti,
                           parsec=parsec,
+                          maxage=maxage,
                           stage=stage)
         self._jkmin, self._jkmax= 0.5,0.8
         self._hmin, self._hmax= -3.,0.
@@ -563,7 +564,8 @@ class rcmodel(isomodel):
                 *(self._Z <= 0.06)\
                 *(self._sample[:,1] > (predH-0.4))\
                 *(self._sample[:,1] < (predH+0.4))\
-                *(self._sample[:,1] > -3.)
+                *(self._sample[:,1] > -3.)\
+                *(self._loggs[:,0] <= 3.5)
             try:
                 out[jj]= numpy.sum(self._masses[aindx]*self._weights[aindx])/numpy.sum(self._weights[aindx])
             except ValueError:
@@ -602,9 +604,51 @@ class rcmodel(isomodel):
                 *(self._Z <= 0.06)\
                 *(self._sample[:,1] > (predH-0.4))\
                 *(self._sample[:,1] < (predH+0.4))\
-                *(self._sample[:,1] > -3.)
+                *(self._sample[:,1] > -3.)\
+                *(self._loggs[:,0] <= 3.5)
             try:
                 out[jj]= numpy.mean(self._massweights[aindx])
+            except ValueError:
+                out[jj]= numpy.nan
+        return out
+
+    def popmass(self,lages=None):
+        """
+        NAME:
+           popmass
+        PURPOSE:
+           calculate the amount of stellar-population mass represented by
+           each RC star
+        INPUT:
+           lages= array of log10 ages
+        OUTPUT:
+        HISTORY:
+           2014-02-28 - Written in this form - Bovy (IAS)
+        """
+        if lages is None:
+            lages= numpy.linspace(-1.,1.,16)
+            lages= lages[lages > numpy.log10(0.8)]
+        nages= len(lages)
+        dlages= lages[1]-lages[0]
+        out= numpy.zeros(nages)
+        for jj in range(nages):
+            jk= self._jks
+            aindx= (self._lages <= lages[jj]+dlages)\
+                *(self._lages > lages[jj]-dlages)
+            #For RC, cut to objects close to RC locus
+            rcd= rcdist()
+            predH= numpy.array([rcd(j,self._Z) for j in jk])
+            predH= numpy.reshape(predH,len(jk))
+            aindx*= (jk < 0.8)*(jk > 0.5)\
+                *(self._Z <= jkzcut(jk,upper=True))\
+                *(self._Z >= jkzcut(jk))\
+                *(self._Z <= 0.06)\
+                *(self._sample[:,1] > (predH-0.4))\
+                *(self._sample[:,1] < (predH+0.4))\
+                *(self._sample[:,1] > -3.)\
+                *(self._loggs[:,0] <= 3.5)
+            try:
+                out[jj]= numpy.sum(self._masses[aindx]*self._weights[aindx])/numpy.sum(self._weights[aindx])/numpy.mean(self._massweights[aindx])
             except ValueError:
                 out[jj]= numpy.nan
         return out
