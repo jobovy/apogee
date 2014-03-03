@@ -478,16 +478,16 @@ class isomodel:
                 plotthis[ii,:]/= numpy.nanmax(plotthis[ii,:])/numpy.nanmax(plotthis)
         if self._band == 'J':
             ylabel= r'$M_J$'
-            ylim=[0.,-3.]
+            ylim=[self._hmax,self._hmin]
         elif self._band == 'H':
             ylabel= r'$M_H$'
-            ylim=[0.,-3.]
+            ylim=[self._hmax,self._hmin]
         elif self._band == 'K':
             ylabel= r'$M_K$'
-            ylim=[0.,-3.]
+            ylim=[self._hmax,self._hmin]
         elif self._band == 'Ks':
             ylabel= r'$M_{K_s}$'
-            ylim=[0.,-3.]
+            ylim=[self._hmax,self._hmin]
         out= bovy_plot.bovy_dens2d(plotthis.T,origin='lower',cmap='gist_yarg',
                                      xrange=[self._jkmin,self._jkmax],
                                      yrange=ylim,
