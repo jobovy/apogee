@@ -457,7 +457,8 @@ class rcmodel(isomodel):
                  basti=False,
                  parsec=True,
                  maxage=10.,
-                 stage=None):
+                 stage=None,
+                 eta=None):
         """
         NAME:
            __init__
@@ -475,6 +476,7 @@ class rcmodel(isomodel):
            parsec= if True, use PARSEC isochrones
            stage= if True, only use this evolutionary stage
            maxage= (10.) maximum log10 of age
+           eta= (None) mass-loss efficiency parameter
         OUTPUT:
            object
         HISTORY:
@@ -489,7 +491,8 @@ class rcmodel(isomodel):
                           basti=basti,
                           parsec=parsec,
                           maxage=maxage,
-                          stage=stage)
+                          stage=stage,
+                          eta=eta)
         self._jkmin, self._jkmax= 0.5,0.8
         self._hmin, self._hmax= -3.,0.
         return None

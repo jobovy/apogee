@@ -19,7 +19,8 @@ class isomodel:
                  basti=False,
                  parsec=True,
                  maxage=10.,
-                 stage=None):
+                 stage=None,
+                 eta=None):
         """
         NAME:
            __init__
@@ -37,6 +38,7 @@ class isomodel:
            parsec= if True (=default), use PARSEC isochrones, if False, use Padova
            stage= if True, only use this evolutionary stage
            maxage= (10.) maximum log10 of age
+           eta= (None) mass-loss efficiency parameter
         OUTPUT:
            object
         HISTORY:
@@ -54,6 +56,7 @@ class isomodel:
         self._Z= Z
         self._imfmodel= imfmodel
         self._basti= basti
+        self._eta= eta
         if isinstance(loggmax,str) and loggmax.lower() == 'rc':
             from apogee.samples.rc import loggteffcut
         #Read isochrones
@@ -78,9 +81,9 @@ class isomodel:
             else:
                 Zs= [Z-0.0005,Z,Z+0.0005] #build up statistics
         if basti:
-            p= isodist.BastiIsochrone(Z=Zs)
+            p= isodist.BastiIsochrone(Z=Zs,eta=eta)
         else:
-            p= isodist.PadovaIsochrone(Z=Zs,parsec=parsec)
+            p= isodist.PadovaIsochrone(Z=Zs,parsec=parsec,eta=eta)
         if basti:
             #Force BaSTI to have equal age sampling
             lages= list(numpy.log10(numpy.arange(0.1,1.,0.1))+9.)
