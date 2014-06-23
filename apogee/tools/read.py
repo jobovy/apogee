@@ -15,6 +15,7 @@
 #             - rcsample: read the red clump sample
 #
 ##################################################################################
+import copy
 import numpy
 import esutil
 import fitsio
@@ -25,7 +26,8 @@ def allStar(rmcommissioning=True,
             akvers='targ',
             rmnovisits=False,
             adddist=False,
-            distredux='v302'):
+            distredux='v302',
+            rmdups=True):
     """
     NAME:
        allStar
@@ -39,6 +41,7 @@ def allStar(rmcommissioning=True,
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
        adddist= (default: False) add distances from Michael Hayden
        distredux= (default: v302) reduction on which the distances are based
+       rmdups= (True) if True, remove duplicates
     OUTPUT:
        allStar data
     HISTORY:
@@ -64,6 +67,8 @@ def allStar(rmcommissioning=True,
     if ak:
         data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
+    if rmdups:
+        data= remove_duplicates(data)
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
@@ -388,3 +393,39 @@ def mainIndx(data):
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     return indx
+
+def remove_duplicates(data):
+    """
+    NAME:
+       remove_duplicates
+    PURPOSE:
+       remove duplicates from an array
+    INPUT:
+       data - array
+    OUTPUT:
+       array w/ duplicates removed
+    HISTORY:
+       2014-06-23 - Written - Bovy (IAS)
+    """
+    tdata= copy.copy(data)
+    #Match the data against itself
+    h=esutil.htm.HTM()
+    htmrev2,minid,maxid = h.match_prepare(data['RA'],data['DEC'])
+    m1,m2,d12 = h.match(data['RA'],data['DEC'],
+                        data['RA'],data['DEC'],
+                        2./3600.,maxmatch=0, #all matches
+                        htmrev2=htmrev2,minid=minid,maxid=maxid)
+    sindx= numpy.argsort(m1)
+    sm1= m1[sindx]
+    dup= sm1[1:] == sm1[:-1]
+    for d in sm1[dup]:
+        #Find the matches for just this duplicate
+        nm1,nm2,nd12= h.match(data['RA'][d],data['DEC'][d],
+                              data['RA'],data['DEC'],
+                              2./3600.,maxmatch=0, #all matches
+                              htmrev2=htmrev2,minid=minid,maxid=maxid)
+        hisnr= numpy.argmax(data['SNR'][nm2])
+        tindx= numpy.ones(len(nm2),dtype='bool')
+        tindx[hisnr]= False
+        tdata['RA'][nm2[tindx]]= -9999
+    return tdata[tdata['RA'] != -9999]
