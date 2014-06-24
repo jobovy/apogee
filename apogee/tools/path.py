@@ -157,14 +157,14 @@ def distPath(redux=None):
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
 
-def rcsamplePath():
+def rcsamplePath(dr='DR11'):
     """
     NAME:
        rcsamplePath
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       (none)
+       dr= ('DR11') data reduction to load the catalog for
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -175,7 +175,7 @@ def rcsamplePath():
        2012-10-08 - Edited for rcsample - Bovy (IAS)
     """
     return os.path.join(_APOGEE_DATA,
-                        'rcsample_'+_APOGEE_REDUX+'.fits')
+                        'apogee-rc-%s.fits' % dr)
 
 def obslogPath(year=2):
     """
