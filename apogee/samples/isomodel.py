@@ -18,6 +18,7 @@ class isomodel:
                  dontgather=False,
                  basti=False,
                  parsec=True,
+                 minage=None,
                  maxage=10.,
                  stage=None,
                  eta=None):
@@ -37,7 +38,8 @@ class isomodel:
            basti= if True, use Basti isochrones (if False, use PARSEC)
            parsec= if True (=default), use PARSEC isochrones, if False, use Padova
            stage= if True, only use this evolutionary stage
-           maxage= (10.) maximum log10 of age
+           minage= (None) minimum log10 of age/yr
+           maxage= (10.) maximum log10 of age/yr
            eta= (None) mass-loss efficiency parameter
         OUTPUT:
            object
@@ -100,6 +102,7 @@ class isomodel:
         pjks= []
         for logage in p.logages():
             if logage > maxage: continue
+            if not minage is None and logage < minage: continue
             if basti and numpy.sum((logage == lages)) == 0: continue
             for zz in range(len(Zs)):
                 thisiso= p(logage,Zs[zz],asrecarray=True,stage=stage)
