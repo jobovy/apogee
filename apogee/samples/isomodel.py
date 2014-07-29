@@ -20,6 +20,7 @@ class isomodel:
                  parsec=True,
                  minage=None,
                  maxage=10.,
+                 jkmin=None,
                  stage=None,
                  eta=None):
         """
@@ -40,6 +41,7 @@ class isomodel:
            stage= if True, only use this evolutionary stage
            minage= (None) minimum log10 of age/yr
            maxage= (10.) maximum log10 of age/yr
+           jkmin= (None) if set, only consider J-Ks greater than this
            eta= (None) mass-loss efficiency parameter
         OUTPUT:
            object
@@ -128,6 +130,7 @@ class isomodel:
                         JK= 0.996*(thisiso.J[ii]-thisiso.K[ii])+0.00923
                     else:
                         JK= thisiso.J[ii]-thisiso.Ks[ii]
+                    if not jkmin is None and JK < jkmin: continue
                     if band.lower() == 'h':
                         if basti:
                             raise NotImplementedError("'H' not implemented for BaSTI yet")
