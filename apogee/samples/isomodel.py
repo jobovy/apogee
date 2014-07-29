@@ -270,16 +270,13 @@ class isomodel:
         xs, lnpdf= self.calc_pdf(jk)
         if self._band == 'J':
             xlabel= r'$M_J$'
-            xlim=[0.,-2.]
         elif self._band == 'H':
             xlabel= r'$M_H$'
-            xlim=[0.,-2.]
         elif self._band == 'K':
             xlabel= r'$M_K$'
-            xlim=[0.,-3.]
         elif self._band == 'Ks':
             xlabel= r'$M_{K_s}$'
-            xlim=[0.,-2.]
+        xlim=[self._hmax,self._hmin]
         return bovy_plot.bovy_plot(xs,numpy.exp(lnpdf),'k-',
                                    xrange=xlim,
                                    yrange=[0.,
@@ -301,7 +298,7 @@ class isomodel:
            2012-11-09 - Written - Bovy (IAS)
         """
         #Calculate pdf
-        xs= numpy.linspace(-3.,0.,nxs)
+        xs= numpy.linspace(self._hmin,self._hmax,nxs)
         lnpdf= self(jk*numpy.ones(nxs),xs)
         lnpdf[numpy.isnan(lnpdf)]= -numpy.finfo(numpy.dtype(numpy.float64)).max
         lnpdf-= misc.logsumexp(lnpdf)+numpy.log(xs[1]-xs[0])
@@ -537,16 +534,13 @@ class isomodel:
             raise ImportError("'galpy.util.bovy_plot' plotting package not found")
         if self._band == 'J':
             ylabel= r'$M_J$'
-            ylim=[0.,-3.]
         elif self._band == 'H':
             ylabel= r'$M_H$'
-            ylim=[0.,-3.]
         elif self._band == 'K':
             ylabel= r'$M_K$'
-            ylim=[0.,-3.]
         elif self._band == 'Ks':
             ylabel= r'$M_{K_s}$'
-            ylim=[0.,-3.]
+        ylim=[self._hmax,self._hmin]
         return bovy_plot.bovy_plot(self._sample[:,0],self._sample[:,1],
                                    xrange=[self._jkmin,self._jkmax],
                                    yrange=ylim,
