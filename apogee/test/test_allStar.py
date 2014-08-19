@@ -1,14 +1,8 @@
 import numpy
 import apogee.tools.read as apread
 from apogee.tools import bitmask
+_DATA= apread.allStar(raw=True) #such that we can re-use it in different tests
 from _util import known_failure
-_DATA= None #such that we can re-use it in different tests
-
-def test_read():
-    global _DATA
-    _DATA= apread.allStar(raw=True)
-    assert not _DATA is None, '_DATA was not successfully read'
-    return None
 
 def test_telescope():
     #Test the telescope tag against the APSTAR_ID
