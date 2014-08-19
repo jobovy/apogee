@@ -1,21 +1,8 @@
-import functools
-import nose
 import numpy
 import apogee.tools.read as apread
 from apogee.tools import bitmask
+from _util import known_failure
 _DATA= None #such that we can re-use it in different tests
-
-# Decorator for known failure
-def known_failure(test):
-    @functools.wraps(test)
-    def inner(*args, **kwargs):
-        try:
-            test(*args, **kwargs)
-        except Exception:
-            raise nose.SkipTest
-        else:
-            raise AssertionError('Test is expected to fail, but passed instead')
-    return inner
 
 def test_read():
     global _DATA
@@ -63,7 +50,7 @@ def test_targflags_apogee_target2():
         assert numpy.sum(badindx) == 0, 'Some objects with bit %i set in apogee_target2 do not have the corresponding flag name in TARGFLAGS set' % targbit
     return None
 
-#@known_failure
+@known_failure
 def test_extratarg():
     #Test that extratarg tag is
     # 0 for main survey targets, 
@@ -72,7 +59,7 @@ def test_extratarg():
     mainIndx= (((_DATA['APOGEE_TARGET1'] & 2**11) != 0)\
                    +((_DATA['APOGEE_TARGET1'] & 2**12) != 0)
                +((_DATA['APOGEE_TARGET1'] & 2**13) != 0))
-    #assert numpy.sum(mainIndx*(_DATA['EXTRATARG'] != 0)) == 0, '%i main survey targets have EXTRATARG neq 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
+    assert numpy.sum(mainIndx*(_DATA['EXTRATARG'] != 0)) == 0, '%i main survey targets have EXTRATARG neq 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
     commIndx= _DATA['COMMISS'] == 1
     commBitSet= numpy.array([bitmask.bit_set(1,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
@@ -82,3 +69,4 @@ def test_extratarg():
                             dtype='bool')
     assert numpy.sum(tellIndx*(True-tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True-tellBitSet))
     return None
+
