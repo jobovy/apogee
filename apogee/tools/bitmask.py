@@ -83,4 +83,3 @@ def apogee_target2_string(bit):
         return _APOGEE_TARGET2[bit]
     except KeyError:
         raise KeyError("bit %i not recognized as an apogee_target2 bit" % bit)
-
