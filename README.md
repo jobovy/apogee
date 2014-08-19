@@ -94,6 +94,28 @@ catalog.
 *apogee.tools.read* also contains routines to read the various
  targeting-related files (see above).
 
+*apogee.tools.bitmask* has some tools for dealing with APOGEE
+ bitmasks. In particular, it has methods to turn a numerical bit value
+ into the string name of the bit:
+
+```
+from apogee.tools import bitmask
+bitmask.apogee_target1_string(11)
+'APOGEE_SHORT'
+bitmask.apogee_target2_string(9)
+'APOGEE_TELLURIC'
+```
+
+There are also tools to figure out which bits are set for a given
+bitmask from the catalog and to test whether a given bit is set:
+
+```
+bitmask.bits_set(-2147481584)
+[4, 11, 31]
+bitmask.bit_set(1,-2147481584)
+False
+```
+
 ##APOGEE SELECTION FUNCTION
 
 One of the main uses of this codebase is that it can determine the
