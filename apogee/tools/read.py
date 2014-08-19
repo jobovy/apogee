@@ -27,7 +27,8 @@ def allStar(rmcommissioning=True,
             rmnovisits=False,
             adddist=False,
             distredux='v302',
-            rmdups=True):
+            rmdups=True,
+            raw=False):
     """
     NAME:
        allStar
@@ -42,6 +43,7 @@ def allStar(rmcommissioning=True,
        adddist= (default: False) add distances from Michael Hayden
        distredux= (default: v302) reduction on which the distances are based
        rmdups= (True) if True, remove duplicates
+       raw= (False) if True, just return the raw file, read w/ fitsio
     OUTPUT:
        allStar data
     HISTORY:
@@ -49,6 +51,7 @@ def allStar(rmcommissioning=True,
     """
     #read allStar file
     data= fitsio.read(path.allStarPath())
+    if raw: return data
     #Some cuts
     if rmcommissioning:
         indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
