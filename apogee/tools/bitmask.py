@@ -101,6 +101,22 @@ def bits_set(bits):
     bin= [int(i) for i in list(bin)]
     return [b for ii,b in enumerate(range(31,-1,-1)) if bin[ii] == 1][::-1]
 
+def bit_set(bit,bits):
+    """
+    NAME:
+       bit_set
+    PURPOSE:
+       check whether a bit in a bitmask is set
+    INPUT:
+       bit - check whether this bit is set
+       bits - bitmask
+    OUTPUT:
+       True if bit is set in bits
+    HISTORY:
+       2014-08-19 - Written - Bovy (IAS)
+    """
+    return (bits & 2**bit) != 0
+
 def bitmask_to_binary(bits,width=32):
     """
     NAME:
