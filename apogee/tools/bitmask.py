@@ -34,6 +34,20 @@ _APOGEE_TARGET1={0:"APOGEE_FAINT",
                  29:"APOGEE_FAINT_EXTRA",
                  30:"APOGEE_SEGUE_OVERLAP",
                  31:"APOGEE_CHECKED"}
+_APOGEE_TARGET2={1:"APOGEE_FLUX_STANDARD",
+                 2:"APOGEE_STANDARD_STAR",
+                 3:"APOGEE_RV_STANDARD",
+                 4:"SKY",
+                 9:"APOGEE_TELLURIC",
+                 10:"APOGEE_CALIB_CLUSTER",
+                 11:"APOGEE_BULGE_GIANT",
+                 12:"APOGEE_BULGE_SUPER_GIANT",
+                 13:"APOGEE_EMBEDDEDCLUSTER_STAR",
+                 14:"APOGEE_LONGBAR",
+                 15:"APOGEE_EMISSION_STAR",
+                 16:"APOGEE_KEPLER_COOLDWARF",
+                 17:"APOGEE_MIRCLUSTER_STAR",
+                 31:"APOGEE_CHECKED"}
 def apogee_target1_string(bit):
     """
     NAME:
@@ -51,4 +65,22 @@ def apogee_target1_string(bit):
         return _APOGEE_TARGET1[bit]
     except KeyError:
         raise KeyError("bit %i not recognized as an apogee_target1 bit" % bit)
+
+def apogee_target2_string(bit):
+    """
+    NAME:
+       apogee_target2_string
+    PURPOSE:
+       return the string name of an APOGEE_TARGET2 bit
+    INPUT:
+       bit - the bit (integer between 0 and 31)
+    OUTPUT:
+       string name
+    HISTORY:
+       2014-08-19 - Written - Bovy (IAS)
+    """
+    try:
+        return _APOGEE_TARGET2[bit]
+    except KeyError:
+        raise KeyError("bit %i not recognized as an apogee_target2 bit" % bit)
 
