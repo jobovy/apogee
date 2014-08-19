@@ -23,11 +23,12 @@ def test_read():
     assert not _DATA is None, '_DATA was not successfully read'
     return None
 
-@known_failure
 def test_telescope():
     #Test the telescope tag against the APSTAR_ID
     onemIndx= numpy.array(['apogee.apo1m' in s for s in _DATA['APSTAR_ID']])
-    assert numpy.sum(onemIndx*(True-(_DATA['TELESCOPE'] == 'apo1m'))) == 0,\
+    telescopeIndx= numpy.array(['apo1m' in d for d in _DATA['TELESCOPE']],
+                               dtype='bool')
+    assert numpy.sum(onemIndx*(True-telescopeIndx)) == 0,\
         'TELESCOPE tag does not correspond to APSTAR_ID for 1m data'
     return None
 
