@@ -83,3 +83,36 @@ def apogee_target2_string(bit):
         return _APOGEE_TARGET2[bit]
     except KeyError:
         raise KeyError("bit %i not recognized as an apogee_target2 bit" % bit)
+
+def bits_set(bits):
+    """
+    NAME:
+       bits_set
+    PURPOSE:
+       check which bits in a bitmask are set
+    INPUT:
+       bitmask value
+    OUTPUT:
+       list of bits set
+    HISTORY:
+       2014-08-19 - Written - Bovy (IAS)
+    """
+    bin= bitmask_to_binary(bits,32)
+    bin= [int(i) for i in list(bin)]
+    return [b for ii,b in enumerate(range(31,-1,-1)) if bin[ii] == 1][::-1]
+
+def bitmask_to_binary(bits,width=32):
+    """
+    NAME:
+       bitmask_to_binary
+    PURPOSE:
+       convert the bitmask to a binary representation
+    INPUT:
+       bitmask value
+    OUTPUT:
+       binary representation, e.g., 2 = '00000000000000000000000000000010'
+    HISTORY:
+       2014-08-19 - Written - Bovy (IAS)
+    """
+    return ''.join([str((bits>>i)&1) for i in range(width-1,-1,-1)])
+
