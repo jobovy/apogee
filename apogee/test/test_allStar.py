@@ -71,9 +71,9 @@ def test_extratarg():
     mainIndx= (((_DATA['APOGEE_TARGET1'] & 2**11) != 0)\
                    +((_DATA['APOGEE_TARGET1'] & 2**12) != 0)
                +((_DATA['APOGEE_TARGET1'] & 2**13) != 0))
-    assert numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0) == 0, '%i main survey targets have EXTRATARG > 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
+    assert numpy.sum(mainIndx*_DATA['EXTRATARG'] != 0) == 0, '%i main survey targets have EXTRATARG > 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
     commIndx= _DATA['COMMISS'] == 1
-    assert numpy.sum(commIndx*(_DATA['EXTRATARG'] != 2)) == 0, '%i commissioning targets have EXTRATARG neq 1' % numpy.sum(commIndx*(_DATA['EXTRATARG'] != 1))
+    assert numpy.sum(commIndx*(_DATA['EXTRATARG'] != 1)) == 0, '%i commissioning targets have EXTRATARG neq 1' % numpy.sum(commIndx*(_DATA['EXTRATARG'] != 1))
     tellIndx= (_DATA['APOGEE_TARGET2'] & 2**9) != 0
     assert numpy.sum(tellIndx*(_DATA['EXTRATARG'] != 2)) == 0, '%i telluric targets have EXTRATARG neq 2' % numpy.sum(tellIndx*(_DATA['EXTRATARG'] != 2))
     return None
