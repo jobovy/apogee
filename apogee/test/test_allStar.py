@@ -36,10 +36,6 @@ def test_targflags_apogee_target2():
         name= bitmask.apogee_target2_string(targbit)
         targindx= numpy.array([name in s for s in _DATA['TARGFLAGS']],
                               dtype='bool')
-        if targbit == 0:
-            targindx*= \
-                numpy.array([not 'APOGEE_FAINT_EXTRA' in s for s in _DATA['TARGFLAGS']],
-                            dtype='bool')
         badindx= ((_DATA['APOGEE_TARGET2'] & 2**targbit) != 0)*(True-targindx)
         assert numpy.sum(badindx) == 0, 'Some objects with bit %i set in apogee_target2 do not have the corresponding flag name in TARGFLAGS set' % targbit
     return None
