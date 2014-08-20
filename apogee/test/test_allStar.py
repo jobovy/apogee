@@ -75,3 +75,10 @@ def test_params_named():
         assert numpy.all(numpy.fabs(numpy.sqrt(_DATA['PARAM_COV'][cnanIndx,paramIndx('logg'),paramIndx('logg')])
                                     -_DATA['LOGG_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV LOGG does not correspond to tag LOGG_ERR'
     return None
+
+@known_failure
+def test_params_err():
+    #Test that the param errors (teff and logg) are not equal to -1
+    assert not numpy.all(_DATA['TEFF_ERR'] == -1), 'TEFF_ERR are all equal to -1'
+    assert not numpy.all(_DATA['LOGG_ERR'] == -1), 'LOGG_ERR are all equal to -1'
+    return None
