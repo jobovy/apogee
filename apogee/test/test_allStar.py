@@ -91,7 +91,7 @@ def test_elem_named():
     for ii,elem in enumerate(elems):
         elemval= _DATA['ELEM'][:,elemIndx(elem)]
         if elem in ferreOverM: elemval+= _DATA['FPARAM'][:,paramIndx('metals')]
-        #What about the following?
+        #BOVY: What about the following?
         goodIndx= _DATA['FPARAM'][:,paramIndx('metals')] != -9999.
         assert numpy.all(numpy.fabs(elemval[goodIndx]-_DATA[elem.upper()+'_H'][goodIndx]) < 10.**-10.), 'ELEM value for %s_H does not agree with named tag' % elem 
         #Errors
