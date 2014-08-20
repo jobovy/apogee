@@ -1,6 +1,6 @@
 import numpy
 import apogee.tools.read as apread
-from apogee.tools import bitmask
+from apogee.tools import bitmask, paramIndx, elemIndx
 _DATA= apread.allStar(raw=True) #such that we can re-use it in different tests
 from _util import known_failure
 
@@ -60,3 +60,18 @@ def test_extratarg():
     assert numpy.sum(tellIndx*(True-tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True-tellBitSet))
     return None
 
+def test_params_named():
+    #Test that the named tags correspond to the correct values in param according to PARAM_SYMBOL
+    assert numpy.all(numpy.fabs(_DATA['PARAM'][:,paramIndx('teff')]
+                                -_DATA['TEFF']) < 10.**-10.), 'PARAM TEFF does not correspond to tag TEFF'
+    assert numpy.all(numpy.fabs(_DATA['PARAM'][:,paramIndx('logg')]
+                                -_DATA['LOGG']) < 10.**-10.), 'PARAM LOGG does not correspond to tag LOGG'
+    cnanIndx= (True-numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('teff'),paramIndx('teff')])))
+    if numpy.sum(cnanIndx) > 0:
+        assert numpy.all(numpy.fabs(numpy.sqrt(_DATA['PARAM_COV'][cnanIndx,paramIndx('teff'),paramIndx('teff')])
+                                    -_DATA['TEFF_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV TEFF does not correspond to tag TEFF_ERR'
+    cnanIndx= (True-numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('logg'),paramIndx('logg')])))
+    if numpy.sum(cnanIndx) > 0:
+        assert numpy.all(numpy.fabs(numpy.sqrt(_DATA['PARAM_COV'][cnanIndx,paramIndx('logg'),paramIndx('logg')])
+                                    -_DATA['LOGG_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV LOGG does not correspond to tag LOGG_ERR'
+    return None
