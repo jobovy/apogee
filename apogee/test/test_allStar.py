@@ -1,3 +1,4 @@
+import copy
 import numpy
 import apogee.tools.read as apread
 from apogee.tools import bitmask, paramIndx, elemIndx
@@ -89,7 +90,7 @@ def test_elem_named():
             'Ni','Fe','Al','K','Na','V','Mn']
     ferreOverM= ['C','N','O','Mg','Si','S','Ca','Ti']
     for ii,elem in enumerate(elems):
-        elemval= _DATA['ELEM'][:,elemIndx(elem)]
+        elemval= copy.copy(_DATA['ELEM'][:,elemIndx(elem)])
         if elem in ferreOverM: elemval+= _DATA['FPARAM'][:,paramIndx('metals')]
         #BOVY: What about the following?
         goodIndx= _DATA['FPARAM'][:,paramIndx('metals')] != -9999.
@@ -99,4 +100,28 @@ def test_elem_named():
                                     -_DATA[elem.upper()+'_H_ERR']) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
                                 
-    
+@known_failure
+def test_elem_calib_outsiderange():
+    #Test that the elem calibration does not extend outside of the calibration
+    #temperature range
+    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
+            'Ni','Fe','Al','K','Na','V','Mn']
+    TeffMin= 3800.
+    TeffMax= 5200.
+    for elem in elems:
+        calibDiff= _DATA['FELEM'][:,elemIndx(elem)]\
+            -_DATA['ELEM'][:,elemIndx(elem)]
+        #Only consider good stars for this element
+        indx= ((_DATA['ASPCAPFLAG'] & 2**23) == 0)\
+            *(_DATA['FPARAM'][:,paramIndx('teff')] > -1000.)\
+            *(_DATA['FELEM'][:,elemIndx(elem)] > -1000.)\
+            *(_DATA['ELEM'][:,elemIndx(elem)] > -1000.)
+        loTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
+                                                         paramIndx('teff')]
+                                         -TeffMin))
+        hiTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
+                                                         paramIndx('teff')]
+                                         -TeffMax))
+        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] < TeffMin]-calibDiff[indx][loTIndx]) < 10.**-10.), 'Calibration offset does not saturate below the minimum calibration temperature of %i for element %s' % (TeffMin,elem)
+        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] > TeffMax]-calibDiff[indx][hiTIndx]) < 10.**-10.), 'Calibration offset does not saturate above the maximum calibration temperature of %i for element %s' % (TeffMax,elem)
+    return None
