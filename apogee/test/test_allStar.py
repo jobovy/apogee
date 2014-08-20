@@ -82,3 +82,21 @@ def test_params_err():
     assert not numpy.all(_DATA['TEFF_ERR'] == -1), 'TEFF_ERR are all equal to -1'
     assert not numpy.all(_DATA['LOGG_ERR'] == -1), 'LOGG_ERR are all equal to -1'
     return None
+
+def test_elem_named():
+    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL 
+    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
+            'Ni','Fe','Al','K','Na','V','Mn']
+    ferreOverM= ['C','N','O','Mg','Si','S','Ca','Ti']
+    for ii,elem in enumerate(elems):
+        elemval= _DATA['ELEM'][:,elemIndx(elem)]
+        if elem in ferreOverM: elemval+= _DATA['FPARAM'][:,paramIndx('metals')]
+        #What about the following?
+        goodIndx= _DATA['FPARAM'][:,paramIndx('metals')] != -9999.
+        assert numpy.all(numpy.fabs(elemval[goodIndx]-_DATA[elem.upper()+'_H'][goodIndx]) < 10.**-10.), 'ELEM value for %s_H does not agree with named tag' % elem 
+        #Errors
+        assert numpy.all(numpy.fabs(_DATA['ELEM_ERR'][:,elemIndx(elem)]
+                                    -_DATA[elem.upper()+'_H_ERR']) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
+    return None
+                                
+    
