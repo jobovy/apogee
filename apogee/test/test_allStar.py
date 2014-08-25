@@ -77,7 +77,6 @@ def test_params_named():
                                     -_DATA['LOGG_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV LOGG does not correspond to tag LOGG_ERR'
     return None
 
-@known_failure
 def test_params_err():
     #Test that the param errors (teff and logg) are not equal to -1
     assert not numpy.all(_DATA['TEFF_ERR'] == -1), 'TEFF_ERR are all equal to -1'
@@ -95,7 +94,14 @@ def test_elem_named():
         #BOVY: What about the following?
         goodIndx= _DATA['FPARAM'][:,paramIndx('metals')] != -9999.
         assert numpy.all(numpy.fabs(elemval[goodIndx]-_DATA[elem.upper()+'_H'][goodIndx]) < 10.**-10.), 'ELEM value for %s_H does not agree with named tag' % elem 
-        #Errors
+    return None
+                
+@known_failure                
+def test_elem_err_named():
+    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL 
+    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
+            'Ni','Fe','Al','K','Na','V','Mn']
+    for ii,elem in enumerate(elems):
         assert numpy.all(numpy.fabs(_DATA['ELEM_ERR'][:,elemIndx(elem)]
                                     -_DATA[elem.upper()+'_H_ERR']) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
