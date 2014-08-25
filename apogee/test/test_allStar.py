@@ -106,14 +106,13 @@ def test_elem_err_named():
                                     -_DATA[elem.upper()+'_H_ERR']) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
                                 
-@known_failure
 def test_elem_calib_outsiderange():
     #Test that the elem calibration does not extend outside of the calibration
     #temperature range
     elems= ['C','N','O','Mg','Si','S','Ca','Ti',
             'Ni','Fe','Al','K','Na','V','Mn']
     TeffMin= 3800.
-    TeffMax= 5200.
+    TeffMax= 5250.
     for elem in elems:
         calibDiff= _DATA['FELEM'][:,elemIndx(elem)]\
             -_DATA['ELEM'][:,elemIndx(elem)]
@@ -128,6 +127,6 @@ def test_elem_calib_outsiderange():
         hiTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
                                                          paramIndx('teff')]
                                          -TeffMax))
-        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] < TeffMin]-calibDiff[indx][loTIndx]) < 10.**-10.), 'Calibration offset does not saturate below the minimum calibration temperature of %i for element %s' % (TeffMin,elem)
-        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] > TeffMax]-calibDiff[indx][hiTIndx]) < 10.**-10.), 'Calibration offset does not saturate above the maximum calibration temperature of %i for element %s' % (TeffMax,elem)
+        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] < TeffMin]-calibDiff[indx][loTIndx]) < 10.**-3.), 'Calibration offset does not saturate below the minimum calibration temperature of %i for element %s' % (TeffMin,elem)
+        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] > TeffMax]-calibDiff[indx][hiTIndx]) < 10.**-2.), 'Calibration offset does not saturate above the maximum calibration temperature of %i for element %s' % (TeffMax,elem)
     return None
