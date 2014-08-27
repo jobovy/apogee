@@ -96,14 +96,26 @@ def test_elem_named():
         assert numpy.all(numpy.fabs(elemval[goodIndx]-_DATA[elem.upper()+'_H'][goodIndx]) < 10.**-10.), 'ELEM value for %s_H does not agree with named tag' % elem 
     return None
                 
-@known_failure                
-def test_elem_err_named():
-    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL 
+def test_elem_err_named_exclNaN():
+    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL , rm differences that are NaN
     elems= ['C','N','O','Mg','Si','S','Ca','Ti',
             'Ni','Fe','Al','K','Na','V','Mn']
     for ii,elem in enumerate(elems):
-        assert numpy.all(numpy.fabs(_DATA['ELEM_ERR'][:,elemIndx(elem)]
-                                    -_DATA[elem.upper()+'_H_ERR']) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
+        errDiff= _DATA['ELEM_ERR'][:,elemIndx(elem)]\
+            -_DATA[elem.upper()+'_H_ERR']
+        cnanIndx= True-numpy.isnan(errDiff)
+        assert numpy.all(numpy.fabs(errDiff[cnanIndx]) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
+    return None
+                                
+@known_failure                
+def test_elem_err_named():
+    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL, currently fails because of two objects 
+    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
+            'Ni','Fe','Al','K','Na','V','Mn']
+    for ii,elem in enumerate(elems):
+        errDiff= _DATA['ELEM_ERR'][:,elemIndx(elem)]\
+            -_DATA[elem.upper()+'_H_ERR']
+        assert numpy.all(numpy.fabs(errDiff) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
                                 
 def test_elem_calib_outsiderange():
