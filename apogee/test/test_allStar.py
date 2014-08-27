@@ -41,7 +41,6 @@ def test_targflags_apogee_target2():
         assert numpy.sum(badindx) == 0, 'Some objects with bit %i set in apogee_target2 do not have the corresponding flag name in TARGFLAGS set' % targbit
     return None
 
-@known_failure
 def test_extratarg():
     #Test that extratarg tag is
     # 0 for main survey targets, 
@@ -50,14 +49,18 @@ def test_extratarg():
     mainIndx= (((_DATA['APOGEE_TARGET1'] & 2**11) != 0)\
                    +((_DATA['APOGEE_TARGET1'] & 2**12) != 0)
                +((_DATA['APOGEE_TARGET1'] & 2**13) != 0))
-    assert numpy.sum(mainIndx*(_DATA['EXTRATARG'] != 0)) == 0, '%i main survey targets have EXTRATARG neq 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
+    #Also rm commissioning
     commIndx= _DATA['COMMISS'] == 1
+    mainIndx*= (True-commIndx)
+    assert numpy.sum(mainIndx*(_DATA['EXTRATARG'] != 0)) == 0, '%i main survey targets have EXTRATARG neq 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
     commBitSet= numpy.array([bitmask.bit_set(1,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
     assert numpy.sum(commIndx*(True-commBitSet)) == 0, '%i commissioning targets do not have bit 1 in EXTRATARG set' % numpy.sum(commIndx*(True-commBitSet)) == 0
     tellIndx= (_DATA['APOGEE_TARGET2'] & 2**9) != 0
     tellBitSet= numpy.array([bitmask.bit_set(2,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
+    #Rm the tellurics that are main targets
+    tellIndx*= (True-mainIndx)
     assert numpy.sum(tellIndx*(True-tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True-tellBitSet))
     return None
 
