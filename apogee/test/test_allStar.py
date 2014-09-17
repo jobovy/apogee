@@ -110,9 +110,9 @@ def test_elem_err_named_exclNaN():
         assert numpy.all(numpy.fabs(errDiff[cnanIndx]) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
                                 
-@known_failure                
+#@known_failure                
 def test_elem_err_named():
-    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL, currently fails because of two objects 
+    #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL
     elems= ['C','N','O','Mg','Si','S','Ca','Ti',
             'Ni','Fe','Al','K','Na','V','Mn']
     for ii,elem in enumerate(elems):
