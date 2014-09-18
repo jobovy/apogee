@@ -19,7 +19,7 @@ import copy
 import numpy
 import esutil
 import fitsio
-from apogee.tools import path
+from apogee.tools import path, paramIndx
 def allStar(rmcommissioning=True,
             main=False,
             ak=True,
@@ -222,8 +222,12 @@ def apokasc(rmcommissioning=True,
     kascdata['APOGEE_TARGET2']= data['APOGEE_TARGET2']
     kascdata['LOGG']= data['LOGG']
     kascdata['TEFF']= data['TEFF']
-    kascdata['METALS']= data['METALS']
-    kascdata['ALPHAFE']= data['ALPHAFE']
+    if int(path._APOGEE_REDUX[1:]) > 600:
+        kascdata['METALS']= data['PARAM'][:,paramIndx('logg')]
+        kascdata['ALPHAFE']= data['PARAM'][:,paramIndx('logg')]
+    else:
+        kascdata['METALS']= data['METALS']
+        kascdata['ALPHAFE']= data['ALPHAFE']
     kascdata['FNFE']= data['FPARAM'][:,5]
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
