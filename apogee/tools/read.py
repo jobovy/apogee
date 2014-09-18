@@ -27,7 +27,7 @@ def allStar(rmcommissioning=True,
             rmnovisits=False,
             adddist=False,
             distredux='v302',
-            rmdups=True,
+            rmdups=False,
             raw=False):
     """
     NAME:
@@ -42,7 +42,7 @@ def allStar(rmcommissioning=True,
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
        adddist= (default: False) add distances from Michael Hayden
        distredux= (default: v302) reduction on which the distances are based
-       rmdups= (True) if True, remove duplicates
+       rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
     OUTPUT:
        allStar data
