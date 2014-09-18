@@ -123,11 +123,11 @@ def allStar(rmcommissioning=True,
             data['DMASS']= dist['DMASS'][:,1]
             data['DISO_GAL']= dist['DISO_GAL'][:,1]
             data['DMASS_GAL']= dist['DMASS_GAL'][:,1]
-        if int(path._APOGEE_REDUX[1:]) > 600:
-            data= esutil.numpy_util.add_fields(data,[('METALS', float),
-                                                     ('ALPHAFE', float)])
-            data['METALS']= data['PARAM'][:,paramIndx('metals')]
-            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+    if int(path._APOGEE_REDUX[1:]) > 600:
+        data= esutil.numpy_util.add_fields(data,[('METALS', float),
+                                                 ('ALPHAFE', float)])
+        data['METALS']= data['PARAM'][:,paramIndx('metals')]
+        data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
     return data
         
 def allVisit(rmcommissioning=True,
