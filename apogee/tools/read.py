@@ -191,7 +191,8 @@ def apokasc(rmcommissioning=True,
        2013-10-01 - Written - Bovy (IAS)
     """
     #read allStar file
-    data= allStar(rmcommissioning=rmcommissioning,main=main,adddist=False)
+    data= allStar(rmcommissioning=rmcommissioning,main=main,adddist=False,
+                  rmdups=False)
     #read the APOKASC file
     kascdata= fitsio.read(path.apokascPath())
     #Match these two
