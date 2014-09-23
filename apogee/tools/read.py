@@ -15,11 +15,14 @@
 #             - rcsample: read the red clump sample
 #
 ##################################################################################
+import os
+import sys
 import copy
 import numpy
 import esutil
 import fitsio
 from apogee.tools import path, paramIndx
+_ERASESTR= "                                                                                "
 def allStar(rmcommissioning=True,
             main=False,
             ak=True,
@@ -52,6 +55,18 @@ def allStar(rmcommissioning=True,
     #read allStar file
     data= fitsio.read(path.allStarPath())
     if raw: return data
+    if rmdups:
+        dupsFilename= path.allStarPath().replace('.fits','-nodups,fits')
+        if os.path.exists(dupsFilename):
+            data= fitsio.read(dupsFilename)
+        else:
+            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
+            sys.stdout.flush()
+            data= remove_duplicates(data)
+            #Cache this file for subsequent use of rmdups
+            fitsio.write(dupsFilename,data,clobber=True)
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.flush()
     #Some cuts
     if rmcommissioning:
         indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
@@ -70,8 +85,6 @@ def allStar(rmcommissioning=True,
     if ak:
         data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
-    if rmdups:
-        data= remove_duplicates(data)
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
