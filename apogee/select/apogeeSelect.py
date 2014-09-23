@@ -1129,7 +1129,7 @@ class apogeeSelect:
     def _load_spec_data(self,sample='rcsample'):
         """Internal function to load the full spectroscopic data set and 
         cut it down to the statistical sample"""
-        allStar= apread.allStar(main=True,akvers='targ')
+        allStar= apread.allStar(main=True,akvers='targ',rmdups=True)
         #Only keep stars in locations for which we are loading the 
         #selection function
         indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations 
