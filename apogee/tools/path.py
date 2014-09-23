@@ -174,8 +174,12 @@ def rcsamplePath(dr='DR11'):
        2012-01-02 - Written - Bovy (IAS)
        2012-10-08 - Edited for rcsample - Bovy (IAS)
     """
-    return os.path.join(_APOGEE_DATA,
-                        'apogee-rc-%s.fits' % dr)
+    if dr.lower() == 'dr12':
+        return os.path.join(_APOGEE_DATA,
+                            'apogee-rc-%s-nostat.fits' % dr)
+    else:
+        return os.path.join(_APOGEE_DATA,
+                            'apogee-rc-%s.fits' % dr)
 
 def obslogPath(year=2):
     """
