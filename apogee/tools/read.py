@@ -233,7 +233,7 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False):
+def rcsample(main=False,dr=None):
     """
     NAME:
        rcsample
@@ -241,6 +241,7 @@ def rcsample(main=False):
        read the rcsample file
     INPUT:
        main= (default: False) if True, only select stars in the main survey
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
     OUTPUT:
        rcsample data
     HISTORY:

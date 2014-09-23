@@ -157,14 +157,14 @@ def distPath(redux=None):
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
 
-def rcsamplePath(dr='DR11'):
+def rcsamplePath(dr=None):
     """
     NAME:
        rcsamplePath
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       dr= ('DR11') data reduction to load the catalog for
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -174,6 +174,10 @@ def rcsamplePath(dr='DR11'):
        2012-01-02 - Written - Bovy (IAS)
        2012-10-08 - Edited for rcsample - Bovy (IAS)
     """
+    if dr is None:
+        if _APOGEE_REDUX == 'v402': dr= 'DR11'
+        elif _APOGEE_REDUX == 'v601': dr= 'DR12'
+        else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
     if dr.lower() == 'dr12':
         return os.path.join(_APOGEE_DATA,
                             'apogee-rc-%s-nostat.fits' % dr)
