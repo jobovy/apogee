@@ -55,8 +55,9 @@ def allStar(rmcommissioning=True,
     #read allStar file
     data= fitsio.read(path.allStarPath())
     if raw: return data
+    #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath().replace('.fits','-nodups,fits')
+        dupsFilename= path.allStarPath().replace('.fits','-nodups.fits')
         if os.path.exists(dupsFilename):
             data= fitsio.read(dupsFilename)
         else:
@@ -447,7 +448,14 @@ def remove_duplicates(data):
                               data['RA'],data['DEC'],
                               2./3600.,maxmatch=0, #all matches
                               htmrev2=htmrev2,minid=minid,maxid=maxid)
-        hisnr= numpy.argmax(data['SNR'][nm2])
+        #If some matches are commissioning data or have bad ak, rm from consideration
+        comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
+        comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
+        goodak= (True-numpy.isnan(data['AK_TARG'][nm2]))\
+            *(data['AK_TARG'][nm2] > -50.)
+        hisnr= numpy.argmax(data['SNR'][nm2]*(True-comindx)*goodak) #effect. make com zero SNR
+        if numpy.amax(data['SNR'][nm2]*(True-comindx)*goodak) == 0.: #all commissioning or bad ak, treat all equally
+            hisnr= numpy.argmax(data['SNR'][nm2])
         tindx= numpy.ones(len(nm2),dtype='bool')
         tindx[hisnr]= False
         tdata['RA'][nm2[tindx]]= -9999
