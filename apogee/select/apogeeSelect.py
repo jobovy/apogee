@@ -1222,6 +1222,8 @@ class apogeeSelect:
             self._dr= '10'
         elif self._year == 2:
             self._dr= 'X'
+        elif self._year == 3:
+            self._dr= '12'
         #Match up plates with designs           
         apogeePlate= apread.apogeePlate(dr=self._dr)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
