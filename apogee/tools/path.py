@@ -245,7 +245,7 @@ def apogeePlatePath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
-    if dr == 'X':
+    if dr == 'X' or dr == '12':
         platename= 'apogeePlate.fits'
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
@@ -269,7 +269,7 @@ def apogeeDesignPath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
-    if dr == 'X':
+    if dr == 'X' or dr == '12':
         platename= 'apogeeDesign.fits'
     else:
         platename= 'apogeeDesign_DR%s.fits' % dr
@@ -293,7 +293,7 @@ def apogeeFieldPath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
-    if dr == 'X':
+    if dr == 'X' or dr == '12':
         platename= 'apogeeField.fits'
     else:
         platename= 'apogeeField_DR%s.fits' % dr
@@ -318,7 +318,7 @@ def apogeeObjectPath(field_name,dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeeObject - Bovy (IAS)
     """
-    if dr == 'X':
+    if dr == 'X' or dr == '12':
         filename= 'apogeeObject_%s.fits' % field_name.strip()
     else:
         filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
