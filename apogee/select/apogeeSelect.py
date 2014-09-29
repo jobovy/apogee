@@ -353,9 +353,9 @@ class apogeeSelect:
            2013-11-10 - Written - Bovy (IAS)
         """
         #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit(plateInt=True) #no need to cut to main, don't care about special plates
+        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
         print "Removing plate 7442"
-        allVisit= allVisit[allVisit['PLATE'] != 7442]
+        allVisit= allVisit[allVisit['PLATE'] != '7442']
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
                  allVisit['PLATE'][ii]+'-'+
                  '%05i' % allVisit['MJD'][ii] + '-'
