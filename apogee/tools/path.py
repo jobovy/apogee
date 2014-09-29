@@ -205,6 +205,9 @@ def obslogPath(year=2):
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year1+2.csv')
+    elif year == 3:
+        return os.path.join(_APOGEE_DATA,
+                            'obs-summary-year1+2+3.csv')
 
 def apogeeTargetDirPath(dr='X'):
     """
