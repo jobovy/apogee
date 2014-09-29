@@ -321,6 +321,22 @@ class apogeeSelect:
         locIndx= self._locations == location_id
         return self.__dict__['_%s_hmax' % cohort][locIndx]
 
+    def fieldName(self,location_id):
+        """
+        NAME:
+           fieldName
+        PURPOSE:
+           give the field name corresponding to a given location
+        INPUT:
+           location_id
+        OUTPUT:
+           field name
+        HISTORY:
+           2014-09-29 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return self._apogeeField['FIELD_NAME'][locIndx][0]
+
     def determine_statistical(self,specdata):
         """
         NAME:
