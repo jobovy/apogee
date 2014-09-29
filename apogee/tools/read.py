@@ -147,7 +147,8 @@ def allStar(rmcommissioning=True,
 def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
-             akvers='targ'):
+             akvers='targ',
+             plateInt=False):
     """
     NAME:
        allVisit
@@ -158,6 +159,7 @@ def allVisit(rmcommissioning=True,
        main= (default: False) if True, only select stars in the main survey
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
+       plateInt= (False) if True, cast plate as an integer and give special plates -1
     OUTPUT:
        allVisit data
     HISTORY:
@@ -180,6 +182,23 @@ def allVisit(rmcommissioning=True,
     if ak:
         data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
+    if plateInt:
+        #If plate is a string, cast it as an integer
+        if isinstance(data['PLATE'][0],str):
+            #First cast the special plates as -1
+            plateDtype= data['PLATE'].dtype
+            data['PLATE'][data['PLATE'] == 'calibration'.ljust(int(str(plateDtype)[2:]))]= '-1'
+            data['PLATE'][data['PLATE'] == 'hip'.ljust(int(str(plateDtype)[2:]))]= '-1'
+            data['PLATE'][data['PLATE'] == 'misc'.ljust(int(str(plateDtype)[2:]))]= '-1'
+            data['PLATE'][data['PLATE'] == 'moving_groups'.ljust(int(str(plateDtype)[2:]))]= -1
+            data['PLATE'][data['PLATE'] == 'rrlyr'.ljust(int(str(plateDtype)[2:]))]= '-1'
+            #Now change the dtype to make plate an int
+            dt= data.dtype
+            dt= dt.descr
+            plateDtypeIndx= dt.index(('PLATE', '|S13'))
+            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
+            dt= numpy.dtype(dt)
+            data= data.astype(dt)
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
