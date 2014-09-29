@@ -148,7 +148,8 @@ def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
              akvers='targ',
-             plateInt=False):
+             plateInt=False,
+             plateS4=False):
     """
     NAME:
        allVisit
@@ -160,6 +161,7 @@ def allVisit(rmcommissioning=True,
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        plateInt= (False) if True, cast plate as an integer and give special plates -1
+       plateS4= (False) if True, cast plate as four character string
     OUTPUT:
        allVisit data
     HISTORY:
@@ -182,7 +184,7 @@ def allVisit(rmcommissioning=True,
     if ak:
         data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
-    if plateInt:
+    if plateInt or plateS4:
         #If plate is a string, cast it as an integer
         if isinstance(data['PLATE'][0],str):
             #First cast the special plates as -1
@@ -196,7 +198,10 @@ def allVisit(rmcommissioning=True,
             dt= data.dtype
             dt= dt.descr
             plateDtypeIndx= dt.index(('PLATE', '|S13'))
-            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
+            if plateInt:
+                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
+            elif plateS4:
+                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S4')
             dt= numpy.dtype(dt)
             data= data.astype(dt)
     #Add dereddened J, H, and Ks
