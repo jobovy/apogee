@@ -353,7 +353,9 @@ class apogeeSelect:
            2013-11-10 - Written - Bovy (IAS)
         """
         #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit() #no need to cut to main
+        allVisit= apread.allVisit(plateInt=True) #no need to cut to main, don't care about special plates
+        print "Removing plate 7442"
+        allVisit= allVisit[allVisit['PLATE'] != 7442]
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
                  allVisit['PLATE'][ii]+'-'+
                  '%05i' % allVisit['MJD'][ii] + '-'
@@ -1255,8 +1257,10 @@ class apogeeSelect:
         designsIndx= numpy.zeros(nplates,dtype='int')
         for ii in range(nplates):
             dindx= apogeePlate['PLATE_ID'] == self._plates[ii]
-            if numpy.sum(dindx) == 0:
+            if numpy.sum(dindx) == 0 and self._plates[ii] != 7442:
                 raise IOError("No entry found in apogeePlate for plate %i" % self._plates[ii])
+            elif numpy.sum(dindx) == 0 and self._plates[ii] == 7442:
+                continue
             platesIndx[ii]= list(dindx).index(True)
             designs[ii]= apogeePlate['DESIGN_ID'][dindx]
             dindx= apogeeDesign['DESIGN_ID'] == designs[ii]
