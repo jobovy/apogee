@@ -93,7 +93,7 @@ numpy.recarray has additional tags containing the extinction-corrected
 The *allStar* read function also has an option *rmdups=True* (default:
 False) that removes a small number of duplicates in the allStar file
 (these are mainly commissioning stars re-observed during the main
-surveys and a few stars in overlapping fields). The first time this
+survey and a few stars in overlapping fields). The first time this
 option is used the read function may take about 10 minutes to remove
 all duplicates, but the duplicate-free file is then cached for
 re-use. Use as
