@@ -3,6 +3,8 @@
 Tools for dealing with [SDSS-III] (http://sdss3.org/) [APOGEE]
 (http://www.sdss3.org/surveys/apogee.php) data.
 
+.. contents::
+
 ##AUTHOR
 
 Jo Bovy - bovy at ias dot edu
