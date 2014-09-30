@@ -88,7 +88,7 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *Ks* magnitudes.
+*J*, *H*, and *K:subscript:`s`* magnitudes.
 
 ``apokasc= apread.apokasc()``
 
