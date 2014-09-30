@@ -248,10 +248,8 @@ example,::
 	#Now which part of the sample is statistical?
 	statIndx= apo.determine_statistical(allStar)
 
-*statIndx* now is an boolean index array that identifies the stars
- that are in the statistical sample.
-
-
+The array **statIndx** now is an boolean index array that identifies
+ the stars that are in the statistical sample.
 
 TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
 =====================================================
