@@ -293,14 +293,14 @@ def rcsample(main=False,dr=None):
         data= data[indx]
     return data
         
-def obslog(year=2):
+def obslog(year=None):
     """
     NAME:
        obslog
     PURPOSE:
        read the observation summary up to a certain year
     INPUT:
-       year= read up to this year (2)
+       year= read up to this year (None)
     OUTPUT:
        observation log
     HISTORY:

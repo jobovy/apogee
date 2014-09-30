@@ -185,14 +185,14 @@ def rcsamplePath(dr=None):
         return os.path.join(_APOGEE_DATA,
                             'apogee-rc-%s.fits' % dr)
 
-def obslogPath(year=2):
+def obslogPath(year=None):
     """
     NAME:
        obslogPath
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       year= read up to this year (2)
+       year= read up to this year (None)
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -202,6 +202,10 @@ def obslogPath(year=2):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for obslog - Bovy (IAS)
     """
+    if year is None:
+        if _APOGEE_REDUX == 'v402': year= 2
+        elif _APOGEE_REDUX == 'v601': year= 3
+        else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year1+2.csv')
