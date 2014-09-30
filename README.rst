@@ -185,11 +185,13 @@ The selection function can be plotted using::
 .. image:: _readme_files/_selfunc_xy.png 
    :width: 50 %
    :alt: Selection function as a function of Galactic X and Y
+   :align: left
 
 .. image:: _readme_files/_selfunc_rz.png
    :width: 50 %
    :alt: Selection function as a function of Galactocentric R and Z
-
+   :align: right
+   
 which gives a sense of the spatial dependence of the selection
 function (which is really a function of *H* and not distance; *H* is
 converted to distance here assuming a red-clump like absolute
