@@ -77,12 +77,10 @@ BASIC USE
 ==========
 
 The most basic capability of the code is to read various data produces
-and apply cuts (in *apogee.tools.read*). For example
+and apply cuts (in *apogee.tools.read*). For example::
 
-```
-import apogee.tools.read as apread
-allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
-```
+   import apogee.tools.read as apread
+   allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
 
 will read the allStar file corresponding to the $APOGEE_REDUX version,
 remove stars only observed on commissioning plates
