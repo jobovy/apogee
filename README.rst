@@ -182,10 +182,10 @@ The selection function can be plotted using::
     apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
     apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
 
-.. image:: _readme_files/_selfunc_xy.png 
-   :width: 50 %
-   :alt: Selection function as a function of Galactic X and Y
-   :align: left
+    .. image:: _readme_files/_selfunc_xy.png 
+       :width: 50 %
+       :alt: Selection function as a function of Galactic X and Y
+       :align: left
 
 .. image:: _readme_files/_selfunc_rz.png
    :width: 50 %
