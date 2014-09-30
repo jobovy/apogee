@@ -95,10 +95,10 @@ numpy.recarray has additional tags containing the extinction-corrected
 reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
 
-*apogee.tools.read* also contains routines to read the various
+**apogee.tools.read** also contains routines to read the various
  targeting-related files (see above).
 
-*apogee.tools.bitmask* has some tools for dealing with APOGEE
+**apogee.tools.bitmask** has some tools for dealing with APOGEE
  bitmasks. In particular, it has methods to turn a numerical bit value
  into the string name of the bit:::
 
