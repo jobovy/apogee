@@ -337,7 +337,7 @@ def obslog(year=None):
                                 skip_footer=1)
     return obslogtxt
 
-def apogeePlate(dr='X'):
+def apogeePlate(dr=None):
     """
     NAME:
        apogeePlate
@@ -352,7 +352,7 @@ def apogeePlate(dr='X'):
     """
     return fitsio.read(path.apogeePlatePath(dr=dr))
 
-def apogeeDesign(dr='X'):
+def apogeeDesign(dr=None):
     """
     NAME:
        apogeeDesign
@@ -367,7 +367,7 @@ def apogeeDesign(dr='X'):
     """
     return fitsio.read(path.apogeeDesignPath(dr=dr))
 
-def apogeeField(dr='X'):
+def apogeeField(dr=None):
     """
     NAME:
        apogeeField
@@ -382,7 +382,7 @@ def apogeeField(dr='X'):
     """
     return fitsio.read(path.apogeeFieldPath(dr=dr))
 
-def apogeeObject(field_name,dr='X',
+def apogeeObject(field_name,dr=None,
                  ak=True,
                  akvers='targ'):
     """

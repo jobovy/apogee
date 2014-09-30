@@ -213,7 +213,7 @@ def obslogPath(year=None):
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year1+2+3.csv')
 
-def apogeeTargetDirPath(dr='X'):
+def apogeeTargetDirPath(dr=None):
     """
     NAME:
        apogeeTargetDirPath
@@ -230,9 +230,10 @@ def apogeeTargetDirPath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeeTargetDir - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     return os.path.join(_APOGEE_DATA,'dr','apogee','target','apogee_DR'+dr)
     
-def apogeePlatePath(dr='X'):
+def apogeePlatePath(dr=None):
     """
     NAME:
        apogeePlatePath
@@ -249,6 +250,7 @@ def apogeePlatePath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     if dr == 'X' or dr == '12':
         platename= 'apogeePlate.fits'
     else:
@@ -256,7 +258,7 @@ def apogeePlatePath(dr='X'):
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         platename)
 
-def apogeeDesignPath(dr='X'):
+def apogeeDesignPath(dr=None):
     """
     NAME:
        apogeeDesignPath
@@ -273,6 +275,7 @@ def apogeeDesignPath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     if dr == 'X' or dr == '12':
         platename= 'apogeeDesign.fits'
     else:
@@ -280,7 +283,7 @@ def apogeeDesignPath(dr='X'):
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         platename)
 
-def apogeeFieldPath(dr='X'):
+def apogeeFieldPath(dr=None):
     """
     NAME:
        apogeeFieldPath
@@ -297,6 +300,7 @@ def apogeeFieldPath(dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     if dr == 'X' or dr == '12':
         platename= 'apogeeField.fits'
     else:
@@ -304,7 +308,7 @@ def apogeeFieldPath(dr='X'):
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         platename)
 
-def apogeeObjectPath(field_name,dr='X'):
+def apogeeObjectPath(field_name,dr=None):
     """
     NAME:
        apogeeObjectPath
@@ -322,9 +326,17 @@ def apogeeObjectPath(field_name,dr='X'):
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeeObject - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     if dr == 'X' or dr == '12':
         filename= 'apogeeObject_%s.fits' % field_name.strip()
     else:
         filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         filename)
+
+def _default_dr():
+    if _APOGEE_REDUX == 'v304': dr= '10'
+    elif _APOGEE_REDUX == 'v402': dr= 'X'
+    elif _APOGEE_REDUX == 'v601': dr= '12'
+    else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
+    return dr
