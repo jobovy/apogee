@@ -335,9 +335,10 @@ and::
 .. image:: _readme_files/_rc_popmass.png
 
 
-For convenience, the data in Figs. 3, 12, 13, and 14 in Bovy et
-al. 2014 has been stored as functions in this codebase. For example,
-we can calculate distances as follows::
+For convenience, the data in Figs. 3, 12, 13, and 14 in `Bovy et
+al. 2014 <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__ has
+been stored as functions in this codebase. For example, we can
+calculate distances as follows::
 
    from apogee.samples.rc import rcdist
    rcd= rcdist()
