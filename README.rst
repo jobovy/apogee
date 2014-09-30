@@ -1,15 +1,18 @@
-#apogee
+apogee
+-------
 
 Tools for dealing with [SDSS-III] (http://sdss3.org/) [APOGEE]
 (http://www.sdss3.org/surveys/apogee.php) data.
 
 .. contents::
 
-##AUTHOR
+AUTHOR
+======
 
 Jo Bovy - bovy at ias dot edu
 
-##INSTALLATION
+INSTALLATION
+============
 
 Standard python setup.py build/install
 
@@ -21,7 +24,8 @@ or
 
 ``python setup.py install --prefix=/some/directory/``
 
-##DEPENDENCIES
+DEPENDENCIES
+=============
 
 This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
 (http://www.scipy.org/), [Matplotlib]
@@ -31,7 +35,8 @@ This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
 (http://github.com/jobovy/galpy), and [isodist]
 (http://github.com/jobovy/isodist).
 
-##DATA FILES AND ENVIRONMENT VARIABLES
+DATA FILES AND ENVIRONMENT VARIABLES
+=====================================
 
 This code depends on a number of data files and environment
 variables. The environment variables are
@@ -68,7 +73,8 @@ obs-summary-year1+2.csv also needs to be present.
 Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files.
 
-##BASIC USE
+BASIC USE
+==========
 
 The most basic capability of the code is to read various data produces
 and apply cuts (in *apogee.tools.read*). For example
@@ -118,7 +124,8 @@ bitmask.bit_set(1,-2147481584)
 False
 ```
 
-##APOGEE SELECTION FUNCTION
+APOGEE SELECTION FUNCTION
+==========================
 
 One of the main uses of this codebase is that it can determine the
 selection function---the fraction of objects in APOGEE's color and
@@ -276,12 +283,13 @@ statIndx= apo.determine_statistical(allStar)
 
 
 
-##TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
+TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
+=====================================================
 
 This codebase contains tools to characterize the properties of
 different subsamples of the APOGEE data using stellar-evolution
 models. In particular, it contains methods to reproduce the selection
-of red clump (RC) stars as in (Bovy et al. 2014, in preparation), to
+of red clump (RC) stars as in (Bovy et al. 2014), to
 calculate the mean *Ks* magnitude along the RC as a function of
 metallity and color (Fig. 3 in that paper). The code also allows the
 average RC mass, the amount of stellar-population mass represented by
@@ -290,7 +298,8 @@ above paper) to be computed. The tools in this package are kept
 general such that they can also be useful in defining other subsamples
 in APOGEE.
 
-###RC catalog tools
+RC catalog tools
++++++++++++++++++
 
 The RC catalog is constructed by inspecting the properties of stellar
 isochrones computed by stellar-evolution codes and finding the region
