@@ -186,7 +186,7 @@ The selection function can be plotted using::
    :alt: Selection function as a function of Galactic X and Y
    :width: 350
 
-.. imageg:: _readme_files/_selfunc_rz.png
+.. image:: _readme_files/_selfunc_rz.png
    :alt: Selection function as a function of Galactocentric R and Z
    :width: 350
 
