@@ -184,7 +184,6 @@ The selection function can be plotted using::
 
 .. image:: _readme_files/_selfunc_xy.png 
    :scale: 50 % 
-   :width: 50 %
    :alt: Selection function as a function of Galactic X and Y
    :align: left
 
