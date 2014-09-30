@@ -27,13 +27,13 @@ or
 DEPENDENCIES
 =============
 
-This package requires [NumPy](http://numpy.scipy.org/), [Scipy]
-(http://www.scipy.org/), [Matplotlib]
-(http://matplotlib.sourceforge.net/), [fitsio]
-(http://github.com/esheldon/fitsio), [esutil]
-(http://code.google.com/p/esutil/), [galpy]
-(http://github.com/jobovy/galpy), and [isodist]
-(http://github.com/jobovy/isodist).
+This package requires `NumPy <http://numpy.scipy.org/>`__, `Scipy
+<http://www.scipy.org/>`__, `Matplotlib
+<http://matplotlib.sourceforge.net/>`__, `fitsio
+<http://github.com/esheldon/fitsio>`__, `esutil
+<http://code.google.com/p/esutil/>`__, `galpy
+<http://github.com/jobovy/galpy>`__, and `isodist
+<http://github.com/jobovy/isodist>`__.
 
 DATA FILES AND ENVIRONMENT VARIABLES
 =====================================
