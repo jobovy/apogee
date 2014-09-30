@@ -42,7 +42,7 @@ This code depends on a number of data files and environment
 variables. The environment variables are
 
 * **APOGEE_DATA**: top-level directory with APOGEE data
-* **APOGEE_REDUX**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11)
+* **APOGEE_REDUX**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v601 for DR12)
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
 
 Most data files live in the $APOGEE_DATA directory. For example,
@@ -88,11 +88,21 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *K*\ :sub:`s` magnitudes.
+*J*, *H*, and *K*\ :sub:`s` magnitudes. The *allStar* read function
+also has an option *rmdups=True* (default: False) that removes a small
+number of duplicates in the allStar file (these are mainly
+commissioning stars re-observed during the main surveys and a few
+stars in overlapping fields). The first time this option is used the
+read function may take about 10 minutes to remove all duplicates, but
+the duplicate-free file is then cached for re-use. Use as
+
+``allStar= apread.allStar(rmcommissioning=True,rmdups=True)``
+
+We can read the APOKASC catalog using
 
 ``apokasc= apread.apokasc()``
 
-reads the APOKASC catalog and matches and combines it with the allStar
+This reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
 
 Module **apogee.tools.read** also contains routines to read the
