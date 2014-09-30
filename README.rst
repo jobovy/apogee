@@ -1,8 +1,8 @@
 apogee
 -------
 
-Tools for dealing with [SDSS-III] (http://sdss3.org/) [APOGEE]
-(http://www.sdss3.org/surveys/apogee.php) data.
+Tools for dealing with `SDSS-III <http://sdss3.org/>`__ `APOGEE
+<http://www.sdss3.org/surveys/apogee.php>`__ data.
 
 .. contents::
 
@@ -50,7 +50,7 @@ allStar-$APOGEE_REDUX.fits, allVisit-$APOGEE_REDUX.fits, and
 APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits live there. Files related
 to the target selection live in a sub-directory **dr/**. This
 sub-directory mirrors the directory structure of targeting-related
-files on the SDSS-III [SAS] (http://data.sdss3.org/sas/dr10/):
+files on the SDSS-III `SAS <http://data.sdss3.org/sas/dr10/>`__:
 
 * **$APOGEE_DATA/dr/apogee/target/**
 
@@ -155,7 +155,7 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sa
 mple (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-Ks* > 0.5 color cut only) are included in the spectroscopic sample. See the function [*apogee.tools.read.mainIndx*](http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345) for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-Ks* > 0.5 color cut only) are included in the spectroscopic sample. See the function `*apogee.tools.read.mainIndx* <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
 The selection function can be evaluated (as a function) by calling the instance. For example, 
 
@@ -289,14 +289,14 @@ TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
 This codebase contains tools to characterize the properties of
 different subsamples of the APOGEE data using stellar-evolution
 models. In particular, it contains methods to reproduce the selection
-of red clump (RC) stars as in (Bovy et al. 2014), to
-calculate the mean *Ks* magnitude along the RC as a function of
-metallity and color (Fig. 3 in that paper). The code also allows the
-average RC mass, the amount of stellar-population mass represented by
-each RC star, and the age distribution (Figs. 12, 13, and 14 in the
-above paper) to be computed. The tools in this package are kept
-general such that they can also be useful in defining other subsamples
-in APOGEE.
+of red clump (RC) stars as in `Bovy et al. 2014
+<http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__, to calculate
+the mean *Ks* magnitude along the RC as a function of metallity and
+color (Fig. 3 in that paper). The code also allows the average RC
+mass, the amount of stellar-population mass represented by each RC
+star, and the age distribution (Figs. 12, 13, and 14 in the above
+paper) to be computed. The tools in this package are kept general such
+that they can also be useful in defining other subsamples in APOGEE.
 
 RC catalog tools
 +++++++++++++++++
@@ -310,12 +310,12 @@ load different stellar-isochrone models and compute their
 properties. This is implemented in a general *apogee.samples.isomodel*
 class; the code particular to the RC lives in *apogee.samples.rc*,
 with *rcmodel* being the equivalent of the more general
-*isomodel*. This code requires the [isodist]
-(http://github.com/jobovy/isodist) library with accompanying data
+*isomodel*. This code requires the `isodist
+<http://github.com/jobovy/isodist>`__ library with accompanying data
 files; see the *isodist* website for info on how to obtain this.
 
 For example, we can load near-solar metallicity isochrones from the
-[PARSEC](http://stev.oapd.inaf.it/cgi-bin/cmd) library for the RC
+`PARSEC <http://stev.oapd.inaf.it/cgi-bin/cmd>`__ library for the RC
 using
 
 ```
