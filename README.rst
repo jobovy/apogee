@@ -88,7 +88,7 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *K*\ :sub:`*s*` magnitudes.
+*J*, *H*, and *K*\ :sub:`s` magnitudes.
 
 ``apokasc= apread.apokasc()``
 
@@ -142,7 +142,7 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sa
 mple (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-Ks* > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-*K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
 The selection function can be evaluated (as a function) by calling the instance. For example,::
 
@@ -260,12 +260,13 @@ different subsamples of the APOGEE data using stellar-evolution
 models. In particular, it contains methods to reproduce the selection
 of red clump (RC) stars as in `Bovy et al. 2014
 <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__, to calculate
-the mean *Ks* magnitude along the RC as a function of metallity and
-color (Fig. 3 in that paper). The code also allows the average RC
-mass, the amount of stellar-population mass represented by each RC
-star, and the age distribution (Figs. 12, 13, and 14 in the above
-paper) to be computed. The tools in this package are kept general such
-that they can also be useful in defining other subsamples in APOGEE.
+the mean *K*\ :sub:`s` magnitude along the RC as a function of
+metallity and color (Fig. 3 in that paper). The code also allows the
+average RC mass, the amount of stellar-population mass represented by
+each RC star, and the age distribution (Figs. 12, 13, and 14 in the
+above paper) to be computed. The tools in this package are kept
+general such that they can also be useful in defining other subsamples
+in APOGEE.
 
 RC catalog tools
 +++++++++++++++++
@@ -344,8 +345,8 @@ we can calculate distances as follows::
    rcd(0.65,0.02,11.)
    array([ 3.3412256])
 
-where the inputs to *rcd* are *J-Ks* color, metallicity *Z* (converted
-from [Fe/H]), and the apparant *Ks* magnitude.
+where the inputs to *rcd* are *J-*K*\ :sub:`s` color, metallicity *Z*
+(converted from [Fe/H]), and the apparant *K*\ :sub:`s` magnitude.
 
 We can also get the data from Figs. 12, 13, and 14. This can be
 achieved as follows::
