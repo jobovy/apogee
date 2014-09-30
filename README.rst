@@ -142,7 +142,7 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sa
 mple (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-*K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
 The selection function can be evaluated (as a function) by calling the instance. For example,::
 
@@ -345,7 +345,7 @@ we can calculate distances as follows::
    rcd(0.65,0.02,11.)
    array([ 3.3412256])
 
-where the inputs to *rcd* are *J-*K*\ :sub:`s` color, metallicity *Z*
+where the inputs to *rcd* are *J-K*\ :sub:`s` color, metallicity *Z*
 (converted from [Fe/H]), and the apparant *K*\ :sub:`s` magnitude.
 
 We can also get the data from Figs. 12, 13, and 14. This can be
