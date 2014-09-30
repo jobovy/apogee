@@ -96,11 +96,10 @@ reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
 
 Module **apogee.tools.read** also contains routines to read the
- various targeting-related files (see above).
-
-The module **apogee.tools.bitmask** has some tools for dealing with
- APOGEE bitmasks. In particular, it has methods to turn a numerical
- bit value into the string name of the bit:::
+various targeting-related files (see above). The module
+**apogee.tools.bitmask** has some tools for dealing with APOGEE
+bitmasks. In particular, it has methods to turn a numerical bit value
+into the string name of the bit:::
 
 from apogee.tools import bitmask
 bitmask.apogee_target1_string(11)
