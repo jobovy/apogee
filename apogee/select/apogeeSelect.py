@@ -10,6 +10,7 @@ warnings.filterwarnings('ignore','.*All-NaN.*',) #turn-off All-NaN warnings
 warnings.filterwarnings('ignore','.*invalid value encountered in .*',) #turn-off NaN warnings
 ##APOGEE TOOLS
 import apogee.tools.read as apread
+import apogee.tools.path as appath
 #Commissioning plates
 _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4829,4830,4809,4813,4814,4817,
@@ -33,7 +34,7 @@ class apogeeSelect:
     """Class that contains selection functions for APOGEE targets"""
     def __init__(self,sample='main',
                  locations=None,
-                 year=2,
+                 year=None,
                  sftype='constant',
                  minnspec=3,
                  frac4complete=1.,
@@ -54,7 +55,7 @@ class apogeeSelect:
                    sample is defined after observations), so main is typically
                    the better choice, since it has better statistics)
            locations= locations to load the selection function for
-           year= (2) load up to this year 
+           year= (None) load up to this year (automatically set based on APOGEE_REDUX
            sftype= ('constant') selection function type:
               - constant: selection function is # spec / # phot within a cohort
            minnspec= (3) minimum number of spectra in a field/cohort to be included
@@ -1206,11 +1207,16 @@ class apogeeSelect:
         self._nspec_long= nspec_long
         return None
 
-    def _process_obslog(self,locations=None,year=2,frac4complete=1.,
+    def _process_obslog(self,locations=None,year=None,frac4complete=1.,
                         dontcutcolorplates=False):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
-        origobslog= apread.obslog(year=year)
+        if year is None:
+            if appath._APOGEE_REDUX == 'v402': year= 2
+            elif appath._APOGEE_REDUX == 'v601': year= 3
+            else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
+        self._year= year
+        origobslog= apread.obslog(year=self._year)
         #Remove plates that only have pre-commissioning data
         indx= numpy.ones(len(origobslog),dtype='bool')
         for ii in range(len(origobslog)):
@@ -1233,7 +1239,6 @@ class apogeeSelect:
         self._obslog= obslog
         nplates= len(self._plates)
         #Read the plate and design files
-        self._year= year
         if self._year == 1:
             self._dr= '10'
         elif self._year == 2:
