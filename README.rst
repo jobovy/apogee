@@ -101,19 +101,19 @@ various targeting-related files (see above). The module
 bitmasks. In particular, it has methods to turn a numerical bit value
 into the string name of the bit::
 
-from apogee.tools import bitmask
-bitmask.apogee_target1_string(11)
-'APOGEE_SHORT'
-bitmask.apogee_target2_string(9)
-'APOGEE_TELLURIC'
+     from apogee.tools import bitmask
+     bitmask.apogee_target1_string(11)
+     'APOGEE_SHORT'
+     bitmask.apogee_target2_string(9)
+     'APOGEE_TELLURIC'
 
 There are also tools to figure out which bits are set for a given
 bitmask from the catalog and to test whether a given bit is set::
 
-bitmask.bits_set(-2147481584)
-[4, 11, 31]
-bitmask.bit_set(1,-2147481584)
-False
+	bitmask.bits_set(-2147481584)
+	[4, 11, 31]
+	bitmask.bit_set(1,-2147481584)
+	False
 
 APOGEE SELECTION FUNCTION
 ==========================
@@ -124,8 +124,8 @@ magnitude range(s) successfully observed spectroscopically. This code
 is contained in *apogee.select.apogeeSelect*. The selection function
 is loaded using::
 
-import apogee.select.apogeeSelect
-apo= apogee.select.apogeeSelect()
+   import apogee.select.apogeeSelect
+   apo= apogee.select.apogeeSelect()
 
 which will load the selection function for the full sample (this will
 take a few minutes). If only a few fields are needed, only those
@@ -146,12 +146,12 @@ mple (within the color and magnitude limits of the cohort).
 
 The selection function can be evaluated (as a function) by calling the instance. For example,::
 
-apo(4240,11.8)
-0.0043398099560346048
-apo(4242,12.7)
-0.0094522019334049405
-apo(4242,12.9)
-0.
+    apo(4240,11.8)
+    0.0043398099560346048
+    apo(4242,12.7)
+    0.0094522019334049405
+    apo(4242,12.9)
+    0.
 
 (all of the examples here use a preliminary version of the selection function for year1+2 APOGEE data; later versions might give slightly different answers and later years will give very different answers if the number of completed cohorts changes)
 
@@ -160,27 +160,27 @@ been completed yet (as of year1+2).
 
 To get a list of all locations that are part of the statistical sample (i.e., that have at least a single completed cohort), do::
 
-locs= apo.list_fields(cohort='all') #to get all locations
-locs= apo.list_fields(cohort='short') #to get all locations with a completed short cohort
-locs= apo.list_fields(cohort='medium') #to get all locations with a completed medium cohort
-locs= apo.list_fields(cohort='long') #to get all locations with a completed long cohort
-
+   locs= apo.list_fields(cohort='all') #to get all locations
+   locs= apo.list_fields(cohort='short') #to get all locations with a completed short cohort
+   locs= apo.list_fields(cohort='medium') #to get all locations with a completed medium cohort
+   locs= apo.list_fields(cohort='long') #to get all locations with a completed long cohort
+   
 To get the H-band limits for a field's cohort do::
 
-apo.Hmin(4240,cohort='short')
-apo.Hmax(4240,cohort='short')
+   apo.Hmin(4240,cohort='short')
+   apo.Hmax(4240,cohort='short')
 
 
 and similar for medium and long cohorts. We can also get the center of the plate in longitude and latitude, the radius within which targets are drawn, or the string name for each field::
 
-apo.glonGlat(4240)
-apo.radius(4240)
-apo.fieldName(4240)
+    apo.glonGlat(4240)
+    apo.radius(4240)
+    apo.fieldName(4240)
 
 The selection function can be plotted using::
 
-apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
-apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
+    apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
+    apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
 
 <img src="_readme_files/_selfunc_xy.png" alt="Selection function as a function of Galactic X and Y" width="350" />
 <img src="_readme_files/_selfunc_rz.png" alt="Selection function as a function of Galactocentric R and Z" width="350" />
@@ -225,8 +225,8 @@ The red line is the spectroscopic sample and the black line the
 photometric sample. We can calculate the K-S probability that the red
 and black distributions are the same::
 
-apo.check_consistency(4242)
-0.76457183071108814
+    apo.check_consistency(4242)
+    0.76457183071108814
 
 Thus, there is a very high probability that these two distributions
 are the same.
@@ -240,12 +240,12 @@ statistical sample, so that their relative frequency in the sample can
 be adjust to reflect that of the underlying photometric sample. For
 example,::
 
-import apogee.tools.read as apread
-allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
-#Do some cuts to the sample
-allStar= allStar[various cuts]
-#Now which part of the sample is statistical?
-statIndx= apo.determine_statistical(allStar)
+	import apogee.tools.read as apread
+	allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
+	#Do some cuts to the sample
+	allStar= allStar[various cuts]
+	#Now which part of the sample is statistical?
+	statIndx= apo.determine_statistical(allStar)
 
 *statIndx* now is an boolean index array that identifies the stars
  that are in the statistical sample.
@@ -287,13 +287,13 @@ For example, we can load near-solar metallicity isochrones from the
 `PARSEC <http://stev.oapd.inaf.it/cgi-bin/cmd>`__ library for the RC
 using::
 
-from apogee.samples.rc import rcmodel
-rc= rcmodel(Z=0.02)
+	from apogee.samples.rc import rcmodel
+	rc= rcmodel(Z=0.02)
 
 This command will take about a minute to execute. We can then plot the
-isochrones, similar to Fig. 2 in the APOGEE-RC paper::
+isochrones, similar to Fig. 2 in the APOGEE-RC paper
 
-rc.plot(nbins=101,conditional=True)
+``rc.plot(nbins=101,conditional=True)``
 
 which gives
 
@@ -301,14 +301,14 @@ which gives
 
 We can also calculate properties of the absolute magnitude distribution as a function of color::
 
-rc.mode(0.65)
--1.659
-rc.sigmafwhm(0.65)
-0.086539636654887273
+   rc.mode(0.65)
+   -1.659
+   rc.sigmafwhm(0.65)
+   0.086539636654887273
 
-and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution::
+and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution
 
-rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)
+``rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)``
 
 (this takes a while) which shows
 
@@ -319,9 +319,9 @@ stellar population's mass is present in the RC, and the amount of
 stellar population mass per RC star. These are all calculated as a
 function of log10(age), so a grid of those needs to be specified::
 
-lages= numpy.linspace(numpy.log10(0.8),1.,20)
-amass= rc.avgmass(lages)
-plot(lages,amass,'k-')
+	 lages= numpy.linspace(numpy.log10(0.8),1.,20)
+	 amass= rc.avgmass(lages)
+	 plot(lages,amass,'k-')
 
 which gives
 
@@ -329,8 +329,8 @@ which gives
 
 and::
 
-popmass= rc.popmass(lages)
-plot(lages,popmass,'k-')
+	popmass= rc.popmass(lages)
+	plot(lages,popmass,'k-')
 
 <img src="_readme_files/_rc_popmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
 
@@ -339,10 +339,10 @@ For convenience, the data in Figs. 3, 12, 13, and 14 in Bovy et
 al. 2014 has been stored as functions in this codebase. For example,
 we can calculate distances as follows::
 
-from apogee.samples.rc import rcdist
-rcd= rcdist()
-rcd(0.65,0.02,11.)
-array([ 3.3412256])
+   from apogee.samples.rc import rcdist
+   rcd= rcdist()
+   rcd(0.65,0.02,11.)
+   array([ 3.3412256])
 
 where the inputs to *rcd* are *J-Ks* color, metallicity *Z* (converted
 from [Fe/H]), and the apparant *Ks* magnitude.
@@ -350,16 +350,16 @@ from [Fe/H]), and the apparant *Ks* magnitude.
 We can also get the data from Figs. 12, 13, and 14. This can be
 achieved as follows::
 
-from apogee.samples.rc import rcpop
-rcp= rcpop()
+	 from apogee.samples.rc import rcpop
+	 rcp= rcpop()
 
 which sets up all of the required data. We can then get the average
 mass etc.::
 
-rcp.avgmass(0.,0.) #[Fe/H], log10 age
-2.1543462571654866
-rcp.popmass(0.,0.)
-38530.337516523861
+     rcp.avgmass(0.,0.) #[Fe/H], log10 age
+     2.1543462571654866
+     rcp.popmass(0.,0.)
+     38530.337516523861
 
 and we can plot them. E.g.,
 
