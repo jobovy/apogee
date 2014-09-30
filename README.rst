@@ -144,7 +144,7 @@ The basic algorithm to determine the selection function is very simple:
 mple (within the color and magnitude limits of the cohort).
 * Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
-The selection function can be evaluated (as a function) by calling the instance. For example,::
+The selection function can be evaluated (as a function) by calling the instance. For example::
 
     apo(4240,11.8)
     0.0043398099560346048
@@ -182,8 +182,13 @@ The selection function can be plotted using::
     apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
     apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
 
-<img src="_readme_files/_selfunc_xy.png" alt="Selection function as a function of Galactic X and Y" width="350" />
-<img src="_readme_files/_selfunc_rz.png" alt="Selection function as a function of Galactocentric R and Z" width="350" />
+.. image:: _readme_files/_selfunc_xy.png 
+   :alt: Selection function as a function of Galactic X and Y
+   :width: 350
+
+.. imageg:: _readme_files/_selfunc_rz.png
+   :alt: Selection function as a function of Galactocentric R and Z
+   :width: 350
 
 which gives a sense of the spatial dependence of the selection
 function (which is really a function of *H* and not distance; *H* is
