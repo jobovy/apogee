@@ -183,12 +183,8 @@ The selection function can be plotted using::
     apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
 
 .. image:: _readme_files/_selfunc_xy.png 
-   :scale: 10 % 
 
 .. image:: _readme_files/_selfunc_rz.png
-   :width: 50 %
-   :alt: Selection function as a function of Galactocentric R and Z
-   :align: right
    
 which gives a sense of the spatial dependence of the selection
 function (which is really a function of *H* and not distance; *H* is
@@ -199,7 +195,7 @@ and latitude
 
 ``apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)``
 
-<img src="_readme_files/_selfunc_lb_short.png" alt="Selection function as a function of Galactic longitude and latitude" width="650" />
+.. image:: _readme_files/_selfunc_lb_short.png
 
 This function can also show the number of photometric and
 spectroscopic targets, the H-band limits for each cohort, and the
@@ -211,7 +207,7 @@ as well as that of the spectroscopic sample and the photometric sample re-weight
 
 ``apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)``
 
-<img src="_readme_files/_colormag.png" alt="Color--magnitude distribution of the photometric and spectroscopic sample" width="450" />
+.. image:: _readme_files/_colormag.png
 
 This allows one to see that the spectroscopic sample (red) is a fair
 sampling of the underlying photometric sample (black), after
@@ -224,7 +220,7 @@ fraction) using
 
 which shows this for all completed cohorts in field 4242 (*090+00*):
 
-<img src="_readme_files/_hcdf_4242.png" alt="Cumulative H distribution for field 4242" width="600" />
+.. image:: _readme_files/_hcdf_4242.png
 
 The red line is the spectroscopic sample and the black line the
 photometric sample. We can calculate the K-S probability that the red
@@ -303,7 +299,7 @@ isochrones, similar to Fig. 2 in the APOGEE-RC paper
 
 which gives
 
-<img src="_readme_files/_rc_cmd.png" alt="RC CMD for solar metallicity" width="450" />
+.. image:: _readme_files/_rc_cmd.png
 
 We can also calculate properties of the absolute magnitude distribution as a function of color::
 
@@ -318,7 +314,7 @@ and we can make the same plot as above, but including the model, full-width, hal
 
 (this takes a while) which shows
 
-<img src="_readme_files/_rc_cmd_wmode.png" alt="RC CMD for solar metallicity, with mode, FWHM, and cuts" width="450" />
+.. image:: _readme_files/_rc_cmd_wmode.png
 
 We can also compute the average mass of an RC star, the fraction of a
 stellar population's mass is present in the RC, and the amount of
@@ -331,14 +327,14 @@ function of log10(age), so a grid of those needs to be specified::
 
 which gives
 
-<img src="_readme_files/_rc_avgmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
+.. image:: _readme_files/_rc_avgmass.png
 
 and::
 
 	popmass= rc.popmass(lages)
 	plot(lages,popmass,'k-')
 
-<img src="_readme_files/_rc_popmass.png" alt="Average mass as a function of age, Z=0.02" width="450" />
+.. image:: _readme_files/_rc_popmass.png
 
 
 For convenience, the data in Figs. 3, 12, 13, and 14 in Bovy et
