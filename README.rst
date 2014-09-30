@@ -99,7 +99,7 @@ Module **apogee.tools.read** also contains routines to read the
 various targeting-related files (see above). The module
 **apogee.tools.bitmask** has some tools for dealing with APOGEE
 bitmasks. In particular, it has methods to turn a numerical bit value
-into the string name of the bit:::
+into the string name of the bit::
 
 from apogee.tools import bitmask
 bitmask.apogee_target1_string(11)
@@ -108,7 +108,7 @@ bitmask.apogee_target2_string(9)
 'APOGEE_TELLURIC'
 
 There are also tools to figure out which bits are set for a given
-bitmask from the catalog and to test whether a given bit is set:::
+bitmask from the catalog and to test whether a given bit is set::
 
 bitmask.bits_set(-2147481584)
 [4, 11, 31]
@@ -299,7 +299,7 @@ which gives
 
 <img src="_readme_files/_rc_cmd.png" alt="RC CMD for solar metallicity" width="450" />
 
-We can also calculate properties of the absolute magnitude distribution as a function of color:::
+We can also calculate properties of the absolute magnitude distribution as a function of color::
 
 rc.mode(0.65)
 -1.659
