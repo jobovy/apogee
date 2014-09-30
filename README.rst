@@ -88,13 +88,15 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *K*\ :sub:`s` magnitudes. The *allStar* read function
-also has an option *rmdups=True* (default: False) that removes a small
-number of duplicates in the allStar file (these are mainly
-commissioning stars re-observed during the main surveys and a few
-stars in overlapping fields). The first time this option is used the
-read function may take about 10 minutes to remove all duplicates, but
-the duplicate-free file is then cached for re-use. Use as
+*J*, *H*, and *K*\ :sub:`s` magnitudes. 
+
+The *allStar* read function also has an option *rmdups=True* (default:
+False) that removes a small number of duplicates in the allStar file
+(these are mainly commissioning stars re-observed during the main
+surveys and a few stars in overlapping fields). The first time this
+option is used the read function may take about 10 minutes to remove
+all duplicates, but the duplicate-free file is then cached for
+re-use. Use as
 
 ``allStar= apread.allStar(rmcommissioning=True,rmdups=True)``
 
