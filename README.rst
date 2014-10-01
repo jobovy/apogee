@@ -96,13 +96,13 @@ False) that removes a small number of duplicates in the allStar file
 survey and a few stars in overlapping fields). The first time this
 option is used the read function may take about 10 minutes to remove
 all duplicates, but the duplicate-free file is then cached for
-re-use. Use as
+re-use. Use as::
 
-``allStar= apread.allStar(rmcommissioning=True,rmdups=True)``
+	allStar= apread.allStar(rmcommissioning=True,rmdups=True)
 
-We can read the APOKASC catalog using
+We can read the APOKASC catalog using::
 
-``apokasc= apread.apokasc()``
+   apokasc= apread.apokasc()
 
 This reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
@@ -129,9 +129,9 @@ bitmask from the catalog and to test whether a given bit is set::
 
 The final command run on an array of bitmasks will return a boolean
 index array of entries for which this bit is set. For example, to get
-the tellucircs in the allStar file do
+the tellucircs in the allStar file do::
 
-``telluricsIndx= bitmask.bit_set(9,allStar['APOGEE_TARGET2'])``
+    telluricsIndx= bitmask.bit_set(9,allStar['APOGEE_TARGET2'])
 
 If you want a quick reminder of what the various bits are, just
 display the bitmask dictionaries::
@@ -162,9 +162,9 @@ is loaded using::
 
 which will load the selection function for the full sample (this will
 take a few minutes). If only a few fields are needed, only those
-fields can be loaded by supplying the *locations=* keyword, e.g.,
+fields can be loaded by supplying the *locations=* keyword, e.g.::
 
-``apo= apogee.select.apogeeSelect(locations=[4240,4241,4242])``
+       apo= apogee.select.apogeeSelect(locations=[4240,4241,4242])
 
 will only load the fields *030+00*, *060+00*, and *090+00*. Locations
 are identified using their location_id.
@@ -223,9 +223,9 @@ function (which is really a function of *H* and not distance; *H* is
 converted to distance here assuming a red-clump like absolute
 magnitude and a fiducial extinction model). The selection function for
 a given cohort can also be plotted as a function of Galactic longitude
-and latitude
+and latitude::
 
-``apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)``
+apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
 
 .. image:: _readme_files/_selfunc_lb_short.png
 
@@ -235,9 +235,9 @@ probability that the spectroscopic sample was drawn from the
 photometric sample (through use of the *type=* keyword).
 
 The photometric sample's color--magnitude distribution can be shown,
-as well as that of the spectroscopic sample and the photometric sample re-weighted using the selection function
+as well as that of the spectroscopic sample and the photometric sample re-weighted using the selection function::
 
-``apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)``
+   apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.75)
 
 .. image:: _readme_files/_colormag.png
 
@@ -246,9 +246,9 @@ sampling of the underlying photometric sample (black), after
 correcting for the (simple) selection function (blue). For individual
 plates, the cumulative distribution in *H* can be compared for the
 photometric and spectroscopic samples (correcting for the selection
-fraction) using
+fraction) using::
 
-``apo.plot_Hcdf(4242)``
+	  apo.plot_Hcdf(4242)
 
 which shows this for all completed cohorts in field 4242 (*090+00*):
 
@@ -323,9 +323,9 @@ using::
 	rc= rcmodel(Z=0.02)
 
 This command will take about a minute to execute. We can then plot the
-isochrones, similar to Fig. 2 in the APOGEE-RC paper
+isochrones, similar to Fig. 2 in the APOGEE-RC paper::
 
-``rc.plot(nbins=101,conditional=True)``
+	    rc.plot(nbins=101,conditional=True)
 
 which gives
 
@@ -338,9 +338,9 @@ We can also calculate properties of the absolute magnitude distribution as a fun
    rc.sigmafwhm(0.65)
    0.086539636654887273
 
-and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution
+and we can make the same plot as above, but including the model, full-width, half-maximum, and the cuts that isolate the narrow part of the luminosity distribution::
 
-``rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)``
+    rc.plot(nbins=101,conditional=True,overlay_mode=True,overlay_cuts=True)
 
 (this takes a while) which shows
 
@@ -394,24 +394,24 @@ mass etc.::
      rcp.popmass(0.,0.)
      38530.337516523861
 
-and we can plot them. E.g.,
+and we can plot them. E.g.::
 
-``rcp.plot_avgmass()``
+    rcp.plot_avgmass()
 
-produces Fig. 12 and 
+produces Fig. 12 and::
 
-``rcp.plot_popmass()``
+	 rcp.plot_popmass()
 
 gives the bottom panel of Fig. 13. We can also calculate the age
-distribution
+distribution::
 
-``age_func= rcp.calc_age_pdf()``
+	age_func= rcp.calc_age_pdf()
 
 which returns a function that evaluates the age PDF for the
 solar-neighborhood metallicity distribution assumed in the paper. We
-can also directly plot it
+can also directly plot it::
 
-``rcp.plot_age_pdf()``
+    rcp.plot_age_pdf()
 
 which gives Fig. 14. More info on all of these functions is available
 in the docstrings.
