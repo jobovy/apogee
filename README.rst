@@ -225,7 +225,7 @@ magnitude and a fiducial extinction model). The selection function for
 a given cohort can also be plotted as a function of Galactic longitude
 and latitude::
 
-apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
+    apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
 
 .. image:: _readme_files/_selfunc_lb_short.png
 
