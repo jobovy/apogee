@@ -127,6 +127,21 @@ bitmask from the catalog and to test whether a given bit is set::
 	bitmask.bit_set(1,-2147481584)
 	False
 
+If you want a quick reminder of what the various bits are, just
+display the bitmask dictionaries::
+
+   bitmask.APOGEE_TARGET1
+   {0: 'APOGEE_FAINT',
+    1: 'APOGEE_MEDIUM',
+    2: 'APOGEE_BRIGHT',
+    3: 'APOGEE_IRAC_DERED',
+    ...}
+   bitmask.APOGEE_TARGET2
+   {1: 'APOGEE_FLUX_STANDARD',
+    2: 'APOGEE_STANDARD_STAR',
+    3: 'APOGEE_RV_STANDARD',
+    ...}
+
 APOGEE SELECTION FUNCTION
 ==========================
 
