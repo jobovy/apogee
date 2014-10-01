@@ -127,6 +127,12 @@ bitmask from the catalog and to test whether a given bit is set::
 	bitmask.bit_set(1,-2147481584)
 	False
 
+The final command run on an array of bitmasks will return a boolean
+index array of entries for which this bit is set. For example, to get
+the tellucircs in the allStar file do
+
+``telluricsIndx= bitmask.bit_set(9,allStar['APOGEE_TARGET2'])``
+
 If you want a quick reminder of what the various bits are, just
 display the bitmask dictionaries::
 
