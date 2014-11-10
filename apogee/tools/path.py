@@ -17,7 +17,7 @@
 #             - apogeeObjectPath: path of an apogeeObject file
 #             - apogeePlatePlate: path of the apogeePlate file
 #             - apokascPath: path of the APOKASC catalog
-#             - distPath: path of the file that has M. Hayden's distances
+#             - distPath: path of the file that has APOGEE distances
 #             - obslogPath: path of the observation log
 #             - rcsamplePath: path of the red clump sample file
 #             - apallPath: the path of the apall file (an early version of 
@@ -129,7 +129,7 @@ def apokascPath():
     return os.path.join(_APOGEE_DATA,
                         'APOKASC_Catalog.'+_APOGEE_APOKASC_REDUX+'.fits')
 
-def distPath(redux=None):
+def distPath(dr=None):
     """
     NAME:
        distPath
@@ -146,6 +146,7 @@ def distPath(redux=None):
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     if redux is None:
         redux= _APOGEE_REDUX
     if redux.lower() == 'v402':
@@ -336,3 +337,10 @@ def _default_dr():
     elif _APOGEE_REDUX == 'v601': dr= '12'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
+
+def _redux_dr(dr=None):
+    if dr is None: dr= _default_dr()
+    if dr == '10': return 'v304'
+    elif dr == '11' or dr == 'X': return 'v402'
+    elif dr == '12': return 'v601'
+    else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
