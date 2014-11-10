@@ -147,11 +147,11 @@ def distPath(dr=None):
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if redux is None:
-        redux= _APOGEE_REDUX
-    if redux.lower() == 'v402':
-        #return os.path.join(_APOGEE_DATA,
-        #                    'allStar+-v402.121114.fits')
+    redux= _redux_dr(dr=dr)
+    if redux.lower() == 'v601':
+        return os.path.join(_APOGEE_DATA,
+                            'apogee-distances_DR12_v1.fits')
+    elif redux.lower() == 'v402':
         return os.path.join(_APOGEE_DATA,
                             'allStar+-v402.130103.fits')
     elif redux.lower() == 'v302':
