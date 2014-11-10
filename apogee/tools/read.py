@@ -29,7 +29,7 @@ def allStar(rmcommissioning=True,
             akvers='targ',
             rmnovisits=False,
             adddist=False,
-            distredux='v302',
+            distredux=None,
             rmdups=False,
             raw=False):
     """
@@ -43,8 +43,8 @@ def allStar(rmcommissioning=True,
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
-       adddist= (default: False) add distances from Michael Hayden
-       distredux= (default: v302) reduction on which the distances are based
+       adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
+       distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
     OUTPUT:
@@ -100,14 +100,15 @@ def allStar(rmcommissioning=True,
     data['K0'][(data[aktag] <= -50.)]= -9999.9999
     #Add distances
     if adddist:
-        dist= fitsio.read(path.distPath(redux=distredux))
+        dist= fitsio.read(path.distPath(),1)
         h=esutil.htm.HTM()
         m1,m2,d12 = h.match(dist['RA'],dist['DEC'],
                              data['RA'],data['DEC'],
                              2./3600.,maxmatch=1)
         data= data[m2]
         dist= dist[m1]
-        if distredux.lower() == 'v302':
+        distredux= path._redux_dr()
+        if distredux.lower() == 'v302' or distredux.lower() == 'v304':
             data= esutil.numpy_util.add_fields(data,[('DM05', float),
                                                      ('DM16', float),
                                                      ('DM50', float),
@@ -137,6 +138,21 @@ def allStar(rmcommissioning=True,
             data['DMASS']= dist['DMASS'][:,1]
             data['DISO_GAL']= dist['DISO_GAL'][:,1]
             data['DMASS_GAL']= dist['DMASS_GAL'][:,1]
+        elif distredux.lower() == 'v601':
+            data= esutil.numpy_util.add_fields(data,[('HIP_PLX', float),
+                                                     ('HIP_E_PLX', float),
+                                                     ('RC_DIST', float),
+                                                     ('APOKASC_DIST_DIRECT', float),
+                                                     ('BPG_DIST1_MEAN', float),
+                                                     ('HAYDEN_DIST_PEAK', float),
+                                                     ('SCHULTHEIS_DIST', float)])
+            data['HIP_PLX']= dist['HIP_PLX']
+            data['HIP_E_PLX']= dist['HIP_E_PLX']
+            data['RC_DIST']= dist['RC_dist_pc']
+            data['APOKASC_DIST_DIRECT']= dist['APOKASC_dist_direct_pc']/1000.
+            data['BPG_DIST1_MEAN']= dist['BPG_dist1_mean']
+            data['HAYDEN_DIST_PEAK']= 10.**(dist['HAYDEN_distmod_PEAK']/5.-2.)
+            data['SCHULTHEIS_DIST']= dist['SCHULTHEIS_dist']
     if int(path._APOGEE_REDUX[1:]) > 600:
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
