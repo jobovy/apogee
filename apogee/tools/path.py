@@ -154,7 +154,7 @@ def distPath(dr=None):
     elif redux.lower() == 'v402':
         return os.path.join(_APOGEE_DATA,
                             'allStar+-v402.130103.fits')
-    elif redux.lower() == 'v302':
+    elif redux.lower() == 'v302' or redux.lower() == 'v304':
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
 
