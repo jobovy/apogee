@@ -48,27 +48,32 @@ variables. The environment variables are
 Most data files live in the $APOGEE_DATA directory. For example,
 allStar-$APOGEE_REDUX.fits, allVisit-$APOGEE_REDUX.fits, and
 APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits live there. Files related
-to the target selection live in a sub-directory **dr/**. This
-sub-directory mirrors the directory structure of targeting-related
-files on the SDSS-III `SAS <http://data.sdss3.org/sas/dr10/>`__:
+to the spectra and the target selection live in sub-directories
+**drXX/**. These sub-directories mirror the directory structure of
+spectra- and targeting-related files on the SDSS-III `SAS
+<http://data.sdss3.org/sas/dr10/>`__:
 
-* **$APOGEE_DATA/dr/apogee/target/**
+* **$APOGEE_DATA/dr10/apogee/target/**
 
 with sub-directories in that last *target/* directory
 
 * **apogee_DR10**
-* **apogee_DRX**
 
 These directories contain the apogeeDesign_DR10.fits,
 apogeeField_DR10.fits, apogeePlate_DR10.fits, and
-apogeeObject_DR10-FIELDNAME.fits files (for DRX, which are files that
-have not been released publicly yet, these filenames are the same, but
-without the *_DR10*). 
+apogeeObject_DR10-FIELDNAME.fits files (for DR11/DR12, which are files
+that have not been released publicly yet, these filenames are the
+same, but without the *_DR10*).
 
 For the target selection code to work, the allStar-$APOGEE_REDUX.fits,
 allVisit-$APOGEE_REDUX.fits files need to be present, as well as the
-targeting files in the *dr/* directory. The observation log
+targeting files in the *drXX/* directories. The observation log
 obs-summary-year1+2.csv also needs to be present.
+
+Files of individual spectra live in directories that mirror the SAS as
+well:
+
+* **$APOGEE_DATA/dr10/apogee/spectra/**
 
 Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files.
