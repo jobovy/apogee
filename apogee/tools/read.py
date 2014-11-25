@@ -438,7 +438,7 @@ def apogeeObject(field_name,dr=None,
     data['K0'][(data[aktag] <= -50.)]= -9999.9999
     return data
 
-def aspcapStar(loc_id,apogee_id,ext=1,dr=None):
+def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     """
     NAME:
        aspcapStar
@@ -448,16 +448,17 @@ def aspcapStar(loc_id,apogee_id,ext=1,dr=None):
        loc_id - location ID
        apogee_id - APOGEE ID of the star
        ext= (1) extension to load
+       header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
     OUTPUT:
-       aspcapStar file
+       aspcapStar file or (aspcapStar file, header)
     HISTORY:
        2014-11-25 - Written - Bovy (IAS)
     """
     filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr)
     if not os.path.exists(filePath):
         download.aspcapStar(loc_id,apogee_id,dr=dr)
-    data= fitsio.read(filePath,ext)
+    data= fitsio.read(filePath,ext,header=header)
     return data
 
 def mainIndx(data):
