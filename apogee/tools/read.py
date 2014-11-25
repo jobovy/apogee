@@ -21,7 +21,7 @@ import copy
 import numpy
 import esutil
 import fitsio
-from apogee.tools import path, paramIndx
+from apogee.tools import path, paramIndx, download
 _ERASESTR= "                                                                                "
 def allStar(rmcommissioning=True,
             main=False,
@@ -436,6 +436,28 @@ def apogeeObject(field_name,dr=None,
     data['J0'][(data[aktag] <= -50.)]= -9999.9999
     data['H0'][(data[aktag] <= -50.)]= -9999.9999
     data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    return data
+
+def aspcapStar(loc_id,apogee_id,ext=1,dr=None):
+    """
+    NAME:
+       aspcapStar
+    PURPOSE:
+       Read an aspcapStar file for a given star
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       ext= (1) extension to load
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       aspcapStar file
+    HISTORY:
+       2014-11-25 - Written - Bovy (IAS)
+    """
+    filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr)
+    if not os.path.exists(filePath):
+        download.aspcapStar(loc_id,apogee_id,dr=dr)
+    data= fitsio.read(filePath,ext)
     return data
 
 def mainIndx(data):

@@ -20,6 +20,7 @@
 #             - distPath: path of the file that has APOGEE distances
 #             - obslogPath: path of the observation log
 #             - rcsamplePath: path of the red clump sample file
+#             - aspcapStarPath: path of a aspcapStar file
 #             - apallPath: the path of the apall file (an early version of 
 #               allStar by JB, now deprecated)
 #
