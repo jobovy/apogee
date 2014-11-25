@@ -332,6 +332,51 @@ def apogeeObjectPath(field_name,dr=None):
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         filename)
 
+def aspcapStarPath(loc_id,apogee_id,dr=None):
+    """
+    NAME:
+       aspcapStarPath
+    PURPOSE:
+       returns the path of the aspcapStar file
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    HISTORY:
+       2014-11-25 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '10':
+        return os.path.join(specReduxPath,'r3','s3','a3',
+                            _redux_dr(dr=dr),'%i' % loc_id,
+                            'aspcapStar-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                       apogee_id))
+    elif dr == '12':
+        return os.path.join(specReduxPath,'r5','stars','l25_6d',
+                            _redux_dr(dr=dr),'%i' % loc_id,
+                            'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                          apogee_id))
+    
+def apogeeSpectroReduxDirPath(dr=None):
+    """
+    NAME:
+       apogeeSpectroReduxDirPath
+    PURPOSE:
+        returns the path of the spectro dir
+    INPUT:
+       dr= return the path corresponding to this data release       
+    OUTPUT:
+       path string
+    HISTORY:
+       2014-11-25 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                        'apogee','spectro','redux')
+   
 def _default_dr():
     if _APOGEE_REDUX == 'v304': dr= '10'
     elif _APOGEE_REDUX == 'v402': dr= '11'
