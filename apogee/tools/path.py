@@ -228,7 +228,8 @@ def apogeeTargetDirPath(dr=None):
        2012-11-04 - Edited for apogeeTargetDir - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    return os.path.join(_APOGEE_DATA,'dr','apogee','target','apogee_DR'+dr)
+    return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                        'apogee','target','apogee_DR'+dr)
     
 def apogeePlatePath(dr=None):
     """
@@ -248,7 +249,7 @@ def apogeePlatePath(dr=None):
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr == 'X' or dr == '12':
+    if dr == '11' or dr == '12':
         platename= 'apogeePlate.fits'
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
@@ -273,7 +274,7 @@ def apogeeDesignPath(dr=None):
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr == 'X' or dr == '12':
+    if dr == '11' or dr == '12':
         platename= 'apogeeDesign.fits'
     else:
         platename= 'apogeeDesign_DR%s.fits' % dr
@@ -298,7 +299,7 @@ def apogeeFieldPath(dr=None):
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr == 'X' or dr == '12':
+    if dr == '11' or dr == '12':
         platename= 'apogeeField.fits'
     else:
         platename= 'apogeeField_DR%s.fits' % dr
@@ -324,7 +325,7 @@ def apogeeObjectPath(field_name,dr=None):
        2012-11-04 - Edited for apogeeObject - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr == 'X' or dr == '12':
+    if dr == '11' or dr == '12':
         filename= 'apogeeObject_%s.fits' % field_name.strip()
     else:
         filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
@@ -333,7 +334,7 @@ def apogeeObjectPath(field_name,dr=None):
 
 def _default_dr():
     if _APOGEE_REDUX == 'v304': dr= '10'
-    elif _APOGEE_REDUX == 'v402': dr= 'X'
+    elif _APOGEE_REDUX == 'v402': dr= '11'
     elif _APOGEE_REDUX == 'v601': dr= '12'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -341,6 +342,6 @@ def _default_dr():
 def _redux_dr(dr=None):
     if dr is None: dr= _default_dr()
     if dr == '10': return 'v304'
-    elif dr == '11' or dr == 'X': return 'v402'
+    elif dr == '11' or dr == '11': return 'v402'
     elif dr == '12': return 'v601'
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
