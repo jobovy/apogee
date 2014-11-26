@@ -8,6 +8,9 @@
 ###############################################################################
 import os
 import sys
+import shutil
+import tempfile
+import subprocess
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'https://data.sdss.org/sas/bosswork'
@@ -46,7 +49,26 @@ def _download_file(downloadPath,filePath,dr):
         # make all intermediate directories
         os.makedirs(os.path.dirname(filePath)) 
     except OSError: pass
-    os.system('wget -q %s -O %s' % (downloadPath,filePath))
+    # Safe way of downloading
+    downloading= True
+    interrupted= False
+    file, tmp_savefilename= tempfile.mkstemp()
+    os.close(file) #Easier this way
+    while downloading:
+        try:
+            subprocess.check_call(['wget','-q','%s' % downloadPath,
+                                   '-O','%s' % tmp_savefilename])
+            shutil.move(tmp_savefilename,filePath)
+            downloading= False
+            if interrupted:
+                raise KeyboardInterrupt
+        except subprocess.CalledProcessError: #Assume KeyboardInterrupt
+            if not downloading:
+                raise
+            sys.stdout.write('\r'+"KeyboardInterrupt ignored while downloading ...\r")
+            sys.stdout.flush()
+            os.remove(tmp_savefilename)
+            interrupted= True
     sys.stdout.write('\r'+_ERASESTR+'\r')
     sys.stdout.flush()        
     return None
