@@ -78,6 +78,15 @@ well:
 Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files.
 
+**The apogee package will automatically attempt to download most of
+the data files, so provided you have setup APOGEE_DATA and
+APOGEE_REDUX, you will not have to download data files yourself to get
+started.** If you have access to proprietary data, you have to setup a
+.netrc file with the correct login credentials (see `here
+<https://trac.sdss3.org/wiki/Software/NetRc>`__). Please let me know
+if there are files that you would like to have added to the automatic
+downloading.
+
 BASIC USE
 ==========
 
