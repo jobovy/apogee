@@ -1,6 +1,12 @@
+import os.path
 import path as appath
+import download as download
 import fitsio
 try:
+    # Need to have allStar
+    filePath= appath.allStarPath()
+    if not os.path.exists(filePath):
+        download.allStar()
     indexArrays= fitsio.read(appath.allStarPath(),3)
 except ValueError:
     _INDEX_ARRAYS_LOADED= False
