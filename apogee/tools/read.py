@@ -108,7 +108,7 @@ def allStar(rmcommissioning=True,
         data= data[m2]
         dist= dist[m1]
         distredux= path._redux_dr()
-        if distredux.lower() == 'v302' or distredux.lower() == 'v304':
+        if distredux.lower() == 'v302' or distredux.lower() == path._DR10REDUX:
             data= esutil.numpy_util.add_fields(data,[('DM05', float),
                                                      ('DM16', float),
                                                      ('DM50', float),
@@ -129,7 +129,7 @@ def allStar(rmcommissioning=True,
             data['SIG_DM']= dist['SIG_DM']
             data['DIST_SOL']= dist['DIST_SOL']/1000.
             data['SIG_DISTSOL']= dist['SIG_DISTSOL']/1000.
-        elif distredux.lower() == 'v402':
+        elif distredux.lower() == path._DR11REDUX:
             data= esutil.numpy_util.add_fields(data,[('DISO', float),
                                                      ('DMASS', float),
                                                      ('DISO_GAL', float),
@@ -138,7 +138,7 @@ def allStar(rmcommissioning=True,
             data['DMASS']= dist['DMASS'][:,1]
             data['DISO_GAL']= dist['DISO_GAL'][:,1]
             data['DMASS_GAL']= dist['DMASS_GAL'][:,1]
-        elif distredux.lower() == 'v601':
+        elif distredux.lower() == path._DR12REDUX:
             data= esutil.numpy_util.add_fields(data,[('HIP_PLX', float),
                                                      ('HIP_E_PLX', float),
                                                      ('RC_DIST', float),

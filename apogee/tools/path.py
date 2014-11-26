@@ -38,6 +38,10 @@ if _APOGEE_APOKASC_REDUX is None:
     _APOGEE_APOKASC_REDUX= 'v7.3'
 _ASPCAP= True
 _CODEV= '1'
+# Reductions
+_DR10REDUX='v304'
+_DR11REDUX='v402'
+_DR12REDUX='v601'
 def apallPath(visit=False):
     """
     NAME:
@@ -70,7 +74,7 @@ def apallPath(visit=False):
             return os.path.join(_APOGEE_DATA,
                                 'allStar-'+_APOGEE_ASPCAP_REDUX+'.fits')
 
-def allStarPath():
+def allStarPath(dr=None):
     """
     NAME:
        allStarPath
@@ -87,8 +91,10 @@ def allStarPath():
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
+    redux= _redux_dr(dr=dr)
     return os.path.join(_APOGEE_DATA,
-                        'allStar-'+_APOGEE_REDUX+'.fits')
+                        'allStar-%s.fits' % redux)
 
 def allVisitPath():
     """
@@ -149,13 +155,13 @@ def distPath(dr=None):
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
-    if redux.lower() == 'v601':
+    if redux.lower() == _DR12REDUX:
         return os.path.join(_APOGEE_DATA,
                             'apogee-distances_DR12_v1.fits')
-    elif redux.lower() == 'v402':
+    elif redux.lower() == _DR11REDUX:
         return os.path.join(_APOGEE_DATA,
                             'allStar+-v402.130103.fits')
-    elif redux.lower() == 'v302' or redux.lower() == 'v304':
+    elif redux.lower() == 'v302' or redux.lower() == _DR10REDUX:
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
 
@@ -379,15 +385,15 @@ def apogeeSpectroReduxDirPath(dr=None):
                         'apogee','spectro','redux')
    
 def _default_dr():
-    if _APOGEE_REDUX == 'v304': dr= '10'
-    elif _APOGEE_REDUX == 'v402': dr= '11'
-    elif _APOGEE_REDUX == 'v601': dr= '12'
+    if _APOGEE_REDUX == _DR10REDUX: dr= '10'
+    elif _APOGEE_REDUX == _DR11REDUX: dr= '11'
+    elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
 
 def _redux_dr(dr=None):
     if dr is None: dr= _default_dr()
-    if dr == '10': return 'v304'
-    elif dr == '11' or dr == '11': return 'v402'
-    elif dr == '12': return 'v601'
+    if dr == '10': return _DR10REDUX
+    elif dr == '11' or dr == '11': return _DR11REDUX
+    elif dr == '12': return _DR12REDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
