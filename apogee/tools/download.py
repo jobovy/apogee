@@ -41,7 +41,7 @@ def allStar(dr=None):
     head, tail= os.path.split(downloadPath) #strips off filename
     downloadPath, tail= os.path.split(head) #strips off location_id
     downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
-    _download_file(downloadPath,filePath,dr)
+    _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
 def allVisit(dr=None):
@@ -69,7 +69,7 @@ def allVisit(dr=None):
     head, tail= os.path.split(downloadPath) #strips off filename
     downloadPath, tail= os.path.split(head) #strips off location_id
     downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
-    _download_file(downloadPath,filePath,dr)
+    _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
 def rcsample(dr=None):
@@ -122,7 +122,7 @@ def aspcapStar(loc_id,apogee_id,dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
-def _download_file(downloadPath,filePath,dr):
+def _download_file(downloadPath,filePath,dr,verbose=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))
     sys.stdout.flush()
@@ -137,8 +137,10 @@ def _download_file(downloadPath,filePath,dr):
     os.close(file) #Easier this way
     while downloading:
         try:
-            subprocess.check_call(['wget','-q','%s' % downloadPath,
-                                   '-O','%s' % tmp_savefilename])
+            cmd= ['wget','%s' % downloadPath,
+                  '-O','%s' % tmp_savefilename]
+            if not verbose: cmd.append('-q')
+            subprocess.check_call(cmd)
             shutil.move(tmp_savefilename,filePath)
             downloading= False
             if interrupted:
@@ -150,6 +152,9 @@ def _download_file(downloadPath,filePath,dr):
             sys.stdout.flush()
             os.remove(tmp_savefilename)
             interrupted= True
+        finally:
+            if os.path.exists(tmp_savefilename):
+                os.remove(tmp_savefilename)   
     sys.stdout.write('\r'+_ERASESTR+'\r')
     sys.stdout.flush()        
     return None
