@@ -81,7 +81,7 @@ def allStarPath(dr=None):
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       (none)
+       dr= return the path corresponding to this data release       
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -96,14 +96,14 @@ def allStarPath(dr=None):
     return os.path.join(_APOGEE_DATA,
                         'allStar-%s.fits' % redux)
 
-def allVisitPath():
+def allVisitPath(dr=None):
     """
     NAME:
        allVisitPath
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       (none)
+       dr= return the path corresponding to this data release       
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -113,8 +113,10 @@ def allVisitPath():
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
+    redux= _redux_dr(dr=dr)
     return os.path.join(_APOGEE_DATA,
-                        'allVisit-'+_APOGEE_REDUX+'.fits')
+                        'allVisit-%s.fits' % redux)
 
 def apokascPath():
     """
