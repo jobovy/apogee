@@ -52,6 +52,9 @@ def allStar(rmcommissioning=True,
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
     """
+    filePath= path.allStarPath()
+    if not os.path.exists(filePath):
+        download.allStar()
     #read allStar file
     data= fitsio.read(path.allStarPath())
     if raw: return data

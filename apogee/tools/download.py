@@ -15,6 +15,34 @@ from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'https://data.sdss.org/sas/bosswork'
 _ERASESTR= "                                                                                "
+def allStar(dr=None):
+    """
+    NAME:
+       allStar
+    PURPOSE:
+       download the allStar file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2014-11-26 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.allStarPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path, hacked from aspcapStar path
+    aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
+    downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
+                                               'dr%s' % dr),
+                                  _base_url(dr=dr))
+    head, tail= os.path.split(downloadPath) #strips off filename
+    downloadPath, tail= os.path.split(head) #strips off location_id
+    downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
 def aspcapStar(loc_id,apogee_id,dr=None):
     """
     NAME:
