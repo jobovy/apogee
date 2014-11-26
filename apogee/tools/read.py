@@ -307,6 +307,9 @@ def rcsample(main=False,dr=None):
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
     """
+    filePath= path.rcsamplePath(dr=dr)
+    if not os.path.exists(filePath):
+        download.rcsample(dr=dr)
     #read rcsample file
     data= fitsio.read(path.rcsamplePath(dr=dr))
     #Some cuts

@@ -14,6 +14,7 @@ import subprocess
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'https://data.sdss.org/sas/bosswork'
+_RC_URL= 'http://data.sdss3.org/sas/bosswork' # currently different
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
     """
@@ -68,6 +69,30 @@ def allVisit(dr=None):
     head, tail= os.path.split(downloadPath) #strips off filename
     downloadPath, tail= os.path.split(head) #strips off location_id
     downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
+def rcsample(dr=None):
+    """
+    NAME:
+       rcsample
+    PURPOSE:
+       download the rcsample file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2014-11-26 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.allVisitPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath=\
+        os.path.join(_base_url(dr=dr,rc=True),
+                     'apogee/vac/apogee-rc/cat/apogee-rc-DR%s.fits' % dr)
     _download_file(downloadPath,filePath,dr)
     return None
 
@@ -129,7 +154,8 @@ def _download_file(downloadPath,filePath,dr):
     sys.stdout.flush()        
     return None
 
-def _base_url(dr):
-    if dr == '10': return _DR10_URL
+def _base_url(dr,rc=False):
+    if rc: return _RC_URL
+    elif dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
     else: return -1
