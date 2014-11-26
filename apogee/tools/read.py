@@ -186,7 +186,10 @@ def allVisit(rmcommissioning=True,
     HISTORY:
        2013-11-07 - Written - Bovy (IAS)
     """
-    #read allStar file
+    filePath= path.allVisitPath()
+    if not os.path.exists(filePath):
+        download.allVisit()
+    #read allVisit file
     data= fitsio.read(path.allVisitPath())
     #Some cuts
     if rmcommissioning:
