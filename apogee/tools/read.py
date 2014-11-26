@@ -305,7 +305,7 @@ def rcsample(main=False,dr=None):
        2013-10-08 - Written - Bovy (IAS)
     """
     #read rcsample file
-    data= fitsio.read(path.rcsamplePath())
+    data= fitsio.read(path.rcsamplePath(dr=dr))
     #Some cuts
     if main:
         indx= mainIndx(data)
