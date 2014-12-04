@@ -14,7 +14,6 @@ import subprocess
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
-_RC_URL= 'http://data.sdss3.org/sas/bosswork' # currently different
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
     """
@@ -87,13 +86,13 @@ def rcsample(dr=None):
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
-    filePath= path.allVisitPath(dr=dr)
+    filePath= path.rcsamplePath(dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path
     downloadPath=\
-        os.path.join(_base_url(dr=dr,rc=True),
+        os.path.join(_base_url(dr=dr),
                      'apogee/vac/apogee-rc/cat/apogee-rc-DR%s.fits' % dr)
-    _download_file(downloadPath,filePath,dr)
+    _download_file(downloadPath,filePath,dr,verbose=False)
     return None
 
 def aspcapStar(loc_id,apogee_id,dr=None):
@@ -160,7 +159,6 @@ def _download_file(downloadPath,filePath,dr,verbose=False):
     return None
 
 def _base_url(dr,rc=False):
-    if rc: return _RC_URL
-    elif dr == '10': return _DR10_URL
+    if dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
     else: return -1
