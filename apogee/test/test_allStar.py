@@ -64,6 +64,11 @@ def test_extratarg():
     #Rm the tellurics that are main targets
     tellIndx*= (True-mainIndx)
     assert numpy.sum(tellIndx*(True-tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True-tellBitSet))
+    #1m
+    onemIndx= numpy.array(['apogee.apo1m' in s for s in _DATA['APSTAR_ID']])
+    onemBitSet= numpy.array([bitmask.bit_set(3,e) for e in _DATA['EXTRATARG']],
+                            dtype='bool')
+    assert numpy.sum(onemIndx*(True-onemBitSet)) == 0, '%i 1m targets do not have bit 3 in EXTRATARG set' % numpy.sum(onemIndx*(True-onemBitSet))
     return None
 
 def test_params_named():
