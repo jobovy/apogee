@@ -33,7 +33,7 @@ _APOGEE_APOKASC_REDUX= os.getenv('APOGEE_APOKASC_REDUX')
 # Reductions
 _DR10REDUX='v304'
 _DR11REDUX='v402'
-_DR12REDUX='v601'
+_DR12REDUX='v603'
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
 if _APOGEE_APOKASC_REDUX is None:
@@ -186,7 +186,7 @@ def rcsamplePath(dr=None):
     """
     if dr is None:
         if _APOGEE_REDUX == 'v402': dr= 'DR11'
-        elif _APOGEE_REDUX == 'v601': dr= 'DR12'
+        elif _APOGEE_REDUX == 'v603': dr= 'DR12'
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
     return os.path.join(_APOGEE_DATA,
                         'apogee-rc-%s.fits' % dr)
@@ -210,7 +210,7 @@ def obslogPath(year=None):
     """
     if year is None:
         if _APOGEE_REDUX == 'v402': year= 2
-        elif _APOGEE_REDUX == 'v601': year= 3
+        elif _APOGEE_REDUX == 'v603': year= 3
         else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,

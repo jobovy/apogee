@@ -42,7 +42,7 @@ This code depends on a number of data files and environment
 variables. The environment variables are
 
 * **APOGEE_DATA**: top-level directory with APOGEE data
-* **APOGEE_REDUX**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v601 for DR12)
+* **APOGEE_REDUX**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12)
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
 
 Most data files live in the $APOGEE_DATA directory. For example,

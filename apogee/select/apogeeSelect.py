@@ -1213,7 +1213,7 @@ class apogeeSelect:
         #First read the observation-log to determine which plates were observed
         if year is None:
             if appath._APOGEE_REDUX == 'v402': year= 2
-            elif appath._APOGEE_REDUX == 'v601': year= 3
+            elif appath._APOGEE_REDUX == 'v603': year= 3
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         self._year= year
         origobslog= apread.obslog(year=self._year)
