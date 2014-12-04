@@ -185,11 +185,11 @@ def rcsamplePath(dr=None):
        2012-10-08 - Edited for rcsample - Bovy (IAS)
     """
     if dr is None:
-        if _APOGEE_REDUX == 'v402': dr= 'DR11'
-        elif _APOGEE_REDUX == 'v603': dr= 'DR12'
+        if _APOGEE_REDUX == 'v402': dr= '11'
+        elif _APOGEE_REDUX == 'v603': dr= '12'
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
     return os.path.join(_APOGEE_DATA,
-                        'apogee-rc-%s.fits' % dr)
+                        'apogee-rc-DR%s.fits' % dr)
 
 def obslogPath(year=None):
     """
