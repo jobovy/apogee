@@ -95,7 +95,8 @@ def test_elem_named():
         elemval= copy.copy(_DATA['ELEM'][:,elemIndx(elem)])
         if elem in ferreOverM: elemval+= _DATA['FPARAM'][:,paramIndx('metals')]
         #BOVY: What about the following?
-        goodIndx= _DATA['FPARAM'][:,paramIndx('metals')] != -9999.
+        goodIndx= (_DATA['FPARAM'][:,paramIndx('metals')] != -9999.)\
+            *(_DATA[elem.upper()+'_H'] != -9999.)
         assert numpy.all(numpy.fabs(elemval[goodIndx]-_DATA[elem.upper()+'_H'][goodIndx]) < 10.**-10.), 'ELEM value for %s_H does not agree with named tag' % elem 
     return None
                 
