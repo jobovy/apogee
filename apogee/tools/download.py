@@ -13,7 +13,7 @@ import tempfile
 import subprocess
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
-_DR12_URL= ' http://data.sdss3.org/sas/dr12'
+_DR12_URL= 'http://data.sdss3.org/sas/dr12'
 _RC_URL= 'http://data.sdss3.org/sas/bosswork' # currently different
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
