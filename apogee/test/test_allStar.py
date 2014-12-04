@@ -43,12 +43,14 @@ def test_targflags_apogee_target2():
 
 def test_extratarg():
     #Test that extratarg tag is
-    # 0 for main survey targets, 
+    # 0 or 4 (duplicates) for main survey targets
     # 1 for commissioning (bit 1)
     # 2 for tellurics (bit 2)
+    # 3 1m (bit 3)
     mainIndx= (((_DATA['APOGEE_TARGET1'] & 2**11) != 0)\
                    +((_DATA['APOGEE_TARGET1'] & 2**12) != 0)
                +((_DATA['APOGEE_TARGET1'] & 2**13) != 0))
+    mainIndx*= (_DATA['EXTRATARG'] != 2**4) #rm duplicates
     #Also rm commissioning
     commIndx= _DATA['COMMISS'] == 1
     mainIndx*= (True-commIndx)
