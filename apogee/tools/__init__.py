@@ -1,4 +1,5 @@
 import os.path
+from scipy import optimize
 import path as appath
 import download as download
 import fitsio
@@ -54,3 +55,33 @@ def elemIndx(elem):
         return _ELEM_SYMBOL.index(elem.lower())
     except ValueError:
         raise KeyError("Element %s is not part of the APOGEE elements (can't do everything!) or something went wrong)" % elem)
+
+def vac2air(wave):
+    """
+    NAME:
+       vac2air
+    PURPOSE:
+       Convert from vacuum to air wavelengths (Morton 1991; see http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
+    INPUT:
+       wave - vacuum wavelength in \AA
+    OUTPUT:
+       air wavelength in \AA
+    HISTORY:
+       2014-12-04 - Written - Bovy (IAS)
+    """
+    return wave/(1.+2.735182*10.**-4.+131.4182/wave**2.+2.76249*10.**8./wave**4.)
+
+def air2vac(wave):
+    """
+    NAME:
+       air2vac
+    PURPOSE:
+       Convert from air to vacuum wavelengths (Morton 1991; see http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
+    INPUT:
+       wave - air wavelength in \AA
+    OUTPUT:
+       vacuum wavelength in \AA
+    HISTORY:
+       2014-12-04 - Written - Bovy (IAS)
+    """
+    return optimize.brentq(lambda x: vac2air(x)-wave,wave-100,wave+100.)
