@@ -470,6 +470,29 @@ def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
+def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
+    """
+    NAME:
+       apStar
+    PURPOSE:
+       Read an apStar file for a given star
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       ext= (1) extension to load
+       header= (True) if True, also return the header
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       apStar file or (apStar file, header)
+    HISTORY:
+       2015-01-13 - Written - Bovy (IAS)
+    """
+    filePath= path.apStarPath(loc_id,apogee_id,dr=dr)
+    if not os.path.exists(filePath):
+        download.apStar(loc_id,apogee_id,dr=dr)
+    data= fitsio.read(filePath,ext,header=header)
+    return data
+
 def mainIndx(data):
     """
     NAME:

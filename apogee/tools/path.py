@@ -20,6 +20,7 @@
 #             - distPath: path of the file that has APOGEE distances
 #             - obslogPath: path of the observation log
 #             - rcsamplePath: path of the red clump sample file
+#             - apStarPath: path of a apStar file
 #             - aspcapStarPath: path of a aspcapStar file
 #             - apallPath: the path of the apall file (an early version of 
 #               allStar by JB, now deprecated)
@@ -368,6 +369,32 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
                             _redux_dr(dr=dr),'%i' % loc_id,
                             'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
                                                           apogee_id))
+    
+def apStarPath(loc_id,apogee_id,dr=None):
+    """
+    NAME:
+       apStarPath
+    PURPOSE:
+       returns the path of the apStar file
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-01-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '10':
+        return os.path.join(specReduxPath,'r3','s3',
+                            '%i' % loc_id,
+                            'apStar-s3-%s.fits' % apogee_id)
+    elif dr == '12':
+        return os.path.join(specReduxPath,'r5','stars','apo25m',
+                            '%i' % loc_id,
+                            'apStar-r5-%s.fits' % apogee_id)
     
 def apogeeSpectroReduxDirPath(dr=None):
     """

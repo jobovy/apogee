@@ -2,9 +2,6 @@
 #
 #   apogee.tools.download: download APOGEE data files
 #
-#   contains:
-#
-#             - aspcapStar: download an aspcapStar file
 ###############################################################################
 import os
 import sys
@@ -113,6 +110,32 @@ def aspcapStar(loc_id,apogee_id,dr=None):
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
     filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                'dr%s' % dr),
+                                   _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
+def apStar(loc_id,apogee_id,dr=None):
+    """
+    NAME:
+       apStar
+    PURPOSE:
+       download an apStar file
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-01-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apStarPath(loc_id,apogee_id,dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
