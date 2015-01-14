@@ -349,7 +349,7 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
     PURPOSE:
        returns the path of the aspcapStar file
     INPUT:
-       loc_id - location ID
+       loc_id - location ID (field for 1m targets)
        apogee_id - APOGEE ID of the star
        dr= return the path corresponding to this data release
     OUTPUT:
@@ -365,10 +365,18 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
                             'aspcapStar-%s-%s.fits' % (_redux_dr(dr=dr),
                                                        apogee_id))
     elif dr == '12':
-        return os.path.join(specReduxPath,'r5','stars','l25_6d',
-                            _redux_dr(dr=dr),'%i' % loc_id,
-                            'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
-                                                          apogee_id))
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r5','stars','l25_6d',
+                                _redux_dr(dr=dr),loc_id.strip(),
+                                'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r5','stars','l25_6d',
+                                _redux_dr(dr=dr),'%i' % loc_id,
+                                'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))
     
 def apStarPath(loc_id,apogee_id,dr=None):
     """
