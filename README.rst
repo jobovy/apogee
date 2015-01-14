@@ -137,6 +137,19 @@ spectra as::
 
 	spec, hdr= apread.aspcapStar(4102,'2M21382701+4221097',ext=1)
 
+For objects observed with the NMSU 1m telescope (those with
+``TELESCOPE`` tag set to apo1m), we need to specify the ``FIELD``
+rather than the location ID. That is, do for example::
+
+       spec, hdr= apread.apStar('hip','2M00003088+5933348',ext=1)
+
+and::
+
+	spec, hdr= apread.aspcapStar('hip','2M00003088+5933348',ext=1)
+
+The ``FIELD`` can be directly fed from the allStar entry (whitespace
+will be automatically removed).
+
 Spectra will also be automatically downloaded if they are not
 available locally. Module **apogee.tools.read** also contains routines
 to read the various targeting-related files (see above). These are
