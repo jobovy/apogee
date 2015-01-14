@@ -377,7 +377,7 @@ def apStarPath(loc_id,apogee_id,dr=None):
     PURPOSE:
        returns the path of the apStar file
     INPUT:
-       loc_id - location ID
+       loc_id - location ID (field for 1m targets)
        apogee_id - APOGEE ID of the star
        dr= return the path corresponding to this data release
     OUTPUT:
@@ -392,9 +392,16 @@ def apStarPath(loc_id,apogee_id,dr=None):
                             '%i' % loc_id,
                             'apStar-s3-%s.fits' % apogee_id)
     elif dr == '12':
-        return os.path.join(specReduxPath,'r5','stars','apo25m',
-                            '%i' % loc_id,
-                            'apStar-r5-%s.fits' % apogee_id)
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r5','stars','apo1m',
+                                loc_id.strip(),
+                                'apStar-r5-%s.fits' % apogee_id)
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r5','stars','apo25m',
+                                '%i' % loc_id,
+                                'apStar-r5-%s.fits' % apogee_id)
     
 def apogeeSpectroReduxDirPath(dr=None):
     """

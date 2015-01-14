@@ -477,7 +477,7 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     PURPOSE:
        Read an apStar file for a given star
     INPUT:
-       loc_id - location ID
+       loc_id - location ID (field for 1m targets)
        apogee_id - APOGEE ID of the star
        ext= (1) extension to load
        header= (True) if True, also return the header
