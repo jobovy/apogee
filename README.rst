@@ -75,7 +75,40 @@ well:
 * **$APOGEE_DATA/dr10/apogee/spectra/**
 
 Routines in the *apogee.tools.path* module keep track of all of the
-paths to the different files.
+paths to the different files. A typical tree looks something like::
+
+      $APOGEE_DATA/
+	allStar-v603.fits
+	apogee-rc-DR12.fits
+	...
+	dr12/
+		apogee/
+			spectro/
+				redux/r5/stars/
+					apo25m/
+						4102/
+							apStar-r5-2M21353892+4229507.fits
+							...
+						...
+					apo1m/
+						hip/
+							apStar-r5-2M00003088+5933348.fits
+							...
+						...
+					l25_6d/v603/
+						4102/
+							aspcapStar-r5-v603-2M21353892+4229507.fits
+							...
+						...
+			target/
+				apogee_dr12/
+					apogeeDesign.fits
+					apogeeField.fits
+					apogeeObject_000+02.fits
+					...
+					apogeePlate.fits
+	dr10/
+	   *similar to dr12/*
 
 **The apogee package will automatically attempt to download most of
 the data files, so provided you have setup APOGEE_DATA and
