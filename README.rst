@@ -90,6 +90,9 @@ downloading.
 BASIC USE
 ==========
 
+File reading
+-------------
+
 The most basic capability of the code is to read various data produces
 and apply cuts (in *apogee.tools.read*). For example::
 
@@ -121,9 +124,26 @@ We can read the APOKASC catalog using::
 This reads the APOKASC catalog and matches and combines it with the allStar
 catalog.
 
+We can also read spectra as follows::
+
+   spec, hdr= apread.apStar(4102,'2M21353892+4229507',ext=1)
+
+where the first argument is the location ID and the second argument is
+the APOGEE ID. This reads the first extension of the `apStar
+<http://data.sdss3.org/datamodel/files/APOGEE_REDUX/APRED_VERS/APSTAR_VERS/TELESCOPE/LOCATION_ID/apStar.html>`_
+file; the header is also returned (set ``header=False`` to not read
+the header). Similarly, we can read pseudo-continuum-normalized
+spectra as::
+
+	spec, hdr= apread.aspcapStar(4102,'2M21382701+4221097',ext=1)
+
 Module **apogee.tools.read** also contains routines to read the
-various targeting-related files (see above). The module
-**apogee.tools.bitmask** has some tools for dealing with APOGEE
+various targeting-related files (see above). 
+
+Bitmasks
+---------
+
+The module **apogee.tools.bitmask** has some tools for dealing with APOGEE
 bitmasks. In particular, it has methods to turn a numerical bit value
 into the string name of the bit::
 
