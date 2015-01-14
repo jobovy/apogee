@@ -369,7 +369,7 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
             return os.path.join(specReduxPath,'r5','stars','l25_6d',
                                 _redux_dr(dr=dr),loc_id.strip(),
                                 'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
-                                                              apogee_id))
+                                                              apogee_id.strip()))
         elif loc_id ==1:
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
@@ -403,7 +403,7 @@ def apStarPath(loc_id,apogee_id,dr=None):
         if isinstance(loc_id,str): #1m
             return os.path.join(specReduxPath,'r5','stars','apo1m',
                                 loc_id.strip(),
-                                'apStar-r5-%s.fits' % apogee_id)
+                                'apStar-r5-%s.fits' % apogee_id.strip())
         elif loc_id ==1:
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
