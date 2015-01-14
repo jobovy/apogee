@@ -155,6 +155,13 @@ into the string name of the bit::
      bitmask.apogee_target2_string(9)
      'APOGEE_TELLURIC'
 
+Or we can find the numerical bit value for a given string name::
+
+   bitmask.apogee_target1_int('APOGEE_SHORT')
+   11
+   bitmask.apogee_target2_int('APOGEE_TELLURIC')
+   9
+
 There are also tools to figure out which bits are set for a given
 bitmask from the catalog and to test whether a given bit is set::
 
@@ -162,6 +169,7 @@ bitmask from the catalog and to test whether a given bit is set::
 	[4, 11, 31]
 	bitmask.bit_set(1,-2147481584)
 	False
+	bitmask.bit_set(bitmask.apogee_target2_int('APOGEE_TELLURIC'),-2147481584)
 
 The final command run on an array of bitmasks will return a boolean
 index array of entries for which this bit is set. For example, to get
