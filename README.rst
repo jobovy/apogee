@@ -51,7 +51,7 @@ APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits live there. Files related
 to the spectra and the target selection live in sub-directories
 **drXX/**. These sub-directories mirror the directory structure of
 spectra- and targeting-related files on the SDSS-III `SAS
-<http://data.sdss3.org/sas/dr12/>`__:
+<http://data.sdss3.org/sas/dr12/apogee>`__:
 
 * **$APOGEE_DATA/dr12/apogee/target/**
 
