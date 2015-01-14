@@ -175,7 +175,12 @@ The final command run on an array of bitmasks will return a boolean
 index array of entries for which this bit is set. For example, to get
 the tellucircs in the allStar file do::
 
+    telluricsIndx= bitmask.bit_set(bitmask.apogee_target2_int('APOGEE_TELLURIC'),allStar['APOGEE_TARGET2'])
+
+or shorter::
+
     telluricsIndx= bitmask.bit_set(9,allStar['APOGEE_TARGET2'])
+
 
 If you want a quick reminder of what the various bits are, just
 display the bitmask dictionaries::
