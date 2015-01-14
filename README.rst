@@ -91,7 +91,7 @@ BASIC USE
 ==========
 
 File reading
--------------
++++++++++++++
 
 The most basic capability of the code is to read various data produces
 and apply cuts (in *apogee.tools.read*). For example::
@@ -141,7 +141,7 @@ Module **apogee.tools.read** also contains routines to read the
 various targeting-related files (see above). 
 
 Bitmasks
----------
++++++++++
 
 The module **apogee.tools.bitmask** has some tools for dealing with APOGEE
 bitmasks. In particular, it has methods to turn a numerical bit value
