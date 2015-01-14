@@ -11,6 +11,7 @@ import subprocess
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
+_MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
     """
@@ -157,6 +158,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False):
     interrupted= False
     file, tmp_savefilename= tempfile.mkstemp()
     os.close(file) #Easier this way
+    ntries= 0
     while downloading:
         try:
             cmd= ['wget','%s' % downloadPath,
@@ -167,13 +169,16 @@ def _download_file(downloadPath,filePath,dr,verbose=False):
             downloading= False
             if interrupted:
                 raise KeyboardInterrupt
-        except subprocess.CalledProcessError: #Assume KeyboardInterrupt
-            if not downloading:
+        except subprocess.CalledProcessError:
+            if not downloading: #Assume KeyboardInterrupt
                 raise
+            elif ntries > _MAX_NTRIES:
+                raise IOError('File %s does not appear to exist on the server ...' % (os.path.basename(filePath)))
             sys.stdout.write('\r'+"KeyboardInterrupt ignored while downloading ...\r")
             sys.stdout.flush()
             os.remove(tmp_savefilename)
             interrupted= True
+            ntries+= 1
         finally:
             if os.path.exists(tmp_savefilename):
                 os.remove(tmp_savefilename)   
