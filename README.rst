@@ -79,6 +79,7 @@ paths to the different files. A typical tree looks something like::
 
       $APOGEE_DATA/
 	allStar-v603.fits
+	allVisit-v603.fits
 	apogee-rc-DR12.fits
 	...
 	dr12/
