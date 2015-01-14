@@ -137,8 +137,10 @@ spectra as::
 
 	spec, hdr= apread.aspcapStar(4102,'2M21382701+4221097',ext=1)
 
-Module **apogee.tools.read** also contains routines to read the
-various targeting-related files (see above). 
+Spectra will also be automatically downloaded if they are not
+available locally. Module **apogee.tools.read** also contains routines
+to read the various targeting-related files (see above). These are
+*not* automatically downloaded at this point.
 
 Bitmasks
 +++++++++
