@@ -51,19 +51,18 @@ APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits live there. Files related
 to the spectra and the target selection live in sub-directories
 **drXX/**. These sub-directories mirror the directory structure of
 spectra- and targeting-related files on the SDSS-III `SAS
-<http://data.sdss3.org/sas/dr10/>`__:
+<http://data.sdss3.org/sas/dr12/>`__:
 
-* **$APOGEE_DATA/dr10/apogee/target/**
+* **$APOGEE_DATA/dr12/apogee/target/**
 
 with sub-directories in that last *target/* directory
 
-* **apogee_DR10**
+* **apogee_DR12**
 
-These directories contain the apogeeDesign_DR10.fits,
-apogeeField_DR10.fits, apogeePlate_DR10.fits, and
-apogeeObject_DR10-FIELDNAME.fits files (for DR11/DR12, which are files
-that have not been released publicly yet, these filenames are the
-same, but without the *_DR10*).
+These directories contain the apogeeDesign_DR12.fits,
+apogeeField_DR12.fits, apogeePlate_DR12.fits, and
+apogeeObject_DR12-FIELDNAME.fits files (for DR10/DR11 there are
+similar directories).
 
 For the target selection code to work, the allStar-$APOGEE_REDUX.fits,
 allVisit-$APOGEE_REDUX.fits files need to be present, as well as the
