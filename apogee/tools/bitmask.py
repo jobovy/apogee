@@ -48,6 +48,8 @@ APOGEE_TARGET2={1:"APOGEE_FLUX_STANDARD",
                 16:"APOGEE_KEPLER_COOLDWARF",
                 17:"APOGEE_MIRCLUSTER_STAR",
                 31:"APOGEE_CHECKED"}
+APOGEE_TARGET1_STR= dict((value, key) for key, value in APOGEE_TARGET1.iteritems())
+APOGEE_TARGET2_STR= dict((value, key) for key, value in APOGEE_TARGET2.iteritems())
 def apogee_target1_string(bit):
     """
     NAME:
