@@ -138,7 +138,7 @@ spectra as::
 	spec, hdr= apread.aspcapStar(4102,'2M21382701+4221097',ext=1)
 
 For objects observed with the NMSU 1m telescope (those with
-``TELESCOPE`` tag set to apo1m), we need to specify the ``FIELD``
+``TELESCOPE`` tag set to ``apo1m``), we need to specify the ``FIELD``
 rather than the location ID. That is, do for example::
 
        spec, hdr= apread.apStar('hip','2M00003088+5933348',ext=1)
