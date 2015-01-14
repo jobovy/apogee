@@ -86,6 +86,42 @@ def apogee_target2_string(bit):
     except KeyError:
         raise KeyError("bit %i not recognized as an apogee_target2 bit" % bit)
 
+def apogee_target1_int(bitname):
+    """
+    NAME:
+       apogee_target1_int
+    PURPOSE:
+       return the bit of an APOGEE_TARGET1 string
+    INPUT:
+       bitname - name of the bit (like 'APOGEE_SHORT')
+    OUTPUT:
+       the bit (integer between 0 and 31)
+    HISTORY:
+       2015-01-14 - Written - Bovy (IAS)
+    """
+    try:
+        return APOGEE_TARGET1_STR[bitname]
+    except KeyError:
+        raise KeyError("bit name %s not recognized as an apogee_target1 bit" % bitname)
+
+def apogee_target2_int(bitname):
+    """
+    NAME:
+       apogee_target2_int
+    PURPOSE:
+       return the bit of an APOGEE_TARGET2 string
+    INPUT:
+       bitname - name of the bit (like 'APOGEE_TELLURIC')
+    OUTPUT:
+       the bit (integer between 0 and 31)
+    HISTORY:
+       2015-01-14 - Written - Bovy (IAS)
+    """
+    try:
+        return APOGEE_TARGET2_STR[bitname]
+    except KeyError:
+        raise KeyError("bit name %s not recognized as an apogee_target2 bit" % bitname)
+
 def bits_set(bits):
     """
     NAME:
