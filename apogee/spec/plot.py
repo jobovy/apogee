@@ -12,6 +12,7 @@ _LOG10LAMBDA0= 4.179
 _DLOG10LAMBDA= 6.*10.**-6.
 _NLAMBDA= 8575
 _LAMBDASUB= 15000
+_STARTENDSKIP= 30
 def specPlotInputDecorator(func):
     """Decorator to parse input to spectral plotting"""
     @wraps(func)
@@ -77,7 +78,7 @@ def waveregions(*args,**kwargs):
         startlams= kwargs.pop('startlams')
         endlams= kwargs.pop('endlams')
         startindxs= []
-        endindx= []
+        endindxs= []
         for ii in range(len(startlams)):
             startindxs.append(numpy.amin(numpy.fabs(startlams-args[0])))
             endindxs.append(numpy.amin(numpy.fabs(endlams-args[0])))
@@ -88,16 +89,22 @@ def waveregions(*args,**kwargs):
                              [590,1940,2857,4025,5070,5955,7400])
     nregions= len(startindxs)
     # Calculate the width of the plot
-    dx= numpy.array([args[0][endindxs[ii]]-args[0][startindxs[ii]] for ii in range(nregions)],
+    dx= numpy.array([args[0][numpy.amin([len(args[0])-1,endindxs[ii]])]\
+                         -args[0][numpy.amax([0,startindxs[ii]-1])] \
+                         for ii in range(nregions)],
                     dtype='float')
-    specdx= numpy.sum(dx) # for later
+    # Adjust 0 (and -1) to start (end) a little further
+    dx[0]= args[0][numpy.amin([len(args[0])-1,endindxs[0]])]\
+        -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])] 
+    dx[-1]= args[0][numpy.amin([len(args[0])-1,endindxs[-1]+_STARTENDSKIP])]\
+        -args[0][numpy.amax([0,startindxs[-1]-1])] 
     dx/= numpy.sum(dx)
     totdx= 0.85
     skipdx= 0.015
     dx*= (totdx-(nregions-1)*skipdx)
     # Setup plot
     if not kwargs.pop('overplot',False):
-        bovy_plot.bovy_print(fig_width=8.4,fig_height=3.,
+        bovy_plot.bovy_print(fig_width=8.4,fig_height=2.5,
                              axes_labelsize=10,text_fontsize=9,
                              legend_fontsize=9,
                              xtick_labelsize=8,ytick_labelsize=8)
@@ -116,8 +123,15 @@ def waveregions(*args,**kwargs):
         fig= pyplot.gcf()
         fig.sca(thisax)
         startindx, endindx= startindxs[ii], endindxs[ii]
-        xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
-                args[0][numpy.amin([len(args[0])-1,endindx])]-_LAMBDASUB]
+        if ii == 0:
+            xrange=[args[0][numpy.amax([0,startindx-_STARTENDSKIP])]-_LAMBDASUB,
+                    args[0][numpy.amin([len(args[0])-1,endindx+1])]-_LAMBDASUB]
+        elif ii == (nregions-1):
+            xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
+                    args[0][numpy.amin([len(args[0])-1,endindx+_STARTENDSKIP])]-_LAMBDASUB]
+        else:
+            xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
+                    args[0][numpy.amin([len(args[0])-1,endindx])]-_LAMBDASUB]
         thisax.plot(args[0][startindx:endindx]-_LAMBDASUB,
                     args[1][startindx:endindx],
                     *args[2:],**kwargs)
@@ -130,9 +144,9 @@ def waveregions(*args,**kwargs):
             thisax.yaxis.set_major_formatter(nullfmt)
         else:
             if apStar:
-                pyplot.ylabel(kwargs.get('ylabel',r'$F$'))
+                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)$'))
             else:
-                pyplot.ylabel(kwargs.get('ylabel',r'$F/F_c$'))
+                pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
         # Remove spines between different wavelength regions
         if ii == 0:
             thisax.spines['right'].set_visible(False)
