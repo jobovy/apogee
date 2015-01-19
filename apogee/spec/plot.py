@@ -124,9 +124,14 @@ def waveregions(*args,**kwargs):
        Plotting-specific keywords
           labelLines= (True) label some lines
           cleanZero= (True) replace zero entries with NaN
+          labelID= A string ID that will be placed in the top-left corner
+          labelTeff, labellogg, labelmetals, labelafe= parameter labels that will be placed in the top-right corner
           pyplot.plot args and kwargs
     OUTPUT:
        plot to output
+       The final axes allow one to put additional labels on the plot, e.g., for adding the APOGEE ID:
+       bovy_plot.bovy_text(r'$\mathrm{%s}$' % '2M02420597+0837017',top_left=True)       
+       Note that an ID (e.g., the apogee ID) and Teff, logg, metallicity, and alpha-enhancement labels can be added using the keywords label* above
     HISTORY:
        2015-01-18 - Written (based on older code) - Bovy (IAS)
     """
@@ -134,6 +139,12 @@ def waveregions(*args,**kwargs):
     apStar= kwargs.pop('apStar',False)
     labelLines= kwargs.pop('labelLines',True)
     cleanZero= kwargs.pop('cleanZero',True)
+    # Labels
+    labelID= kwargs.pop('labelID',None)
+    labelTeff= kwargs.pop('labelTeff',None)
+    labellogg= kwargs.pop('labellogg',None)
+    labelmetals= kwargs.pop('labelmetals',None)
+    labelafe= kwargs.pop('labelafe',None)
     # Clean bad lines
     if cleanZero:
         args[1][args[1] <= 0.]= numpy.nan
@@ -245,7 +256,7 @@ def waveregions(*args,**kwargs):
             _label_all_lines(args[0][startindx],args[0][endindx],
                              thisax,args[0],args[1])
     # Add the x-axis label
-    thisax= pyplot.axes([0.1,0.1,0.85,0.65])
+    thisax= pyplot.axes([0.1,0.1,0.85,0.8])
     pyplot.gcf().sca(thisax)
     thisax.spines['left'].set_visible(False)
     thisax.spines['right'].set_visible(False)
@@ -260,6 +271,44 @@ def waveregions(*args,**kwargs):
     thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
                       labelpad=10)
     thisax.set_zorder(-1)
+    # Start another axis object for later labeling
+    thisax= pyplot.axes([0.1,0.1,0.85,0.8])
+    pyplot.gcf().sca(thisax)
+    thisax.patch.set_facecolor('None')
+    thisax.set_zorder(10)
+    # Labels
+    if not labelID is None:
+        bovy_plot.bovy_text(r'$\mathrm{%s}$' % labelID,
+                            top_left=True,fontsize=10)
+    if not labelTeff is None or not labellogg is None \
+            or not labelmetals is None or not labelafe is None:
+        nParamLabels= int(not labelTeff is None)\
+            +int(not labellogg is None)\
+            +int(not labelmetals is None)\
+            +int(not labelafe is None)
+        # Label parameters
+        paramStr= ''
+        if not labelTeff is None:
+            paramStr+= r'T_\mathrm{eff}= %i\,\mathrm{K}' % (int(labelTeff))
+            nParamLabels-= 1
+            if nParamLabels > 0:
+                paramStr+= ',\ '
+        if not labellogg is None:
+            paramStr+= r'\log g= %.1f' % labellogg
+            nParamLabels-= 1
+            if nParamLabels > 0:
+                paramStr+= ',\ '
+        if not labelmetals is None:
+            paramStr+= r'[\mathrm{M/H}]= %.2f' % labelmetals
+            nParamLabels-= 1
+            if nParamLabels > 0:
+                paramStr+= ',\ '
+        if not labelafe is None:
+            paramStr+= r'[\alpha/\mathrm{M}]= %.2f' % labelafe
+            nParamLabels-= 1
+            if nParamLabels > 0:
+                paramStr+= ',\ '           
+        bovy_plot.bovy_text(r'$%s$' % paramStr,top_right=True,fontsize=10)
     return None
 
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
