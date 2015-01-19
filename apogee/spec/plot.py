@@ -189,10 +189,10 @@ def waveregions(*args,**kwargs):
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
-            left, bottom, width, height= 0.1, 0.1, dx[ii],0.8
+            left, bottom, width, height= 0.1, 0.125, dx[ii],0.8
         else:
             left, bottom, width, height= 0.1+numpy.cumsum(dx)[ii-1]+skipdx*ii,\
-                0.1, dx[ii], 0.8
+                0.125, dx[ii], 0.8
         thisax= pyplot.axes([left,bottom,width,height])
         fig= pyplot.gcf()
         fig.sca(thisax)
@@ -256,7 +256,7 @@ def waveregions(*args,**kwargs):
             _label_all_lines(args[0][startindx],args[0][endindx],
                              thisax,args[0],args[1])
     # Add the x-axis label
-    thisax= pyplot.axes([0.1,0.1,0.85,0.8])
+    thisax= pyplot.axes([0.1,0.125,0.85,0.8])
     pyplot.gcf().sca(thisax)
     thisax.spines['left'].set_visible(False)
     thisax.spines['right'].set_visible(False)
@@ -272,7 +272,7 @@ def waveregions(*args,**kwargs):
                       labelpad=10)
     thisax.set_zorder(-1)
     # Start another axis object for later labeling
-    thisax= pyplot.axes([0.1,0.1,0.85,0.8])
+    thisax= pyplot.axes([0.1,0.125,0.85,0.8])
     pyplot.gcf().sca(thisax)
     thisax.patch.set_facecolor('None')
     thisax.set_zorder(10)
