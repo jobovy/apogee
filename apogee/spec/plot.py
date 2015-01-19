@@ -29,28 +29,41 @@ line_labels['na']= r'$\mathrm{Na\kern 0.1em I}$'
 line_labels['mn']= r'$\mathrm{Mn\kern 0.1em I}$'
 line_labels['s']= r'$\mathrm{S\kern 0.1em I}$'
 line_labels['v']= r'$\mathrm{V\kern 0.1em I}$'
+line_labels['cob']= r'$\mathrm{Co\kern 0.1em I}$'
+line_labels['cu']= r'$\mathrm{Cu\kern 0.1em I}$'
 line_labels['oh']= r'$\mathrm{OH}$'
 line_labels['co']= r'$^{12}\!\mathrm{CO}$'
 line_labels['cn']= r'$\mathrm{CN}$'
 line_labels['13co']= r'$^{13}\!\mathrm{CO}$'
 line_labels['dib']= r'$\mathrm{DIB}$'
-_FEI_lines= [15198.644,15211.682,15399.925,15494.572,15652.786,15969.229,
-             16045.040,16157.660,16169.448,16697.635]
-_MGI_lines= [15745.017,15753.203,15770.108,15883.839,15890.541,15893.826,
-             15958.836]
-_ALI_lines= [16723.524,16767.938]
-_SII_lines= [15365.359,15381.033,15837.928,15964.424,16064.397,16099.184,
-             16220.100,16685.327,16832.756]
-_KI_lines= [15167.211,15172.521]
-_CAI_lines= [16141.2449,16155.176,16159.650,16161.778]
-_TII_lines= [15548.003,15607.106,15703.269,15719.867,16639.705]
-_CRI_lines= [15684.348,15864.548,15470.129]
-_NII_lines= [15609.944,15636.926,16588.970,16593.827,16678.266,16820.064,
-             16823.354]
-_NAI_lines= [16378.346633274852,16393.340725803333]
-_MNI_lines= [15221.569]
+# From Table 2 in Smith et al. (2013)
+_FEI_lines= [air2vac(l) for l in [15194.492,15207.526,15395.718,15490.339,
+                                  15648.510,15964.867,16040.657,16153.247,
+                                  16165.032]]
+_FEI_lines.append(16697.635) # one more from Shetrone
+# From Table 5
+_MGI_lines= [air2vac(l) for l in [15740.716,15748.9,15765.8,15879.5,
+                                  15886.2,15889.485,15954.477]]
+_ALI_lines= [air2vac(l) for l in [16718.957,16763.359]]
+_SII_lines= [air2vac(l) for l in [15361.161,15376.831,15833.602,15960.063,
+                                  16060.009,16094.787,16215.670,16680.770,
+                                  16828.159]]
+_KI_lines= [air2vac(l) for l in [15163.067,15168.376]]
+_CAI_lines= [air2vac(l) for l in [16136.823,16150.763,16155.236,16157.364]]
+_TII_lines= [air2vac(l) for l in [15543.756,15602.842,15698.979,15715.573,
+                                  16635.161]]
+_VI_lines= [air2vac(15924.)]
+_CRI_lines= [air2vac(l) for l in [15680.063,15860.214]]
+_MNI_lines= [air2vac(l) for l in [15159.,15217.,15262.]]
+_COI_lines= [air2vac(16757.7)]
+_NII_lines= [air2vac(l) for l in [15605.680,15632.654,16584.439,16589.295,
+                                  16673.711,16815.471,16818.760]]
+_CUI_lines= [air2vac(16005.7)]
+# From Katia Cunha
+_NAI_lines= [air2vac(16373.86),air2vac(16388.85)]
+# From Matthew Shetrone
 _SI_lines= [15406.540,15426.490,15474.043,15482.712]
-_VI_lines= [15929.2]
+# From Table 4 in Smith et al. (2013)
 _OH_lines= [air2vac(l) for l in [15279.5,15391.,15505.5,15570.5]]
 _CO_lines= [air2vac(l) for l in [15582.,15780.5,15988.,16189.5]]
 _CN_lines= [air2vac(l) for l in [15260.,15322.,15397.,15332.,15410.,
@@ -259,6 +272,8 @@ def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('mn',wavemin,wavemax,thisax,lams,spec)
     _label_lines('s',wavemin,wavemax,thisax,lams,spec)
     _label_lines('v',wavemin,wavemax,thisax,lams,spec)
+    _label_lines('cob',wavemin,wavemax,thisax,lams,spec)
+    _label_lines('cu',wavemin,wavemax,thisax,lams,spec)
     _label_lines('oh',wavemin,wavemax,thisax,lams,spec)
     _label_lines('co',wavemin,wavemax,thisax,lams,spec)
     _label_lines('cn',wavemin,wavemax,thisax,lams,spec)
@@ -292,6 +307,10 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
         lines= _SI_lines
     elif elem.lower() == 'v':
         lines= _VI_lines
+    elif elem.lower() == 'cu':
+        lines= _CUI_lines
+    elif elem.lower() == 'cob':
+        lines= _COI_lines
     elif elem.lower() == 'oh':
         lines= _OH_lines
     elif elem.lower() == 'co':
