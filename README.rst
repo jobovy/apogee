@@ -270,8 +270,8 @@ which gives
 .. image:: _readme_files/_aspcapPlot_example.png 
 		
 ``apogee.spec.plot.waveregions`` can plot arbitrary combinations of
-wavelength regions specified using (``startlams=``,``endlams=``) or
-(``startindxs=``,``endindxs=``) to either specify starting/ending
+wavelength regions specified using (``startlams=``, ``endlams=``) or
+(``startindxs=``, ``endindxs=``) to either specify starting/ending
 wavelengths or indices into the wavelength array. The default displays
 a selection of regions chosen to have every element included in the
 standard APOGEE abundance analysis. If ``labelLines=True`` (the
