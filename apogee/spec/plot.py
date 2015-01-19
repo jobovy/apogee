@@ -84,7 +84,8 @@ def specPlotInputDecorator(func):
                                    _LOG10LAMBDA0+_NLAMBDA*_DLOG10LAMBDA,
                                    _DLOG10LAMBDA)
             return func(lam,args[0],*args[1:],**kwargs)
-        elif isinstance(args[0],(int,str)) and isinstance(args[1],str):
+        elif isinstance(args[0],(int,numpy.short,str)) \
+                and isinstance(args[1],str):
             # location ID and APOGEE ID (loc ID can be string for 1m sample)
             if kwargs.get('apStar',False):
                 spec, hdr= apread.apStar(args[0],args[1],header=True,
@@ -122,6 +123,7 @@ def waveregions(*args,**kwargs):
           startindxs, endindxs= star and end index in the wavelength array of the various chunks
        Plotting-specific keywords
           labelLines= (True) label some lines
+          cleanZero= (True) replace zero entries with NaN
           pyplot.plot args and kwargs
     OUTPUT:
        plot to output
@@ -131,6 +133,10 @@ def waveregions(*args,**kwargs):
     # Grab non-pyplot.plot kwargs
     apStar= kwargs.pop('apStar',False)
     labelLines= kwargs.pop('labelLines',True)
+    cleanZero= kwargs.pop('cleanZero',True)
+    # Clean bad lines
+    if cleanZero:
+        args[1][args[1] <= 0.]= numpy.nan
     # Chunk parameters
     if 'startlams' in kwargs:
         # Turn startlams into a startindxs and similar for endlams
@@ -168,9 +174,7 @@ def waveregions(*args,**kwargs):
                              legend_fontsize=9,
                              xtick_labelsize=8,ytick_labelsize=8)
         pyplot.figure()
-    yrange= kwargs.get('yrange',
-                       [0.9*numpy.nanmin(args[1]),
-                        1.1*numpy.nanmax(args[1])])
+    yrange= kwargs.get('yrange',[0.2,1.2])
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
@@ -324,65 +328,66 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
     for line in lines:
         if line > wavemin and line < wavemax:
             spindx= numpy.argmin(numpy.fabs(line-lams))
+            ylevel= numpy.nanmin(spec[spindx-2:spindx+3])
             if elem == 'ca' and line > 16154. and line < 16156.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.6*spec[spindx],0.9*spec[spindx]],'k-',zorder=0)
+                            [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB+2,
-                                    0.55*spec[spindx],
+                                    0.55*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 'ca' and line > 16160. and line < 16162.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.55*spec[spindx],0.9*spec[spindx]],'k:',zorder=0)
+                            [0.55*ylevel,0.9*ylevel],'k:',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB+2,
-                                    0.5*spec[spindx],
+                                    0.5*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 'fe' and line > 16156. and line < 16158.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.45*spec[spindx],0.9*spec[spindx]],'k:',zorder=1)
+                            [0.45*ylevel,0.9*ylevel],'k:',zorder=1)
                 bovy_plot.bovy_text(line-_LAMBDASUB,
-                                    0.4*spec[spindx],
+                                    0.4*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 's' and line > 15482. and line < 15483.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.6*spec[spindx],0.9*spec[spindx]],'k-')
+                            [0.6*ylevel,0.9*ylevel],'k-')
                 bovy_plot.bovy_text(line-_LAMBDASUB,
-                                    0.55*spec[spindx],
+                                    0.55*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 'cn' and line > 15485. and line < 15488.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.7*spec[spindx],0.9*spec[spindx]],'k-')
+                            [0.7*ylevel,0.9*ylevel],'k-')
                 bovy_plot.bovy_text(line-_LAMBDASUB+2.5,
-                                    0.65*spec[spindx],
+                                    0.65*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 'fe' and line > 15494. and line < 15495.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.6*spec[spindx],0.9*spec[spindx]],'k-',zorder=0)
+                            [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB+2,
-                                    0.55*spec[spindx],
+                                    0.55*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             else:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.7*spec[spindx],0.9*spec[spindx]],'k-')
+                            [0.7*ylevel,0.9*ylevel],'k-')
                 bovy_plot.bovy_text(line-_LAMBDASUB,
-                                    0.65*spec[spindx],
+                                    0.65*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
