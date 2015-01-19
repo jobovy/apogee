@@ -243,6 +243,33 @@ display the bitmask dictionaries::
     3: 'APOGEE_RV_STANDARD',
     ...}
 
+
+Plotting
++++++++++
+
+The ``apogee`` module also contains some functionality to plot the
+APOGEE spectra in ``apogee.spec.plot``. For example, to make a nice
+plot of the pseudo-continuum-normalized aspcapStar spectrum of entry
+3512 in the subsample of S/N > 200 stars in the DR12 red-clump
+catalog, do::
+
+   import apogee.tools.read as apread
+   import apogee.spec.plot as splot
+   data= apread.rcsample()
+   indx= data['SNR'] > 200.
+   data= data[indx]
+   splot.waveregions(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=1,
+                     labelID=data[3512]['APOGEE_ID'],
+		     labelTeff=data[3512]['TEFF'],
+		     labellogg=data[3512]['LOGG'],
+		     labelmetals=data[3512]['METALS'],
+		     labelafe=data[3512]['ALPHAFE'])
+
+which gives
+
+.. image:: _readme_files/_aspcapPlot_example.png 
+		
+
 APOGEE SELECTION FUNCTION
 ==========================
 
