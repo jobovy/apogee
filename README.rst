@@ -338,6 +338,8 @@ many. Similarly, the green and red detector are given by::
 
 .. image:: _readme_files/_detectorGreenPlot_example.png 
 
+and::
+
    splot.detector(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
                   'red',ext=1,labelLines=False,
                   labelID=data[3512]['APOGEE_ID'],
