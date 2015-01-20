@@ -311,7 +311,43 @@ which gives
 
 To plot a whole detector, use ``apogee.spec.plot.detector`` in the
 same way, but specify the detector (``'blue'``, ``'green'``, or
-``'red'``) as an additional argument.
+``'red'``) as an additional argument. For example::
+   
+   splot.detector(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                  'blue',ext=1,labelLines=False,
+                  labelID=data[3512]['APOGEE_ID'],
+                  labelTeff=data[3512]['TEFF'],
+                  labellogg=data[3512]['LOGG'],
+                  labelmetals=data[3512]['METALS'],
+                  labelafe=data[3512]['ALPHAFE'])
+
+which gives
+
+.. image:: _readme_files/_detectorPlot_example.png 
+
+We haven't labeled the lines here, because there are so
+many. Similarly, the green and red detector are given by::
+
+   splot.detector(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                  'green',ext=1,labelLines=False,
+                  labelID=data[3512]['APOGEE_ID'],
+                  labelTeff=data[3512]['TEFF'],
+                  labellogg=data[3512]['LOGG'],
+                  labelmetals=data[3512]['METALS'],
+                  labelafe=data[3512]['ALPHAFE'])
+
+.. image:: _readme_files/_detectorGreenPlot_example.png 
+
+   splot.detector(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                  'red',ext=1,labelLines=False,
+                  labelID=data[3512]['APOGEE_ID'],
+                  labelTeff=data[3512]['TEFF'],
+                  labellogg=data[3512]['LOGG'],
+                  labelmetals=data[3512]['METALS'],
+                  labelafe=data[3512]['ALPHAFE'])
+
+.. image:: _readme_files/_detectorRedPlot_example.png 
+
 		
 APOGEE SELECTION FUNCTION
 ==========================
