@@ -236,7 +236,7 @@ def waveregions(*args,**kwargs):
             thisax.yaxis.set_major_formatter(nullfmt)
         elif not overplot:
             if apStar:
-                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)\,(10^{-17}\,\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
+                pyplot.ylabel(kwargs.get('ylabel',r'$f_\lambda(\lambda)\,(10^{-17}\,\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
             else:
                 pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
         # Remove spines between different wavelength regions
