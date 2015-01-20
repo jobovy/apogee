@@ -177,6 +177,14 @@ def waveregions(*args,**kwargs):
     if nregions == 1: #special case
         dx= [args[0][numpy.amin([len(args[0])-1,endindxs[0]+_STARTENDSKIP])]\
                  -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])]]
+    # Determine a good step for the tickmarks
+    tickStepTmp= numpy.log10(numpy.sum(dx)/10.) % 1
+    if tickStepTmp > numpy.log10(1.5) and tickStepTmp < numpy.log10(3.5):
+        tickStep= 2.*10.**int(numpy.log10(numpy.sum(dx)/10.))
+    elif tickStepTmp > numpy.log10(3.5) and tickStepTmp < numpy.log10(7.5):
+        tickStep= 5.*10.**int(numpy.log10(numpy.sum(dx)/10.))
+    else:
+        tickStep= 10.**int(numpy.log10(numpy.sum(dx)/10.))
     dx/= numpy.sum(dx)
     totdx= 0.85
     skipdx= 0.015
@@ -220,7 +228,7 @@ def waveregions(*args,**kwargs):
                     *args[2:],**kwargs)
         thisax.set_xlim(xrange[0],xrange[1])
         thisax.set_ylim(yrange[0],yrange[1])
-        thisax.xaxis.set_major_locator(ticker.MultipleLocator(20.))
+        thisax.xaxis.set_major_locator(ticker.MultipleLocator(tickStep))
         bovy_plot._add_ticks()
         if ii > 0:
             nullfmt   = NullFormatter()         # no labels
@@ -322,6 +330,38 @@ def waveregions(*args,**kwargs):
         bovy_plot.bovy_text(r'$%s$' % paramStr,top_right=True,fontsize=10)
     return None
 
+@specPlotInputDecorator
+def detector(*args,**kwargs):
+    """
+    NAME:
+       detector
+    PURPOSE:
+       plot the spectrum from one of the detectors
+    INPUT:
+       Either:
+          (a) wavelength, spectrum (\AA,spectrum units)
+          (b) spectrum (assumed on standard APOGEE re-sampled wavelength grid)
+          (c) location ID, APOGEE ID (default loads aspcapStar, loads extension ext(=1); apStar=True loads apStar spectrum)
+       +'blue', 'green', 'red' to pick the detector
+    KEYWORDS:
+       apogee.spec.plot.waveregions keywords
+    OUTPUT:
+       plot to output
+    HISTORY:
+       2015-01-19 - Written - Bovy (IAS)
+    """
+    if len(args) > 2 and args[2].lower() == 'green':
+        startindxs= [3505]
+        endindxs= [6150]
+    elif len(args) > 2 and args[2].lower() == 'red':
+        startindxs= [6282]
+        endindxs= [8404]
+    else: #blue
+        startindxs= [188]
+        endindxs= [3322]
+    return waveregions(args[0],args[1],startindxs=startindxs,endindxs=endindxs,
+                       *args[3:],**kwargs)
+
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
     _label_lines('mg',wavemin,wavemax,thisax,lams,spec)
@@ -389,6 +429,7 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
         if line > wavemin and line < wavemax:
             spindx= numpy.argmin(numpy.fabs(line-lams))
             ylevel= numpy.nanmin(spec[spindx-2:spindx+3])
+            if numpy.isnan(ylevel): continue
             if elem == 'ca' and line > 16154. and line < 16156.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
                             [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
