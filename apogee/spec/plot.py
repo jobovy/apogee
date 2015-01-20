@@ -174,6 +174,9 @@ def waveregions(*args,**kwargs):
         -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])] 
     dx[-1]= args[0][numpy.amin([len(args[0])-1,endindxs[-1]+_STARTENDSKIP])]\
         -args[0][numpy.amax([0,startindxs[-1]-1])] 
+    if nregions == 1: #special case
+        dx= [args[0][numpy.amin([len(args[0])-1,endindxs[0]+_STARTENDSKIP])]\
+                 -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])]]
     dx/= numpy.sum(dx)
     totdx= 0.85
     skipdx= 0.015
@@ -200,9 +203,12 @@ def waveregions(*args,**kwargs):
         fig= pyplot.gcf()
         fig.sca(thisax)
         startindx, endindx= startindxs[ii], endindxs[ii]
-        if ii == 0:
+        if ii == 0 and nregions == 1:
             xrange=[args[0][numpy.amax([0,startindx-_STARTENDSKIP])]-_LAMBDASUB,
-                    args[0][numpy.amin([len(args[0])-1,endindx+1])]-_LAMBDASUB]
+                    args[0][numpy.amin([len(args[0])-1,endindx+_STARTENDSKIP])]-_LAMBDASUB]
+        elif ii == 0:
+            xrange=[args[0][numpy.amax([0,startindx-_STARTENDSKIP])]-_LAMBDASUB,
+                    args[0][numpy.amin([len(args[0])-1,endindx])]-_LAMBDASUB]
         elif ii == (nregions-1):
             xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
                     args[0][numpy.amin([len(args[0])-1,endindx+_STARTENDSKIP])]-_LAMBDASUB]
@@ -225,14 +231,14 @@ def waveregions(*args,**kwargs):
             else:
                 pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
         # Remove spines between different wavelength regions
-        if ii == 0:
+        if ii == 0 and not nregions == 1:
             thisax.spines['right'].set_visible(False)
             thisax.tick_params(right=False,which='both')
-        elif ii == (nregions-1):
+        elif ii == (nregions-1) and not nregions == 1:
             thisax.spines['left'].set_visible(False)
             thisax.tick_params(labelleft='off')
             thisax.tick_params(left=False,which='both')
-        else:
+        elif not nregions == 1:
             thisax.spines['left'].set_visible(False)
             thisax.spines['right'].set_visible(False)
             thisax.tick_params(labelleft='off')
@@ -243,13 +249,13 @@ def waveregions(*args,**kwargs):
         cutOutkwargs = dict(transform=thisax.transAxes,color='k',
                             clip_on=False)
         slope= 1./(dx[ii]+0.2*skipdx)/3.
-        if ii == 0:
+        if ii == 0 and not nregions == 1:
             thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
             thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
-        elif ii == (nregions-1):
+        elif ii == (nregions-1) and not nregions == 1:
             thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
             thisax.plot((-slope*d,+slope*d),(1-d,1+d), **cutOutkwargs)
-        else:
+        elif not nregions == 1:
             thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
             thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
             thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
@@ -259,26 +265,28 @@ def waveregions(*args,**kwargs):
             _label_all_lines(args[0][startindx],args[0][endindx],
                              thisax,args[0],args[1])
     # Add the x-axis label
-    thisax= pyplot.axes([0.1,0.125,0.85,0.8])
-    pyplot.gcf().sca(thisax)
-    thisax.spines['left'].set_visible(False)
-    thisax.spines['right'].set_visible(False)
-    thisax.spines['bottom'].set_visible(False)
-    thisax.spines['top'].set_visible(False)
-    thisax.tick_params(labelleft='off')
-    thisax.tick_params(left=False,which='both')
-    thisax.tick_params(right=False,which='both')
-    thisax.tick_params(labelbottom='off')
-    thisax.tick_params(bottom=False,which='both')
-    thisax.tick_params(top=False,which='both')
+    if not nregions == 1:
+        thisax= pyplot.axes([0.1,0.125,0.85,0.8])
+        pyplot.gcf().sca(thisax)
+        thisax.spines['left'].set_visible(False)
+        thisax.spines['right'].set_visible(False)
+        thisax.spines['bottom'].set_visible(False)
+        thisax.spines['top'].set_visible(False)
+        thisax.tick_params(labelleft='off')
+        thisax.tick_params(left=False,which='both')
+        thisax.tick_params(right=False,which='both')
+        thisax.tick_params(labelbottom='off')
+        thisax.tick_params(bottom=False,which='both')
+        thisax.tick_params(top=False,which='both')
     thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
-                      labelpad=10)
-    thisax.set_zorder(-1)
-    # Start another axis object for later labeling
-    thisax= pyplot.axes([0.1,0.125,0.85,0.8])
-    pyplot.gcf().sca(thisax)
-    thisax.patch.set_facecolor('None')
-    thisax.set_zorder(10)
+                      labelpad=10-(nregions == 1)*10)
+    if not nregions == 1:
+        thisax.set_zorder(-1)
+        # Start another axis object for later labeling
+        thisax= pyplot.axes([0.1,0.125,0.85,0.8])
+        pyplot.gcf().sca(thisax)
+        thisax.patch.set_facecolor('None')
+        thisax.set_zorder(10)
     # Labels
     if not labelID is None:
         bovy_plot.bovy_text(r'$\mathrm{%s}$' % labelID,
