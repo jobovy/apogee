@@ -276,8 +276,39 @@ wavelengths or indices into the wavelength array. The default displays
 a selection of regions chosen to have every element included in the
 standard APOGEE abundance analysis. If ``labelLines=True`` (the
 default), strong, clean lines from `Smith et al. (2013)
-<http://adsabs.harvard.edu/abs/2013ApJ...765...16S>`__ are labeled.
+<http://adsabs.harvard.edu/abs/2013ApJ...765...16S>`__ are labeled. We
+can also overlay the best-fit model spectrum::
 
+   splot.waveregions(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'r-',
+                     ext=3,overplot=True,
+                     labelID=data[3512]['APOGEE_ID'],
+		     labelTeff=data[3512]['TEFF'],
+		     labellogg=data[3512]['LOGG'],
+		     labelmetals=data[3512]['METALS'],
+		     labelafe=data[3512]['ALPHAFE'])
+
+which gives
+
+.. image:: _readme_files/_aspcapPlotwModel_example.png 
+		
+By plotting the error array (``ext=2``) you can see that the regions
+with a large discrepancy between the model and the data are regions
+with large errors (due to sky lines).
+
+The same ``apogee.spec.plot.waveregions`` can also plot the
+non-continuum-normalized spectrum (``apStar`` in APOGEE parlance)::
+
+   splot.waveregions(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=1,
+		     apStar=True,labelID=data[3512]['APOGEE_ID'],
+		     labelTeff=data[3512]['TEFF'],
+		     labellogg=data[3512]['LOGG'],
+		     labelmetals=data[3512]['METALS'],
+		     labelafe=data[3512]['ALPHAFE'])
+
+which gives
+
+.. image:: _readme_files/_apStarPlot_example.png 
+		
 APOGEE SELECTION FUNCTION
 ==========================
 
