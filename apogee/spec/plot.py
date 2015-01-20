@@ -350,17 +350,22 @@ def detector(*args,**kwargs):
     HISTORY:
        2015-01-19 - Written - Bovy (IAS)
     """
+    plotArgsStart= 3
     if len(args) > 2 and args[2].lower() == 'green':
         startindxs= [3505]
         endindxs= [6150]
     elif len(args) > 2 and args[2].lower() == 'red':
         startindxs= [6282]
         endindxs= [8404]
-    else: #blue
+    elif len(args) > 2 and args[2].lower() == 'blue':
         startindxs= [188]
         endindxs= [3322]
+    else: #default: blue
+        startindxs= [188]
+        endindxs= [3322]
+        plotArgsStart= 2
     return waveregions(args[0],args[1],startindxs=startindxs,endindxs=endindxs,
-                       *args[3:],**kwargs)
+                       *args[plotArgsStart:],**kwargs)
 
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
