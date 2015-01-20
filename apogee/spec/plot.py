@@ -486,7 +486,7 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                                     verticalalignment='top')
             else:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.7*ylevel,0.9*ylevel],'k-')
+                            [0.7*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB,
                                     0.65*ylevel,
                                     line_labels[elem.lower()],
