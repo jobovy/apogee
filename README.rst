@@ -308,6 +308,10 @@ non-continuum-normalized spectrum (``apStar`` in APOGEE parlance)::
 which gives
 
 .. image:: _readme_files/_apStarPlot_example.png 
+
+To plot a whole detector, use ``apogee.spec.plot.detector`` in the
+same way, but specify the detector (``'blue'``, ``'green'``, or
+``'red'``) as an additional argument.
 		
 APOGEE SELECTION FUNCTION
 ==========================
