@@ -27,6 +27,7 @@
 #
 ##################################################################################
 import os, os.path
+import numpy
 _APOGEE_DATA= os.getenv('APOGEE_DATA')
 _APOGEE_REDUX= os.getenv('APOGEE_REDUX')
 _APOGEE_ASPCAP_REDUX= os.getenv('APOGEE_ASPCAP_REDUX')
@@ -410,6 +411,66 @@ def apStarPath(loc_id,apogee_id,dr=None):
             return os.path.join(specReduxPath,'r5','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r5-%s.fits' % apogee_id)
+
+def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
+                  cfe=0.,nfe=0.,afe=0.,vmicro=2.,
+                  dr=None,
+                  **kwargs):
+    """
+    NAME:
+       modelSpecPath
+    PURPOSE:
+       returns the path of a model spectrum file
+    INPUT:
+       lib= ('GK') spectral library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       nfe= (0.) grid-point nitrogen-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+       +download kwargs
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-01-20 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    modelSpecLibPath= apogeeModelSpectroLibraryDirPath(dr=dr,lib=lib)
+    if dr == '10':
+        raise IOError('Loading model spectra for DR10 is not supported at this time')
+    elif dr == '12':
+        # Find closest grid-points for cfe, nfe, afe, and vmicro
+        cfegrid= numpy.linspace(-1.,1.,9)
+        nfegrid= numpy.linspace(-1.,1.,5)
+        afegrid= numpy.linspace(-1.,1.,9)
+        vmicrogrid= numpy.array([0.5,1.,2.,4.,8.])
+        cfep= cfegrid[numpy.argmin(numpy.fabs(cfegrid-cfe))]
+        nfep= nfegrid[numpy.argmin(numpy.fabs(nfegrid-nfe))]
+        afep= afegrid[numpy.argmin(numpy.fabs(afegrid-afe))]
+        vmp= vmicrogrid[numpy.argmin(numpy.fabs(vmicrogrid-vmicro))]
+        # Create strings
+        if cfep >= 0.:
+            cfestr= 'cp%i%i' % (int(cfep),int(round((cfep % 1)*10.)))
+        else:
+            cfestr= 'cm%i%i' % (int(-cfep),int(round((-cfep % 1)*10.)))
+        if nfep >= 0.:
+            nfestr= 'np%i%i' % (int(nfep),int(round((nfep % 1)*10.)))
+        else:
+            nfestr= 'nm%i%i' % (int(-nfep),int(round((-nfep % 1)*10.)))
+        if afep >= 0.:
+            afestr= 'ap%i%i' % (int(afep),int(round((afep % 1)*10.)))
+        else:
+            afestr= 'am%i%i' % (int(-afep),int(round((-afep % 1)*10.)))
+        if vmp >= 0.:
+            vmstr= 'vp%i%i' % (int(vmp),int(round((vmp % 1)*10.)))
+        else:
+            vmstr= 'cm%i%i' % (int(-vmp),int(round((-vmp % 1)*10.)))
+        return os.path.join(specReduxPath,modelSpecLibPath,
+                            afestr+cfestr+nfestr+vmstr+'.fits')
     
 def apogeeSpectroReduxDirPath(dr=None):
     """
@@ -427,6 +488,29 @@ def apogeeSpectroReduxDirPath(dr=None):
     if dr is None: dr= _default_dr()
     return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                         'apogee','spectro','redux')
+   
+def apogeeModelSpectroLibraryDirPath(dr=None,lib='GK'):
+    """
+    NAME:
+       apogeeModelSpectroLibraryDirPath
+    PURPOSE:
+        returns the path of the model spectra within the spectral reduction directory
+    INPUT:
+       dr= return the path corresponding to this data release       
+       lib= ('GK') spectral library
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-01-20 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    if dr == '12':
+        if lib.lower() == 'gk':
+            return os.path.join('speclib','asset','kurucz_filled',
+                                'solarisotopes','asGK_131216_lsfcombo5v6')
+        elif lib.lower() == 'f':
+            return os.path.join('speclib','asset','kurucz_filled',
+                                'solarisotopes','asF_131216_lsfcombo5v6')
    
 def _default_dr():
     if _APOGEE_REDUX == _DR10REDUX: dr= '10'
