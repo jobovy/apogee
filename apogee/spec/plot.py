@@ -197,9 +197,9 @@ def waveregions(*args,**kwargs):
                              xtick_labelsize=8,ytick_labelsize=8)
         pyplot.figure()
     if apStar:
-        yrange= kwargs.get('yrange',[0.,1.1*numpy.nanmax(args[1])])
+        yrange= kwargs.pop('yrange',[0.,1.1*numpy.nanmax(args[1])])
     else:
-        yrange= kwargs.get('yrange',[0.2,1.2])
+        yrange= kwargs.pop('yrange',[0.2,1.2])
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
