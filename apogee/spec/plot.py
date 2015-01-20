@@ -190,7 +190,8 @@ def waveregions(*args,**kwargs):
     skipdx= 0.015
     dx*= (totdx-(nregions-1)*skipdx)
     # Setup plot
-    if not kwargs.pop('overplot',False):
+    overplot= kwargs.pop('overplot',False)
+    if not overplot:
         bovy_plot.bovy_print(fig_width=8.4,fig_height=2.5,
                              axes_labelsize=10,text_fontsize=9,
                              legend_fontsize=9,
@@ -233,9 +234,9 @@ def waveregions(*args,**kwargs):
         if ii > 0:
             nullfmt   = NullFormatter()         # no labels
             thisax.yaxis.set_major_formatter(nullfmt)
-        else:
+        elif not overplot:
             if apStar:
-                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)\,(\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
+                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)\,(10^{-17}\,\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
             else:
                 pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
         # Remove spines between different wavelength regions
@@ -286,8 +287,9 @@ def waveregions(*args,**kwargs):
         thisax.tick_params(labelbottom='off')
         thisax.tick_params(bottom=False,which='both')
         thisax.tick_params(top=False,which='both')
-    thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
-                      labelpad=10-(nregions == 1)*10)
+    if not overplot:
+        thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
+                          labelpad=10-(nregions == 1)*10)
     if not nregions == 1:
         thisax.set_zorder(-1)
         # Start another axis object for later labeling
