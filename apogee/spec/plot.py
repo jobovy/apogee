@@ -185,7 +185,10 @@ def waveregions(*args,**kwargs):
                              legend_fontsize=9,
                              xtick_labelsize=8,ytick_labelsize=8)
         pyplot.figure()
-    yrange= kwargs.get('yrange',[0.2,1.2])
+    if apStar:
+        yrange= kwargs.get('yrange',[0.,1.1*numpy.nanmax(args[1])])
+    else:
+        yrange= kwargs.get('yrange',[0.2,1.2])
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
@@ -218,7 +221,7 @@ def waveregions(*args,**kwargs):
             thisax.yaxis.set_major_formatter(nullfmt)
         else:
             if apStar:
-                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)$'))
+                pyplot.ylabel(kwargs.get('ylabel',r'$f(\lambda)\,(\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
             else:
                 pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
         # Remove spines between different wavelength regions
