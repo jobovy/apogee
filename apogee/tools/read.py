@@ -523,8 +523,9 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     filePath= path.modelSpecPath(lib=lib,teff=teff,logg=logg,metals=metals,
                                  cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr)
     if not os.path.exists(filePath):
-        pass
-#        download.apStar(loc_id,apogee_id,dr=dr)
+        download.modelSpec(lib=lib,teff=teff,logg=logg,metals=metals,
+                           cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr,
+                           **kwargs)
     # Need to use astropy's fits reader, bc the file has issues
     import astropy.io.fits as apyfits
     hdulist= apyfits.open(filePath)
