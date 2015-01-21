@@ -528,12 +528,30 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     # Need to use astropy's fits reader, bc the file has issues
     import astropy.io.fits as apyfits
     hdulist= apyfits.open(filePath)
+    # Find index of nearest grid point in Teff, logg, and metals
+    if dr is None: dr= path._default_dr()
+    if dr == '12':
+        logggrid= numpy.linspace(0.,5.,11)
+        metalsgrid= numpy.linspace(-2.5,0.5,7)
+        if lib.lower() == 'gk':
+            teffgrid= numpy.linspace(3500.,6000.,11)
+            teffIndx= numpy.argmin(numpy.fabs(teff-teffgrid))
+        elif lib.lower() == 'f':
+            teffgrid= numpy.linspace(5500.,8000.,11)
+            teffIndx= numpy.argmin(numpy.fabs(teff-teffgrid))
+        loggIndx= numpy.argmin(numpy.fabs(logg-logggrid))
+        metalsIndx= numpy.argmin(numpy.fabs(metals-metalsgrid))
     if header and not ext == 234:
-        return (hdulist[ext].data,hdulist[ext].header)
+        return (hdulist[ext].data[metalsIndx,loggIndx,teffIndx],
+                hdulist[ext].header)
     elif not ext == 234:
-        return hdulist[ext].data
+        return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
     else: #ext == 234, combine 2,3,4 onto standard APOGEE wavelength grid
-        pass
+        out= numpy.zeros(8575)+numpy.nan
+        out[322:3242]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
+        out[3648:6048]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
+        out[6412:8306]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
+        return out
 
 def mainIndx(data):
     """
