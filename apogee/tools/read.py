@@ -493,6 +493,48 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
+def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
+              cfe=0.,nfe=0.,afe=0.,vmicro=2.,
+              dr=None,header=True,ext=234,**kwargs):
+    """
+    NAME:
+       modelSpec
+    PURPOSE:
+       Read a model spectrum file
+    INPUT:
+       lib= ('GK') spectral library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       nfe= (0.) grid-point nitrogen-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+       ext= (234) extension to load (if ext=234, the blue, green, and red spectra will be combined onto the aspcapStar wavelength grid, with NaN where there is no model)
+       header= (True) if True, also return the header (not for ext=234)
+       dr= return the path corresponding to this data release (general default)
+       +download kwargs
+    OUTPUT:
+       model spectrum or (model spectrum file, header)
+    HISTORY:
+       2015-01-13 - Written - Bovy (IAS)
+    """
+    filePath= path.modelSpecPath(lib=lib,teff=teff,logg=logg,metals=metals,
+                                 cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr)
+    if not os.path.exists(filePath):
+        pass
+#        download.apStar(loc_id,apogee_id,dr=dr)
+    # Need to use astropy's fits reader, bc the file has issues
+    import astropy.io.fits as apyfits
+    hdulist= apyfits.open(filePath)
+    if header and not ext == 234:
+        return (hdulist[ext].data,hdulist[ext].header)
+    elif not ext == 234:
+        return hdulist[ext].data
+    else: #ext == 234, combine 2,3,4 onto standard APOGEE wavelength grid
+        pass
+
 def mainIndx(data):
     """
     NAME:

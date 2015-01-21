@@ -414,8 +414,7 @@ def apStarPath(loc_id,apogee_id,dr=None):
 
 def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
                   cfe=0.,nfe=0.,afe=0.,vmicro=2.,
-                  dr=None,
-                  **kwargs):
+                  dr=None):
     """
     NAME:
        modelSpecPath
@@ -431,7 +430,6 @@ def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
        afe= (0.) grid-point alpha-enhancement
        vmicro= (2.) grid-point microturbulence
        dr= return the path corresponding to this data release
-       +download kwargs
     OUTPUT:
        path string
     HISTORY:
