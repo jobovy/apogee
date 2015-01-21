@@ -137,7 +137,7 @@ def waveregions(*args,**kwargs):
     """
     # Grab non-pyplot.plot kwargs
     apStar= kwargs.pop('apStar',False)
-    labelLines= kwargs.pop('labelLines',True)
+    labelLines= kwargs.pop('labelLines',not 'overplot' in kwargs)
     cleanZero= kwargs.pop('cleanZero',True)
     # Labels
     labelID= kwargs.pop('labelID',None)
