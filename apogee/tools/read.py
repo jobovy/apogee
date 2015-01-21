@@ -528,6 +528,9 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                            **kwargs)
     # Need to use astropy's fits reader, bc the file has issues
     import astropy.io.fits as apyfits
+    from astropy.utils.exceptions import AstropyUserWarning
+    import warnings
+    warnings.filterwarnings('ignore',category=AstropyUserWarning)
     hdulist= apyfits.open(filePath)
     # Find index of nearest grid point in Teff, logg, and metals
     if dr is None: dr= path._default_dr()

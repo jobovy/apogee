@@ -8,6 +8,7 @@ import sys
 import shutil
 import tempfile
 import subprocess
+import numpy
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
@@ -147,7 +148,7 @@ def apStar(loc_id,apogee_id,dr=None):
 
 def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                   cfe=0.,nfe=0.,afe=0.,vmicro=2.,
-                  dr=None):
+                  dr=None,rmHDU1=True,rmHDU2=True):
     """
     NAME:
        modelSpec
@@ -163,6 +164,8 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
        afe= (0.) grid-point alpha-enhancement
        vmicro= (2.) grid-point microturbulence
        dr= return the path corresponding to this data release
+       rmHUD1= (True) if True, rm the first (v. large) HDU with the high-resolution model spectrum
+       rmHDU2= (True) if True, rm the second (quite large) HDU with the model spectrum convolved with the LSF
     OUTPUT:
        (none; just downloads)
     HISTORY:
@@ -177,8 +180,37 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 'dr%s' % dr),
                                    _base_url(dr=dr))
-#    _download_file(downloadPath,filePath,dr)
-    
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    # Post-processing of the file, removing the big first HDU or the first two for local storage
+    if rmHDU1 or rmHDU2:
+        # Open the file, need to use astropy's fits reader, bc the file has issues
+        import astropy.io.fits as apyfits
+        from astropy.utils.exceptions import AstropyUserWarning
+        import warnings
+        warnings.filterwarnings('ignore',category=AstropyUserWarning)
+        hdulist= apyfits.open(filePath)
+        if rmHDU1:
+            hdu= apyfits.PrimaryHDU(numpy.zeros((2,2)))
+        else: 
+            hdu= hdulist[0].copy()
+        inp= [hdu]
+        if rmHDU2:
+            hdu2= apyfits.ImageHDU(numpy.zeros((2,2)))
+        else: 
+            hdu2= hdulist[1].copy()
+        inp.append(hdu2)
+        inp.extend(hdulist[2:])
+        newHdulist= apyfits.HDUList(inp)
+        # Fix any issues in the headers
+        for ii in range(5):
+            if '[A/M]' in newHdulist[ii].header:
+                newHdulist[ii].header['AM']= newHdulist[ii].header.pop('[A/M]',None)
+            if '[C/M]' in newHdulist[ii].header:
+                newHdulist[ii].header['CM']= newHdulist[ii].header.pop('[C/M]',None)
+            if '[N/M]' in newHdulist[ii].header:
+                newHdulist[ii].header['NM']= newHdulist[ii].header.pop('[N/M]',None)
+        # Overwrite file
+        newHdulist.writeto(filePath,clobber=True,output_verify='silentfix')
     return None
 
 def _download_file(downloadPath,filePath,dr,verbose=False):
