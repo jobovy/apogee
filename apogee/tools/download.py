@@ -213,6 +213,62 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
         newHdulist.writeto(filePath,clobber=True,output_verify='silentfix')
     return None
 
+def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
+                      convertToBin=True):
+    """
+    NAME:
+       ferreModelLibrary
+    PURPOSE:
+       download a FERRE model library
+    INPUT:
+       lib= ('GK') spectral library
+       dr= return the path corresponding to this data release
+       pca= (True) if True, download the PCA compressed library
+       sixd= (True) if True, download the 6D library (w/o vmicro)
+       unf= (False) if True, download the binary library (otherwise ascii)
+       convertToBin= (True) if True and not unf, convert the ascii file to binary using ferre's ascii2bin (which has to be on the path)
+    OUTPUT:
+       (none; just downloads; also downloads the corresponding .hdr)
+    HISTORY:
+       2015-01-21 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.ferreModelLibraryPath(lib=lib,dr=dr,pca=pca,
+                                         sixd=sixd,unf=unf)
+    if not os.path.exists(filePath):
+        # Create the file path    
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    'dr%s' % dr),
+                                       _base_url(dr=dr))
+        _download_file(downloadPath,filePath,dr,verbose=True)
+        if convertToBin:
+            sys.stdout.write('\r'+"Converting ascii model library to binary (can take a few minutes) ...\r")
+            sys.stdout.flush()
+            try:
+                p= subprocess.Popen(['ascii2bin'],stdout=subprocess.PIPE,
+                                    stdin=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=os.path.dirname(filePath))
+                p.stdin.write(os.path.basename(filePath)+'\n')
+                p.stdin.write('unf\n')
+                stdout, stderr= p.communicate()
+            except subprocess.CalledProcessError:
+                print("Conversion of %s to binary failed ..." % (os.path.basename(filePath)))
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.flush()        
+    # Also download the header
+    if unf:
+        headerFilePath= filePath.replace('.unf','.hdr')
+    else:
+        headerFilePath= filePath.replace('.dat','.hdr')
+    if os.path.exists(headerFilePath): return None
+    headerDownloadPath= headerFilePath.replace(os.path.join(path._APOGEE_DATA,
+                                                            'dr%s' % dr),
+                                               _base_url(dr=dr))
+    _download_file(headerDownloadPath,headerFilePath,dr,verbose=True)
+    return None
+
 def _download_file(downloadPath,filePath,dr,verbose=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))

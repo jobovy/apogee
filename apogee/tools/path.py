@@ -470,6 +470,42 @@ def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
         return os.path.join(specReduxPath,modelSpecLibPath,
                             afestr+cfestr+nfestr+vmstr+'.fits')
     
+def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None):
+    """
+    NAME:
+       ferreModelLibraryPath
+    PURPOSE:
+       returns the path of a model library
+    INPUT:
+       lib= ('GK') spectral library
+       dr= return the path corresponding to this data release
+       pca= (True) if True, download the PCA compressed library
+       sixd= (True) if True, download the 6D library (w/o vmicro)
+       unf= (False) if True, download the binary library (otherwise ascii)
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-01-21 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    modelSpecLibPath= apogeeModelSpectroLibraryDirPath(dr=dr,lib=lib)
+    if dr == '10':
+        raise IOError('Loading model libraries for DR10 is not supported at this time')
+    elif dr == '12':
+        if pca and sixd:
+            filename= 'p6_aps'
+        elif pca:
+            filename= 'p_aps'
+        else:
+            filename= 'f_'
+        filename+= 'as%s_131216_lsfcombo5v6_w123.' % lib.upper()
+        if unf:
+            filename+= 'unf'
+        else:
+            filename+= 'dat'
+        return os.path.join(specReduxPath,modelSpecLibPath,filename)
+    
 def apogeeSpectroReduxDirPath(dr=None):
     """
     NAME:
