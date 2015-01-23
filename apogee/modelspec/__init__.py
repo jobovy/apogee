@@ -3,6 +3,7 @@ import os, os.path
 import tempfile
 import numpy
 import apogee.tools.path as appath
+from apogee.tools.read import modelspecOnApStarWavegrid
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -26,12 +27,13 @@ def paramArrayInputDecorator(startIndx):
         return scalar_wrapper
     return wrapper
 
+@modelspecOnApStarWavegrid
 @paramArrayInputDecorator(0)
 def interpolate(teff,logg,metals,am,nm,cm,vm=None,
                 lib='GK',pca=True,sixd=True,dr=None,
                 offile=None,
                 inter=3,f_format=1,f_access=None,
-                verbose=False):
+                verbose=False,apStarWavegrid=True):
     """
     NAME:
        interpolate
@@ -56,6 +58,7 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
           f_format= (1) file format (0=ascii, 1=unf)
           f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
        Output options:
+          apStarWavegrid= (True) if True, output the spectrum onto the apStar wavelength grid, otherwise just give the ASPCAP version (blue+green+red directly concatenated)
           offile= (None) if offile is set, the FERRE OFFILE is saved to this file, otherwise this file is removed
        verbose= (False) if True, run FERRE in verbose mode
     OUTPUT:

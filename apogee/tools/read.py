@@ -15,6 +15,7 @@
 #             - rcsample: read the red clump sample
 #
 ##################################################################################
+from functools import wraps
 import os
 import sys
 import copy
@@ -23,6 +24,29 @@ import esutil
 import fitsio
 from apogee.tools import path, paramIndx, download
 _ERASESTR= "                                                                                "
+def modelspecOnApStarWavegrid(func):
+    """Decorator to put a model spectrum onto the apStar wavelength grid"""
+    @wraps(func)
+    def output_wrapper(*args,**kwargs):
+        out= func(*args,**kwargs)
+        if kwargs.get('apStarWavegrid',True) \
+                or (kwargs.get('ext',-1) == 234 \
+                        and kwargs.get('apStarWavegrid',True)):
+            if len(out.shape) == 2:
+                newOut= numpy.zeros((8575,out.shape[0]))+numpy.nan
+                out= out.T
+            else:
+                newOut= numpy.zeros(8575)+numpy.nan              
+            newOut[322:3242]= out[:2920]
+            newOut[3648:6048]= out[2920:5320]
+            newOut[6412:8306]= out[5320:]
+            if len(out.shape) == 2:
+                out= newOut.T
+            else:
+                out= newOut
+        return out
+    return output_wrapper
+
 def allStar(rmcommissioning=True,
             main=False,
             ak=True,
@@ -493,9 +517,10 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
+@modelspecOnApStarWavegrid
 def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
               cfe=0.,nfe=0.,afe=0.,vmicro=2.,
-              dr=None,header=True,ext=234,**kwargs):
+              dr=None,header=True,ext=234,apStarWavegrid=None,**kwargs):
     """
     NAME:
        modelSpec
@@ -511,7 +536,8 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
        afe= (0.) grid-point alpha-enhancement
        vmicro= (2.) grid-point microturbulence
        dr= return the path corresponding to this data release
-       ext= (234) extension to load (if ext=234, the blue, green, and red spectra will be combined onto the aspcapStar wavelength grid, with NaN where there is no model)
+       ext= (234) extension to load (if ext=234, the blue, green, and red spectra will be combined [onto the aspcapStar wavelength grid by default, just concatenated if apStarWavegrid=False), with NaN where there is no model)
+       apStarWavegrid= (True) if False and ext=234, don't put the spectrum on the apStar wavelength grid, but just concatenate the blue, green, and red detector
        header= (True) if True, also return the header (not for ext=234)
        dr= return the path corresponding to this data release (general default)
        +download kwargs
@@ -550,11 +576,11 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                 hdulist[ext].header)
     elif not ext == 234:
         return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
-    else: #ext == 234, combine 2,3,4 onto standard APOGEE wavelength grid
-        out= numpy.zeros(8575)+numpy.nan
-        out[322:3242]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
-        out[3648:6048]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
-        out[6412:8306]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
+    else: #ext == 234, combine 2,3,4
+        out= numpy.zeros(7214)
+        out[:2920]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
+        out[2920:5320]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
+        out[5320:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
         return out
 
 def mainIndx(data):
