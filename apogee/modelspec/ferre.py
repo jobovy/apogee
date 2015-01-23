@@ -1,8 +1,33 @@
 ###############################################################################
 # ferre.py: module for interacting with Carlos Allende Prieto's FERRE code
 ###############################################################################
+from functools import wraps
 import os
 import subprocess
+import numpy
+def paramArrayInputDecorator(func):
+    """Decorator to parse spectral input parameters given as arrays,
+    assumes the arguments are: something,teff,logg,metals,am,nm,cm,vmicro="""
+    @wraps(func)
+    def scalar_wrapper(*args,**kwargs):
+         if numpy.array(args[1]).shape == ():
+             scalarOut= True
+             newargs= (args[0],)
+             for ii in range(len(args)-1):
+                 newargs= newargs+(numpy.array([args[ii+1]]),)
+             args= newargs
+             if not kwargs.get('vm',None) is None:
+                 kwargs['vm']= numpy.array([kwargs['vm']])
+         else:
+             scalarOut= False
+         result= func(*args,**kwargs)
+         if result is None: return result
+         if scalarOut:
+             return result[0,:]
+         else:
+             return result
+    return scalar_wrapper
+
 def run_ferre(dir,verbose=False):
     """
     NAME:
@@ -77,4 +102,38 @@ def write_input_nml(dir,
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
         outfile.write('/\n')
+    return None
+
+@paramArrayInputDecorator
+def write_interpolate_ipf(dir,
+                          teff,logg,metals,am,nm,cm,vm=None):
+    """
+    NAME:
+       write_interpolate_ipf
+    PURPOSE:
+       write a FERRE input.ipf file for interpolation
+    INPUT:
+       dir - directory where the input.ipf file will be written to
+       Parameters (can be 1D arrays):
+          teff - Effective temperature (K)
+          logg - log10 surface gravity / cm s^-2
+          metals - overall metallicity
+          am - [alpha/M]
+          nm - [N/M]
+          cm - [C/M]
+          vm= if using the 7D library, also specify the microturbulence
+    OUTPUT:
+       (none; just writes the file)
+    HISTORY:
+       2015-01-23 - Written - Bovy (IAS)
+    """
+    with open(os.path.join(dir,'input.ipf'),'w') as outfile:
+        for ii in range(len(teff)):
+            outStr= 'dummy '
+            if not vm is None:
+                outStr+= '%.3f ' % numpy.log10(vm[ii])
+            outStr+= '%.3f %.3f %.3f %.3f %.3f %.1f\n' \
+                % (cm[ii],nm[ii],am[ii],
+                   metals[ii],logg[ii],teff[ii])
+            outfile.write(outStr)
     return None
