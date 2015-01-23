@@ -2,6 +2,34 @@
 # ferre.py: module for interacting with Carlos Allende Prieto's FERRE code
 ###############################################################################
 import os
+import subprocess
+def run_ferre(dir,verbose=False):
+    """
+    NAME:
+       run_ferre
+    PURPOSE:
+       run an instance of FERRE
+    INPUT:
+       dir - directory to run the instance in (has to have an input.nml file)
+       verbose= (False) if True, print the FERRE output
+    OUTPUT:
+       (none)
+    HISTORY:
+       2015-01-22 - Written - Bovy (IAS)
+    """
+    # Set up the subprocess to run FERRE
+    if verbose:
+        stdout= None
+        stderr= None
+    else:
+        stdout= subprocess.PIPE
+        stderr= subprocess.PIPE
+    try:
+        subprocess.check_call(['ferre'],cwd=dir,stdout=stdout,stderr=stderr)
+    except subprocess.CalledProcessError:
+        raise Exception("Running FERRE instance in directory %s failed ..." % dir)
+    return None
+
 def write_input_nml(dir,
                     pfile,
                     offile,
@@ -48,4 +76,5 @@ def write_input_nml(dir,
         outfile.write('INTER = %i\n' % inter)
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
+        outfile.write('/\n')
     return None
