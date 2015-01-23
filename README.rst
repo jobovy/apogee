@@ -24,6 +24,18 @@ or
 
 ``python setup.py install --prefix=/some/directory/``
 
+The installation can also automatically install Carlos Allende Prieto's `FERRE <http://leda.as.utexas.edu/ferre/>`__ code. To do this do
+
+``python setup.py install --install-ferre``
+
+On a Mac, you might have issues with OpenMP, which can be disabled
+using ``--ferre-noopenmp``. The installation will also automatically
+change FERRE's default filename-length from 120 to 180, to deal with
+the long filenames for the model libraries on the SDSS SAS (which is
+mirrored locally to use this code). If you want to use a different
+filename-length you can specify, for example, ``--ferre-flen 200`` for
+a length of 200 characters.
+
 DEPENDENCIES
 =============
 
