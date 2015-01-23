@@ -1,33 +1,10 @@
 ###############################################################################
 # ferre.py: module for interacting with Carlos Allende Prieto's FERRE code
 ###############################################################################
-from functools import wraps
 import os
 import subprocess
 import numpy
-def paramArrayInputDecorator(func):
-    """Decorator to parse spectral input parameters given as arrays,
-    assumes the arguments are: something,teff,logg,metals,am,nm,cm,vmicro="""
-    @wraps(func)
-    def scalar_wrapper(*args,**kwargs):
-         if numpy.array(args[1]).shape == ():
-             scalarOut= True
-             newargs= (args[0],)
-             for ii in range(len(args)-1):
-                 newargs= newargs+(numpy.array([args[ii+1]]),)
-             args= newargs
-             if not kwargs.get('vm',None) is None:
-                 kwargs['vm']= numpy.array([kwargs['vm']])
-         else:
-             scalarOut= False
-         result= func(*args,**kwargs)
-         if result is None: return result
-         if scalarOut:
-             return result[0,:]
-         else:
-             return result
-    return scalar_wrapper
-
+from apogee.modelspec import paramArrayInputDecorator
 def run_ferre(dir,verbose=False):
     """
     NAME:
@@ -104,9 +81,8 @@ def write_input_nml(dir,
         outfile.write('/\n')
     return None
 
-@paramArrayInputDecorator
-def write_interpolate_ipf(dir,
-                          teff,logg,metals,am,nm,cm,vm=None):
+@paramArrayInputDecorator(1)
+def write_interpolate_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
     """
     NAME:
        write_interpolate_ipf
