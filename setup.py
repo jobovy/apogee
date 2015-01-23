@@ -9,12 +9,20 @@ long_description = "Tools for APOGEE data analysis; see `here <https://github.co
 
 # Install FERRE when specifying --install-ferre; needs a FORTRAN compiler, e.g., http://hpc.sourceforge.net/
 try:
-    ferre_pos = sys.argv.index('--install-ferre')
+    ferre_pos= sys.argv.index('--install-ferre')
 except ValueError:
     _INSTALL_FERRE= False
 else:
     del sys.argv[ferre_pos]
     _INSTALL_FERRE= True
+
+try:
+    ferre_openmp= sys.argv.index('--ferre-noopenmp')
+except ValueError:
+    _FERRE_NO_OPENMP= False
+else:
+    del sys.argv[ferre_openmp]
+    _FERRE_NO_OPENMP= True
 
 if _INSTALL_FERRE:
     # Code to determine the binary install directory, from http://jasonstitt.com/setuptools-bin-directory
@@ -55,7 +63,10 @@ if _INSTALL_FERRE:
         print '\033[1m'+"Untarring/gunzipping FERRE failed ..." % _FERRE_URL +'\033[0m'
     os.chdir('src')
     try:
-        subprocess.check_call(['make'])
+        if _FERRE_NO_OPENMP:
+            subprocess.check_call(['make','OPT=-O2'])
+        else:
+            subprocess.check_call(['make'])
     except subprocess.CalledProcessError:
         print '\033[1m'+"Compiling FERRE failed ..." % _FERRE_URL +'\033[0m'
     os.rename('a.out','../../../ferre')
