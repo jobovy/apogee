@@ -24,6 +24,15 @@ else:
     del sys.argv[ferre_openmp]
     _FERRE_NO_OPENMP= True
 
+try:
+    ferre_flen= sys.argv.index('--ferre-flen')
+except ValueError:
+    _FERRE_FLEN= 180
+else:
+    _FERRE_FLEN= int(sys.argv[ferre_flen+1])
+    del sys.argv[ferre_flen]
+    del sys.argv[ferre_flen]
+
 if _INSTALL_FERRE:
     # Code to determine the binary install directory, from http://jasonstitt.com/setuptools-bin-directory
     from setuptools import Distribution
@@ -62,6 +71,12 @@ if _INSTALL_FERRE:
     except subprocess.CalledProcessError:
         print '\033[1m'+"Untarring/gunzipping FERRE failed ..." % _FERRE_URL +'\033[0m'
     os.chdir('src')
+    # Change flen in share.f90
+    with open("tmp.f90", "w") as fout:
+        with open("share.f90", "r") as fin:
+            for line in fin:
+                fout.write(line.replace('flen=120','flen=%i' % _FERRE_FLEN))
+    os.rename('tmp.f90','share.f90')
     try:
         if _FERRE_NO_OPENMP:
             subprocess.check_call(['make','OPT=-O2'])
