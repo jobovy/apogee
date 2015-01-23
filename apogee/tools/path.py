@@ -470,7 +470,8 @@ def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
         return os.path.join(specReduxPath,modelSpecLibPath,
                             afestr+cfestr+nfestr+vmstr+'.fits')
     
-def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None):
+def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None,
+                          header=False):
     """
     NAME:
        ferreModelLibraryPath
@@ -479,9 +480,10 @@ def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None):
     INPUT:
        lib= ('GK') spectral library
        dr= return the path corresponding to this data release
-       pca= (True) if True, download the PCA compressed library
-       sixd= (True) if True, download the 6D library (w/o vmicro)
-       unf= (False) if True, download the binary library (otherwise ascii)
+       pca= (True) if True, return path of the PCA compressed library
+       sixd= (True) if True, return path of the 6D library (w/o vmicro)
+       unf= (False) if True, return path of the binary library (otherwise ascii)
+       header= (False) if True, return the path of the header file
     OUTPUT:
        path string
     HISTORY:
@@ -500,7 +502,9 @@ def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None):
         else:
             filename= 'f_'
         filename+= 'as%s_131216_lsfcombo5v6_w123.' % lib.upper()
-        if unf:
+        if header:
+            filename+= 'hdr'
+        elif unf:
             filename+= 'unf'
         else:
             filename+= 'dat'
