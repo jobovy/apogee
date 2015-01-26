@@ -70,6 +70,11 @@ _CN_lines= [air2vac(l) for l in [15260.,15322.,15397.,15332.,15410.,
                                  15447.,15466.,15472.,15482.]]
 _13CO_lines= [air2vac(l) for l in [16122.5,16743.5]]
 
+def apStarWavegrid():
+    return 10.**numpy.arange(_LOG10LAMBDA0,
+                             _LOG10LAMBDA0+_NLAMBDA*_DLOG10LAMBDA,
+                             _DLOG10LAMBDA)
+
 def specPlotInputDecorator(func):
     """Decorator to parse input to spectral plotting"""
     @wraps(func)
@@ -80,9 +85,7 @@ def specPlotInputDecorator(func):
             return func(args[0],args[1],*args[2:],**kwargs)
         elif len(args) >= 1 and isinstance(args[0],(list,numpy.ndarray)):
             # spectrum on standard re-sampled wavelength grid
-            lam= 10.**numpy.arange(_LOG10LAMBDA0,
-                                   _LOG10LAMBDA0+_NLAMBDA*_DLOG10LAMBDA,
-                                   _DLOG10LAMBDA)
+            lam=apStarWavegrid()
             return func(lam,args[0],*args[1:],**kwargs)
         elif isinstance(args[0],(int,numpy.short,str)) \
                 and isinstance(args[1],str):
