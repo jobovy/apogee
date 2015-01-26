@@ -95,3 +95,21 @@ def waveregions(elem,asIndex=False):
         return (10.**numpy.array(newStartl10lams),
                 10.**numpy.array(newEndl10lams))
 
+def tophat(elem):
+    """
+    NAME:
+       tophat
+    PURPOSE:
+       return an array with True in the window of a given element and False otherwise
+    INPUT:
+       elem - element     
+    OUTPUT:
+       array on apStar grid
+    HISTORY:
+       2015-01-26 - Written - Bovy (IAS@KITP)
+    """
+    import apogee.spec.plot as splot
+    out= numpy.zeros(splot._NLAMBDA,dtype='bool')
+    for si,ei in zip(*waveregions(elem,asIndex=True)):
+        out[si+1:ei]= True
+    return out
