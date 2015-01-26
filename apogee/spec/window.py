@@ -77,7 +77,7 @@ def waveregions(elem,asIndex=False):
         newStartindxs, newEndindxs= [startindxs[0]], [endindxs[0]]
     newStartl10lams, newEndl10lams= [startl10lams[0]], [endl10lams[0]]
     winIndx= 0
-    for ii in range(len(startindxs)-1):
+    for ii in range(len(startl10lams)-1):
         if diff[ii] < 10.*splot._DLOG10LAMBDA:
             if asIndex:
                 newEndindxs[winIndx]= endindxs[ii+1]
@@ -113,3 +113,19 @@ def tophat(elem):
     for si,ei in zip(*waveregions(elem,asIndex=True)):
         out[si+1:ei]= True
     return out
+
+def total_dlambda(elem):
+    """
+    NAME:
+       total_dlambda
+    PURPOSE:
+       return the total wavelength span covered by the windows of a given element
+    INPUT:
+       elem - element     
+    OUTPUT:
+       total width in \AA
+    HISTORY:
+       2015-01-26 - Written - Bovy (IAS@KITP)
+    """
+    si,ei= waveregions(elem,asIndex=False)
+    return numpy.sum(ei-si)
