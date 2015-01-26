@@ -43,7 +43,7 @@ def num(elem):
     si, ei= waveregions(elem,asIndex=True)
     return len(si)
 
-def waveregions(elem,asIndex=False):
+def waveregions(elem,asIndex=False,pad=0):
     """
     NAME:
        waveregions
@@ -52,6 +52,7 @@ def waveregions(elem,asIndex=False):
     INPUT:
        elem - element
        asIndx= (False) if yes, return the indices into an apStar-like wavelength grid rather than the wavelengths directly
+       pad= (0) pad on each side by this many log10 wavelengths in 6e-6 (changes how windows are combined)
     OUTPUT:
        (startlams,endlams) or (startindxs, endindxs)
     HISTORY:
@@ -72,6 +73,12 @@ def waveregions(elem,asIndex=False):
         endindxs= indices[dmaskn == 1.]
     startl10lams= l10wavs[dmaskp == 1.]
     endl10lams= l10wavs[dmaskn == 1.]
+    if pad > 0:
+        if asIndex:
+            startindxs= [si-pad for si in startindxs]
+            endindxs= [ei+pad for ei in endindxs]
+        startl10lams-= pad*splot._DLOG10LAMBDA
+        endl10lams+= pad*splot._DLOG10LAMBDA
     diff= numpy.roll(startl10lams,-1)-endl10lams
     if asIndex:
         newStartindxs, newEndindxs= [startindxs[0]], [endindxs[0]]
@@ -114,7 +121,7 @@ def tophat(elem):
         out[si+1:ei]= True
     return out
 
-def total_dlambda(elem):
+def total_dlambda(elem,pad=0):
     """
     NAME:
        total_dlambda
@@ -122,10 +129,11 @@ def total_dlambda(elem):
        return the total wavelength span covered by the windows of a given element
     INPUT:
        elem - element     
+       pad= (0) pad on each side by this many log10 wavelengths in 6e-6 (changes how windows are combined)
     OUTPUT:
        total width in \AA
     HISTORY:
        2015-01-26 - Written - Bovy (IAS@KITP)
     """
-    si,ei= waveregions(elem,asIndex=False)
+    si,ei= waveregions(elem,asIndex=False,pad=pad)
     return numpy.sum(ei-si)
