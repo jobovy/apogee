@@ -4,6 +4,7 @@
 import os, os.path
 import numpy
 from apogee.tools.read import modelspecOnApStarWavegrid
+_MINWIDTH= 3.5 #minimum width of a window in \AA
 
 @modelspecOnApStarWavegrid
 def read(elem,apStarWavegrid=True):
@@ -80,6 +81,21 @@ def waveregions(elem,asIndex=False,pad=0):
             endindxs= [ei+pad for ei in endindxs]
         startl10lams-= pad*splot._DLOG10LAMBDA
         endl10lams+= pad*splot._DLOG10LAMBDA
+    # Check that each window is at least _MINWIDTH wide
+    width= 10.**endl10lams-10.**startl10lams
+    for ii in range(len(startl10lams)):
+        if width[ii] < _MINWIDTH:
+            if asIndex: # Approximate
+                dindx= int(numpy.ceil((_MINWIDTH-width[ii])/2.\
+                                          /(10.**startl10lams[ii]\
+                                                +10.**endl10lams[ii])/2.\
+                                          /numpy.log(10.)/splot._DLOG10LAMBDA))
+                startindxs[ii]-= dindx
+                endindxs[ii]+= dindx                   
+            startl10lams[ii]= numpy.log10(10.**startl10lams[ii]\
+                                              -(_MINWIDTH-width[ii])/2.)
+            endl10lams[ii]= numpy.log10(10.**endl10lams[ii]\
+                                            +(_MINWIDTH-width[ii])/2.)
     diff= numpy.roll(startl10lams,-1)-endl10lams
     if asIndex:
         newStartindxs, newEndindxs= [startindxs[0]], [endindxs[0]]

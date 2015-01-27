@@ -146,6 +146,7 @@ def waveregions(*args,**kwargs):
     noxticks= kwargs.pop('_noxticks',False)
     noskipdiags= kwargs.pop('_noskipdiags',False)
     labelwav= kwargs.pop('_labelwav',False)
+    plotw= kwargs.pop('_plotw',None)
     # Labels
     labelID= kwargs.pop('labelID',None)
     labelTeff= kwargs.pop('labelTeff',None)
@@ -206,7 +207,9 @@ def waveregions(*args,**kwargs):
                              legend_fontsize=9,
                              xtick_labelsize=8,ytick_labelsize=8)
         pyplot.figure()
-    if apStar:
+    if overplot:
+        yrange= numpy.array(pyplot.gca().get_ylim())
+    elif apStar:
         yrange= kwargs.pop('yrange',[0.,1.1*numpy.nanmax(args[1])])
     else:
         yrange= kwargs.pop('yrange',[0.2,1.2])
@@ -236,6 +239,10 @@ def waveregions(*args,**kwargs):
         thisax.plot(args[0][startindx:endindx]-_LAMBDASUB,
                     args[1][startindx:endindx],
                     *args[2:],**kwargs)
+        if not plotw is None:
+            thisax.plot(args[0][startindx:endindx]-_LAMBDASUB,
+                        plotw[startindx:endindx],
+                        '-',lw=2.,color='0.65')
         thisax.set_xlim(xrange[0],xrange[1])
         thisax.set_ylim(yrange[0],yrange[1])
         if noxticks:
@@ -304,6 +311,7 @@ def waveregions(*args,**kwargs):
     if not nregions == 1:
         thisax= pyplot.axes([0.1,0.125,0.85,0.8])
         pyplot.gcf().sca(thisax)
+        thisax.set_ylim(yrange[0],yrange[1])
         thisax.spines['left'].set_visible(False)
         thisax.spines['right'].set_visible(False)
         thisax.spines['bottom'].set_visible(False)
@@ -413,6 +421,7 @@ def windows(*args,**kwargs):
           (c) location ID, APOGEE ID (default loads aspcapStar, loads extension ext(=1); apStar=True loads apStar spectrum)
           +element string (e.g., 'Al'); Adding 1 and 2 splits the windows into two
     KEYWORDS:
+       plot_weights= (False) if True, also plot the weights for the windows (assumes that the spectrum is on the apStarWavegrid)
        apogee.spec.plot.waveregions keywords
     OUTPUT:
        plot to output
@@ -430,16 +439,17 @@ def windows(*args,**kwargs):
             si, ei= apwindow.waveregions(args[2][:-1],pad=pad,asIndex=True)
         except IOError:
             raise IOError("Windows for element %s could not be loaded, please specify an existing APOGEE element" % ((args[2].lower().capitalize())))
-        newargs= (args[0],args[1],args[2][:-1])
-        for ii in range(len(args)-3):
-            newargs= newargs+(args[ii+3],)
-        args= newargs
         if args[2][-1] == '1':
             si= si[:len(si)//2]
             ei= ei[:len(ei)//2]
         else:
             si= si[len(si)//2:]
             ei= ei[len(ei)//2:]
+        # Remove the number from the element
+        newargs= (args[0],args[1],args[2][:-1])
+        for ii in range(len(args)-3):
+            newargs= newargs+(args[ii+3],)
+        args= newargs
     # Also get the number and total width of all of the windows
     dlam= apwindow.total_dlambda(args[2],pad=pad)
     numw= apwindow.num(args[2])
@@ -461,6 +471,16 @@ def windows(*args,**kwargs):
     kwargs['_noxticks']= True
     # Label the largest wavelength in angstrom
     kwargs['_labelwav']= True
+    # Don't label the lines unless explicitly asked for
+    kwargs['labelLines']= kwargs.get('labelLines',False)
+    # Plot the weights as well
+    if kwargs.pop('plot_weights',False):
+        kwargs['_plotw']= apwindow.read(args[2],apStarWavegrid=True)
+        if kwargs.get('apStar',False):
+            kwargs['yrange']= kwargs.get('yrange',
+                                         [0.,1.1*numpy.nanmax(args[1])])
+        else:
+            kwargs['yrange']= kwargs.get('yrange',[0.,1.2])
     # Plot
     waveregions(args[0],args[1],startindxs=si,endindxs=ei,
                 *args[3:],**kwargs)
