@@ -303,7 +303,7 @@ def waveregions(*args,**kwargs):
         if labelwav:
             bovy_plot.bovy_text(2*numpy.floor((xrange[1]-(nregions > 15))/2.),
                                 yrange[0]+0.05*(yrange[1]-yrange[0]),
-                                r'$\lambda\,%i,%03i$' % (15+int(numpy.floor(xrange[1]/1000.)),
+                                r'$\lambda\kern 0.1em%i,%03i$' % (15+int(numpy.floor(xrange[1]/1000.)),
                                                         int(2.*numpy.floor((xrange[1]-(nregions > 15))/2.) % 1000.)),
                                 horizontalalignment='center',
                                 verticalalignment='bottom',
