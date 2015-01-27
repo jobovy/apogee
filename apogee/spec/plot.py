@@ -213,6 +213,7 @@ def waveregions(*args,**kwargs):
         yrange= kwargs.pop('yrange',[0.,1.1*numpy.nanmax(args[1])])
     else:
         yrange= kwargs.pop('yrange',[0.2,1.2])
+    kwargs['zorder']= kwargs.get('zorder',10)
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
@@ -242,7 +243,7 @@ def waveregions(*args,**kwargs):
         if not plotw is None:
             thisax.plot(args[0][startindx:endindx]-_LAMBDASUB,
                         plotw[startindx:endindx],
-                        '-',lw=2.,color='0.65')
+                        '-',lw=2.,color='0.65',zorder=1)
         thisax.set_xlim(xrange[0],xrange[1])
         thisax.set_ylim(yrange[0],yrange[1])
         if noxticks:
@@ -300,10 +301,10 @@ def waveregions(*args,**kwargs):
                              thisax,args[0],args[1])
         # Label the largest round wavelength in angstrom for windows
         if labelwav:
-            bovy_plot.bovy_text(2*numpy.floor((xrange[1]-1)/2.),
+            bovy_plot.bovy_text(2*numpy.floor((xrange[1]-(nregions > 15))/2.),
                                 yrange[0]+0.05*(yrange[1]-yrange[0]),
                                 r'$\lambda\,%i,%03i$' % (15+int(numpy.floor(xrange[1]/1000.)),
-                                                        int(2.*numpy.floor((xrange[1]-1)/2.) % 1000.)),
+                                                        int(2.*numpy.floor((xrange[1]-(nregions > 15))/2.) % 1000.)),
                                 horizontalalignment='center',
                                 verticalalignment='bottom',
                                 rotation='vertical',fontsize=10.)
