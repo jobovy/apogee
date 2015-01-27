@@ -238,11 +238,13 @@ def waveregions(*args,**kwargs):
                     *args[2:],**kwargs)
         thisax.set_xlim(xrange[0],xrange[1])
         thisax.set_ylim(yrange[0],yrange[1])
-        thisax.xaxis.set_major_locator(ticker.MultipleLocator(tickStep))
-        bovy_plot._add_ticks(xticks=True-noxticks)
         if noxticks:
-            nullfmtx= NullFormatter()         # no labels
+            nullfmtx= NullFormatter()         # no labels, assume 1\AA
             thisax.xaxis.set_major_formatter(nullfmtx)
+            thisax.xaxis.set_major_locator(ticker.MultipleLocator(2.))
+        else:
+            thisax.xaxis.set_major_locator(ticker.MultipleLocator(tickStep))
+        bovy_plot._add_ticks(xticks=True-noxticks)
         if ii > 0:
             nullfmt   = NullFormatter()         # no labels
             thisax.yaxis.set_major_formatter(nullfmt)
@@ -291,10 +293,10 @@ def waveregions(*args,**kwargs):
                              thisax,args[0],args[1])
         # Label the largest round wavelength in angstrom for windows
         if labelwav:
-            bovy_plot.bovy_text(numpy.floor(xrange[1])-1,
+            bovy_plot.bovy_text(2*numpy.floor((xrange[1]-1)/2.),
                                 yrange[0]+0.05*(yrange[1]-yrange[0]),
-                                r'$\lambda\,%i,%i$' % (15+int(numpy.floor(xrange[1]/1000.)),
-                                                      int((xrange[1]-1) % 1000.)),
+                                r'$\lambda\,%i,%03i$' % (15+int(numpy.floor(xrange[1]/1000.)),
+                                                        int(2.*numpy.floor((xrange[1]-1)/2.) % 1000.)),
                                 horizontalalignment='center',
                                 verticalalignment='bottom',
                                 rotation='vertical',fontsize=10.)
@@ -409,7 +411,7 @@ def windows(*args,**kwargs):
           (a) wavelength, spectrum (\AA,spectrum units)
           (b) spectrum (assumed on standard APOGEE re-sampled wavelength grid)
           (c) location ID, APOGEE ID (default loads aspcapStar, loads extension ext(=1); apStar=True loads apStar spectrum)
-          +element string (e.g., 'Al')
+          +element string (e.g., 'Al'); Adding 1 and 2 splits the windows into two
     KEYWORDS:
        apogee.spec.plot.waveregions keywords
     OUTPUT:
@@ -424,7 +426,20 @@ def windows(*args,**kwargs):
     try:
         si,ei= apwindow.waveregions(args[2],pad=pad,asIndex=True)
     except IOError:
-        raise IOError("Windows for element %s could not be loaded, please specify an existing APOGEE element" % ((args[2].lower().capitalize())))
+        try:
+            si, ei= apwindow.waveregions(args[2][:-1],pad=pad,asIndex=True)
+        except IOError:
+            raise IOError("Windows for element %s could not be loaded, please specify an existing APOGEE element" % ((args[2].lower().capitalize())))
+        newargs= (args[0],args[1],args[2][:-1])
+        for ii in range(len(args)-3):
+            newargs= newargs+(args[ii+3],)
+        args= newargs
+        if args[2][-1] == '1':
+            si= si[:len(si)//2]
+            ei= ei[:len(ei)//2]
+        else:
+            si= si[len(si)//2:]
+            ei= ei[len(ei)//2:]
     # Also get the number and total width of all of the windows
     dlam= apwindow.total_dlambda(args[2],pad=pad)
     numw= apwindow.num(args[2])
