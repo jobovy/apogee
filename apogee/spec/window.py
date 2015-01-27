@@ -26,7 +26,7 @@ def read(elem,apStarWavegrid=True):
                                        % ((elem.lower().capitalize()))))
     return win
 
-def num(elem):
+def num(elem,pad=0):
     """
     NAME:
        num
@@ -34,13 +34,14 @@ def num(elem):
        return the number of windows for a given element or window array
     INPUT:
        elem - element
+       pad= (0) pad on each side by this many log10 wavelengths in 6e-6 (changes how windows are combined)
     OUTPUT:
        Number of windows
     HISTORY:
        2015-01-25 - Written - Bovy (IAS)
     """
     # Calculate the wavelength regions
-    si, ei= waveregions(elem,asIndex=True)
+    si, ei= waveregions(elem,asIndex=True,pad=pad)
     return len(si)
 
 def waveregions(elem,asIndex=False,pad=0):
