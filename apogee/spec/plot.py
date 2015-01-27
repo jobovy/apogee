@@ -7,6 +7,7 @@ from galpy.util import bovy_plot
 from matplotlib import pyplot
 import matplotlib.ticker as ticker
 from matplotlib.ticker import NullFormatter
+import apogee.spec.window as apwindow
 import apogee.tools.read as apread
 from apogee.tools import air2vac
 _LOG10LAMBDA0= 4.179 
@@ -142,6 +143,9 @@ def waveregions(*args,**kwargs):
     apStar= kwargs.pop('apStar',False)
     labelLines= kwargs.pop('labelLines',not 'overplot' in kwargs)
     cleanZero= kwargs.pop('cleanZero',True)
+    noxticks= kwargs.pop('_noxticks',False)
+    noskipdiags= kwargs.pop('_noskipdiags',False)
+    labelwav= kwargs.pop('_labelwav',False)
     # Labels
     labelID= kwargs.pop('labelID',None)
     labelTeff= kwargs.pop('labelTeff',None)
@@ -173,13 +177,14 @@ def waveregions(*args,**kwargs):
                          for ii in range(nregions)],
                     dtype='float')
     # Adjust 0 (and -1) to start (end) a little further
+    startendskip= kwargs.pop('_startendskip',_STARTENDSKIP)
     dx[0]= args[0][numpy.amin([len(args[0])-1,endindxs[0]])]\
-        -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])] 
-    dx[-1]= args[0][numpy.amin([len(args[0])-1,endindxs[-1]+_STARTENDSKIP])]\
+        -args[0][numpy.amax([0,startindxs[0]-startendskip])] 
+    dx[-1]= args[0][numpy.amin([len(args[0])-1,endindxs[-1]+startendskip])]\
         -args[0][numpy.amax([0,startindxs[-1]-1])] 
     if nregions == 1: #special case
-        dx= [args[0][numpy.amin([len(args[0])-1,endindxs[0]+_STARTENDSKIP])]\
-                 -args[0][numpy.amax([0,startindxs[0]-_STARTENDSKIP])]]
+        dx= [args[0][numpy.amin([len(args[0])-1,endindxs[0]+startendskip])]\
+                 -args[0][numpy.amax([0,startindxs[0]-startendskip])]]
     # Determine a good step for the tickmarks
     tickStepTmp= numpy.log10(numpy.sum(dx)/10.) % 1
     if tickStepTmp > numpy.log10(1.5) and tickStepTmp < numpy.log10(3.5):
@@ -190,12 +195,13 @@ def waveregions(*args,**kwargs):
         tickStep= 10.**int(numpy.log10(numpy.sum(dx)/10.))
     dx/= numpy.sum(dx)
     totdx= 0.85
-    skipdx= 0.015
+    skipdx= kwargs.pop('skipdx',0.015)
     dx*= (totdx-(nregions-1)*skipdx)
     # Setup plot
     overplot= kwargs.pop('overplot',False)
     if not overplot:
-        bovy_plot.bovy_print(fig_width=8.4,fig_height=2.5,
+        bovy_plot.bovy_print(fig_width=kwargs.pop('fig_width',8.4),
+                             fig_height=2.5,
                              axes_labelsize=10,text_fontsize=9,
                              legend_fontsize=9,
                              xtick_labelsize=8,ytick_labelsize=8)
@@ -216,14 +222,14 @@ def waveregions(*args,**kwargs):
         fig.sca(thisax)
         startindx, endindx= startindxs[ii], endindxs[ii]
         if ii == 0 and nregions == 1:
-            xrange=[args[0][numpy.amax([0,startindx-_STARTENDSKIP])]-_LAMBDASUB,
-                    args[0][numpy.amin([len(args[0])-1,endindx+_STARTENDSKIP])]-_LAMBDASUB]
+            xrange=[args[0][numpy.amax([0,startindx-startendskip])]-_LAMBDASUB,
+                    args[0][numpy.amin([len(args[0])-1,endindx+startendskip])]-_LAMBDASUB]
         elif ii == 0:
-            xrange=[args[0][numpy.amax([0,startindx-_STARTENDSKIP])]-_LAMBDASUB,
+            xrange=[args[0][numpy.amax([0,startindx-startendskip])]-_LAMBDASUB,
                     args[0][numpy.amin([len(args[0])-1,endindx])]-_LAMBDASUB]
         elif ii == (nregions-1):
             xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
-                    args[0][numpy.amin([len(args[0])-1,endindx+_STARTENDSKIP])]-_LAMBDASUB]
+                    args[0][numpy.amin([len(args[0])-1,endindx+startendskip])]-_LAMBDASUB]
         else:
             xrange=[args[0][numpy.amax([0,startindx-1])]-_LAMBDASUB,
                     args[0][numpy.amin([len(args[0])-1,endindx])]-_LAMBDASUB]
@@ -233,7 +239,10 @@ def waveregions(*args,**kwargs):
         thisax.set_xlim(xrange[0],xrange[1])
         thisax.set_ylim(yrange[0],yrange[1])
         thisax.xaxis.set_major_locator(ticker.MultipleLocator(tickStep))
-        bovy_plot._add_ticks()
+        bovy_plot._add_ticks(xticks=True-noxticks)
+        if noxticks:
+            nullfmtx= NullFormatter()         # no labels
+            thisax.xaxis.set_major_formatter(nullfmtx)
         if ii > 0:
             nullfmt   = NullFormatter()         # no labels
             thisax.yaxis.set_major_formatter(nullfmt)
@@ -257,25 +266,38 @@ def waveregions(*args,**kwargs):
             thisax.tick_params(left=False,which='both')
             thisax.tick_params(right=False,which='both')
         # Plot cut-out markers
-        d = .015 # how big to make the diagonal lines in axes coordinates
         cutOutkwargs = dict(transform=thisax.transAxes,color='k',
                             clip_on=False)
-        slope= 1./(dx[ii]+0.2*skipdx)/3.
-        if ii == 0 and not nregions == 1:
-            thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
-            thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
-        elif ii == (nregions-1) and not nregions == 1:
-            thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
-            thisax.plot((-slope*d,+slope*d),(1-d,1+d), **cutOutkwargs)
-        elif not nregions == 1:
-            thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
-            thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
-            thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
-            thisax.plot((-slope*d,+slope*d),(1-d,1+d), **cutOutkwargs)
+        if not noskipdiags:
+            d = .015 # how big to make the diagonal lines in axes coordinates
+            slope= 1./(dx[ii]+0.2*skipdx)/3.
+            if ii == 0 and not nregions == 1:
+                thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
+                thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
+            elif ii == (nregions-1) and not nregions == 1:
+                thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
+                thisax.plot((-slope*d,+slope*d),(1-d,1+d), **cutOutkwargs)
+            elif not nregions == 1:
+                thisax.plot((1-slope*d,1+slope*d),(-d,+d), **cutOutkwargs)
+                thisax.plot((1-slope*d,1+slope*d),(1-d,1+d), **cutOutkwargs)
+                thisax.plot((-slope*d,+slope*d),(-d,+d), **cutOutkwargs)
+                thisax.plot((-slope*d,+slope*d),(1-d,1+d), **cutOutkwargs)
+        else: #plot gray bands
+            cutOutkwargs['color']= '0.5'
+            thisax.fill_between((1.,1.+skipdx),(0.,0.),(1.,1.),**cutOutkwargs)
         # Label the lines
         if labelLines:
             _label_all_lines(args[0][startindx],args[0][endindx],
                              thisax,args[0],args[1])
+        # Label the largest round wavelength in angstrom for windows
+        if labelwav:
+            bovy_plot.bovy_text(numpy.floor(xrange[1])-1,
+                                yrange[0]+0.05*(yrange[1]-yrange[0]),
+                                r'$\lambda\,%i,%i$' % (15+int(numpy.floor(xrange[1]/1000.)),
+                                                      int((xrange[1]-1) % 1000.)),
+                                horizontalalignment='center',
+                                verticalalignment='bottom',
+                                rotation='vertical',fontsize=10.)
     # Add the x-axis label
     if not nregions == 1:
         thisax= pyplot.axes([0.1,0.125,0.85,0.8])
@@ -290,8 +312,11 @@ def waveregions(*args,**kwargs):
         thisax.tick_params(labelbottom='off')
         thisax.tick_params(bottom=False,which='both')
         thisax.tick_params(top=False,which='both')
-    if not overplot:
+    if not overplot and not noxticks:
         thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
+                          labelpad=10-(nregions == 1)*10)
+    elif not overplot and noxticks:
+        thisax.set_xlabel(r'$\lambda\,(\AA)$',
                           labelpad=10-(nregions == 1)*10)
     if not nregions == 1:
         thisax.set_zorder(-1)
@@ -371,6 +396,63 @@ def detector(*args,**kwargs):
         plotArgsStart= 2
     return waveregions(args[0],args[1],startindxs=startindxs,endindxs=endindxs,
                        *args[plotArgsStart:],**kwargs)
+
+@specPlotInputDecorator
+def windows(*args,**kwargs):
+    """
+    NAME:
+       windows
+    PURPOSE:
+       plot the spectral windows for a given element
+    INPUT:
+       Either:
+          (a) wavelength, spectrum (\AA,spectrum units)
+          (b) spectrum (assumed on standard APOGEE re-sampled wavelength grid)
+          (c) location ID, APOGEE ID (default loads aspcapStar, loads extension ext(=1); apStar=True loads apStar spectrum)
+          +element string (e.g., 'Al')
+    KEYWORDS:
+       apogee.spec.plot.waveregions keywords
+    OUTPUT:
+       plot to output
+       The final axes allow one to put additional labels on the plot, e.g., for adding the APOGEE ID:
+       bovy_plot.bovy_text(r'$\mathrm{%s}$' % '2M02420597+0837017',top_left=True)       
+       Note that an ID (e.g., the apogee ID) and Teff, logg, metallicity, and alpha-enhancement labels can be added using the keywords label* above
+    HISTORY:
+       2015-01-26 - Written (based on older code) - Bovy (IAS)
+    """
+    pad= kwargs.pop('pad',3)
+    try:
+        si,ei= apwindow.waveregions(args[2],pad=pad,asIndex=True)
+    except IOError:
+        raise IOError("Windows for element %s could not be loaded, please specify an existing APOGEE element" % ((args[2].lower().capitalize())))
+    # Also get the number and total width of all of the windows
+    dlam= apwindow.total_dlambda(args[2],pad=pad)
+    numw= apwindow.num(args[2])
+    # Set spacing between windows
+    if numw > 20:
+        kwargs['skipdx']= 0.003
+        kwargs['_noskipdiags']= True
+    elif numw > 15:
+        kwargs['skipdx']= 0.01
+    # Set initial space to zero
+    kwargs['_startendskip']= 0
+    # Set initial figure width
+    if not kwargs.get('overplot',False):
+        if dlam > 150.:
+            kwargs['fig_width']= 8.4
+        else:
+            kwargs['fig_width']= 4.2
+    # Don't tick x
+    kwargs['_noxticks']= True
+    # Label the largest wavelength in angstrom
+    kwargs['_labelwav']= True
+    # Plot
+    waveregions(args[0],args[1],startindxs=si,endindxs=ei,
+                *args[3:],**kwargs)
+    # Add label
+    bovy_plot.bovy_text(r'$\mathrm{%s}$' % ((args[2].lower().capitalize())),
+                        top_left=True,fontsize=10)
+    return None
 
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
