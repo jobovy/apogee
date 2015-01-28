@@ -84,7 +84,7 @@ obs-summary-year1+2.csv also needs to be present.
 Files of individual spectra live in directories that mirror the SAS as
 well:
 
-* **$APOGEE_DATA/dr10/apogee/spectra/**
+* **$APOGEE_DATA/dr12/apogee/spectra/**
 
 Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files. A typical tree looks something like::
