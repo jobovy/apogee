@@ -152,6 +152,9 @@ def write_ffile(dir,spec,specerr=None):
     HISTORY:
        2015-01-23 - Written - Bovy (IAS)
     """
+    if len(spec.shape) == 1: 
+        spec= numpy.reshape(spec,(1,len(spec)))
+        specerr= numpy.reshape(specerr,(1,len(specerr)))
     numpy.savetxt(os.path.join(dir,'input.frd'),spec)
     if not specerr is None:
         numpy.savetxt(os.path.join(dir,'input.err'),specerr)
