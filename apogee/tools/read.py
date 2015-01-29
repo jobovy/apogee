@@ -47,6 +47,32 @@ def modelspecOnApStarWavegrid(func):
         return out
     return output_wrapper
 
+def specOnAspcapWavegrid(func):
+    """Decorator to put an APOGEE spectrum onto the ASPCAP wavelength grid"""
+    @wraps(func)
+    def output_wrapper(*args,**kwargs):
+        out= func(*args,**kwargs)
+        if kwargs.get('header',True):
+            out, hdr= out
+        if kwargs.get('aspcapWavegrid',True):
+            if len(out.shape) == 2:
+                newOut= numpy.zeros((7214,out.shape[0]))+numpy.nan
+                out= out.T
+            else:
+                newOut= numpy.zeros(7214)+numpy.nan              
+            newOut[:2920]= out[322:3242]
+            newOut[2920:5320]= out[3648:6048]
+            newOut[5320:]= out[6412:8306]
+            if len(out.shape) == 2:
+                out= newOut.T
+            else:
+                out= newOut
+        if kwargs.get('header',True):
+            return (out,hdr)
+        else:
+            return out
+    return output_wrapper
+
 def allStar(rmcommissioning=True,
             main=False,
             ak=True,
@@ -471,7 +497,9 @@ def apogeeObject(field_name,dr=None,
     data['K0'][(data[aktag] <= -50.)]= -9999.9999
     return data
 
-def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True):
+@specOnAspcapWavegrid
+def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True,
+               aspcapWavegrid=False):
     """
     NAME:
        aspcapStar
@@ -483,6 +511,8 @@ def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True):
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+                       wavelength grid
     OUTPUT:
        aspcapStar file or (aspcapStar file, header)
     HISTORY:
@@ -494,7 +524,8 @@ def aspcapStar(loc_id,apogee_id,ext=1,dr=None,header=True):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
-def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
+@specOnAspcapWavegrid
+def apStar(loc_id,apogee_id,ext=1,dr=None,header=True,aspcapWavegrid=False):
     """
     NAME:
        apStar
@@ -506,6 +537,8 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True):
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+                       wavelength grid
     OUTPUT:
        apStar file or (apStar file, header)
     HISTORY:
