@@ -71,7 +71,7 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
     tmpDir= tempfile.mkdtemp(dir='./')
     try:
         # First write the ipf file with the parameters
-        ferre.write_interpolate_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
+        ferre.write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
         # Now write the input.nml file
         if f_access is None:
             f_access= 1

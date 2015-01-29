@@ -104,10 +104,10 @@ def write_input_nml(dir,
 
 # Interpolation
 @paramArrayInputDecorator(1)
-def write_interpolate_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
+def write_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
     """
     NAME:
-       write_interpolate_ipf
+       write_ipf
     PURPOSE:
        write a FERRE input.ipf file for interpolation
     INPUT:
