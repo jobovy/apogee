@@ -24,8 +24,8 @@ def run_ferre(dir,verbose=False):
         stdout= None
         stderr= None
     else:
-        stdout= subprocess.PIPE
-        stderr= subprocess.PIPE
+        stdout= open('/dev/null', 'w')
+        stderr= subprocess.STDOUT
     try:
         subprocess.check_call(['ferre'],cwd=dir,stdout=stdout,stderr=stderr)
     except subprocess.CalledProcessError:
