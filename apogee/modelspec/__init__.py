@@ -5,6 +5,7 @@ import numpy
 import apogee.tools.path as appath
 from apogee.tools import paramIndx
 from apogee.tools.read import modelspecOnApStarWavegrid
+import apogee.tools.read as apread
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -113,8 +114,11 @@ def fit(spec,specerr,
     PURPOSE:
        Fit a model spectrum to a given data spectrum
     INPUT:
-       spec - spectrum: can be (nwave) or (nspec,nwave)
-       specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       Either:
+          (1) location ID - single or list/array of location IDs
+              APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
+          (2) spec - spectrum: can be (nwave) or (nspec,nwave)
+              specerr - spectrum errors: can be (nwave) or (nspec,nwave)
        Input parameters (can be 1D arrays); only used when init=0
           teff= (4750.) Effective temperature (K)
           logg= (2.5) log10 surface gravity / cm s^-2
@@ -143,9 +147,48 @@ def fit(spec,specerr,
     HISTORY:
        2015-01-29 - Written - Bovy (IAS)
     """
-    import apogee.modelspec.ferre as ferre
+    # Parse input
+    if isinstance(specerr,str): # locID+APOGEE-ID; array
+        ispec= apread.aspcapStar(spec,specerr,ext=1,header=False,
+                                 aspcapWavegrid=True)
+        ispecerr= apread.aspcapStar(spec,specerr,ext=2,header=False,
+                                    aspcapWavegrid=True)
+        spec= ispec
+        specerr= ispecerr
+    elif (isinstance(specerr,(list,numpy.ndarray)) \
+              and isinstance(specerr[0],str)): # locID+APOGEE-ID; array
+        nspec= len(specerr)
+        ispec= numpy.empty((nspec,7214))
+        ispecerr= numpy.empty((nspec,7214))
+        for ii in range(nspec):
+            ispec[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=1,
+                                         header=False,aspcapWavegrid=True)
+            ispecerr[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=2,
+                                            header=False,aspcapWavegrid=True)
+        spec= ispec
+        specerr= ispecerr
+    # Make sure the Teff etc. have the right dimensionality
+    if len(spec.shape) == 1:
+        nspec= 1
+    else:
+        nspec= spec.shape[0]
+    if nspec > 1 and isinstance(teff,float):
+        teff= teff*numpy.ones(nspec)
+    if nspec > 1 and isinstance(logg,float):
+        logg= logg*numpy.ones(nspec)
+    if nspec > 1 and isinstance(metals,float):
+        metals= metals*numpy.ones(nspec)
+    if nspec > 1 and isinstance(am,float):
+        am= am*numpy.ones(nspec)
+    if nspec > 1 and isinstance(nm,float):
+        nm= nm*numpy.ones(nspec)
+    if nspec > 1 and isinstance(cm,float):
+        cm= cm*numpy.ones(nspec)
+    if nspec > 1 and not vm is None and isinstance(vm,float):
+        vm= vm*numpy.ones(nspec)
     if dr is None: dr= appath._default_dr()
     # Setup temporary directory to run FERRE from
+    import apogee.modelspec.ferre as ferre
     tmpDir= tempfile.mkdtemp(dir='./')
     try:
         # First write the ipf file with the parameters
@@ -172,10 +215,8 @@ def fit(spec,specerr,
         tmpOut= numpy.loadtxt(os.path.join(tmpDir,'output.opf'),usecols=cols)
         if len(spec.shape) == 1:
             out= numpy.zeros((1,7))
-            nspec= 1
             tmpOut= numpy.reshape(tmpOut,(1,7-sixd))
         else:
-            nspec= spec.shape[0]
             out= numpy.zeros((nspec,7))
         out[:,paramIndx('TEFF')]= tmpOut[:,-1]
         out[:,paramIndx('LOGG')]= tmpOut[:,-2]
