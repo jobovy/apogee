@@ -95,7 +95,10 @@ def write_input_nml(dir,
         outfile.write("OFFILE = '%s'\n" % offile)
         outfile.write('INTER = %i\n' % inter)
         outfile.write('ERRBAR = %i\n' % errbar)
-        outfile.write('INDINI = %i\n' % indini)
+        indinistr= 'INDINI ='
+        for ii in range(ndim):
+            indinistr+= ' %i' % indini
+        outfile.write(indinistr+'\n')
         outfile.write('INIT = %i\n' % init)
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
