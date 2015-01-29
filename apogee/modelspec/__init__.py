@@ -105,7 +105,7 @@ def fit(spec,specerr,teff,logg,metals,am,nm,cm,vm=None,
         lib='GK',pca=True,sixd=True,dr=None,
         offile=None,
         inter=3,f_format=1,f_access=None,
-        errbar=1,indini=0,init=0,
+        errbar=1,indini=[2,1,1,1,3,2],init=1,
         verbose=False):
     """
     NAME:
@@ -115,7 +115,7 @@ def fit(spec,specerr,teff,logg,metals,am,nm,cm,vm=None,
     INPUT:
        spec - spectrum: can be (nwave) or (nspec,nwave)
        specerr - spectrum errors: can be (nwave) or (nspec,nwave)
-       Parameters (can be 1D arrays, in this case multiple spectra will be returned):
+       Input parameters (can be 1D arrays); only used when init=0
           teff - Effective temperature (K)
           logg - log10 surface gravity / cm s^-2
           metals - overall metallicity
@@ -131,8 +131,8 @@ def fit(spec,specerr,teff,logg,metals,am,nm,cm,vm=None,
        FERRE options:
           inter= (3) order of the interpolation
           errbar= (1) method for calculating the error bars
-          indini= (0) how to initialize the search
-          init= (0) if 0, initialize the search at the parameters in the pfile
+          indini= ([2,1,1,1,3,2]) how to initialize the search (int or array/list with ndim entries)
+          init= (1) if 0, initialize the search at the parameters in the pfile
           f_format= (1) file format (0=ascii, 1=unf)
           f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
        Output options:

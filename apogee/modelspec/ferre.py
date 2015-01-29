@@ -96,8 +96,10 @@ def write_input_nml(dir,
         outfile.write('INTER = %i\n' % inter)
         outfile.write('ERRBAR = %i\n' % errbar)
         indinistr= 'INDINI ='
+        if isinstance(indini,int):
+            indini= numpy.zeros(ndim,dtype='int')+indini
         for ii in range(ndim):
-            indinistr+= ' %i' % indini
+            indinistr+= ' %i' % indini[ii]
         outfile.write(indinistr+'\n')
         outfile.write('INIT = %i\n' % init)
         outfile.write('F_FORMAT = %i\n' % f_format)
