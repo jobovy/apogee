@@ -35,10 +35,16 @@ def run_ferre(dir,verbose=False):
 def write_input_nml(dir,
                     pfile,
                     offile,
+                    ffile=None,
+                    erfile=None,
+                    opfile=None,
                     ndim=6,
                     nov=0,
                     synthfile=None,
                     inter=3,
+                    errbar=1,
+                    indini=0,
+                    init=0,
                     f_format=1,
                     f_access=1):
     """
@@ -50,10 +56,16 @@ def write_input_nml(dir,
        dir - directory where the input.nml file will be written to
        pfile - name of the input parameter file
        offile - name of the output best-fitting model file
+       ffile= name of the input parameter file
+       erfile= name of the flux errors file
+       opfile= name of the output parameter file
        ndim= (6) number of dimensions/parameters
        nov= (0) number of parameters to search (0=interpolation)
        synthfile= (default ferreModelLibraryPath in apogee.tools.path) file name of the model grid's header
        inter= (3) order of the interpolation
+       errbar= (1) method for calculating the error bars
+       indini= (0) how to initialize the search
+       init= (0) if 0, initialize the search at the parameters in the pfile
        f_format= (1) file format (0=ascii, 1=unf)
        f_access= (1) 0: load whole library, 1: use direct access (for small numbers of interpolations)
     OUTPUT:
@@ -74,13 +86,23 @@ def write_input_nml(dir,
         outfile.write(indvstr+'\n')
         outfile.write("SYNTHFILE(1) = '%s'\n" % synthfile)
         outfile.write("PFILE = '%s'\n" % pfile)
+        if not ffile is None:
+            outfile.write("FFILE = '%s'\n" % ffile)
+        if not erfile is None:
+            outfile.write("ERFILE = '%s'\n" % erfile)
+        if not opfile is None:
+            outfile.write("OPFILE = '%s'\n" % opfile)
         outfile.write("OFFILE = '%s'\n" % offile)
         outfile.write('INTER = %i\n' % inter)
+        outfile.write('ERRBAR = %i\n' % errbar)
+        outfile.write('INDINI = %i\n' % indini)
+        outfile.write('INIT = %i\n' % init)
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
         outfile.write('/\n')
     return None
 
+# Interpolation
 @paramArrayInputDecorator(1)
 def write_interpolate_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
     """
@@ -113,3 +135,4 @@ def write_interpolate_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
                    metals[ii],logg[ii],teff[ii])
             outfile.write(outStr)
     return None
+
