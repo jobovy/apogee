@@ -109,7 +109,7 @@ def write_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
     NAME:
        write_ipf
     PURPOSE:
-       write a FERRE input.ipf file for interpolation
+       write a FERRE input.ipf file
     INPUT:
        dir - directory where the input.ipf file will be written to
        Parameters (can be 1D arrays):
@@ -136,3 +136,23 @@ def write_ipf(dir,teff,logg,metals,am,nm,cm,vm=None):
             outfile.write(outStr)
     return None
 
+# Fitting
+def write_ffile(dir,spec,specerr=None):
+    """
+    NAME:
+       write_ffile
+    PURPOSE:
+       write FERRE input.frd file with input fluxes and input.err with input flux errors
+    INPUT:
+       dir - directory where the input.frd file will be written to
+       spec - spectra (nspec,nwave)
+       specerr= (None) if set, aos write the input.err file
+    OUTPUT:
+       (none; just writes the file)
+    HISTORY:
+       2015-01-23 - Written - Bovy (IAS)
+    """
+    numpy.savetxt(os.path.join(dir,'input.frd'),spec)
+    if not specerr is None:
+        numpy.savetxt(os.path.join(dir,'input.err'),specerr)
+    return None
