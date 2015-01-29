@@ -100,8 +100,8 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
         os.rmdir(tmpDir)
     return out
 
-@paramArrayInputDecorator(2)
-def fit(spec,specerr,teff,logg,metals,am,nm,cm,vm=None,
+def fit(spec,specerr,
+        teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
         lib='GK',pca=True,sixd=True,dr=None,
         offile=None,
         inter=3,f_format=1,f_access=None,
@@ -116,12 +116,12 @@ def fit(spec,specerr,teff,logg,metals,am,nm,cm,vm=None,
        spec - spectrum: can be (nwave) or (nspec,nwave)
        specerr - spectrum errors: can be (nwave) or (nspec,nwave)
        Input parameters (can be 1D arrays); only used when init=0
-          teff - Effective temperature (K)
-          logg - log10 surface gravity / cm s^-2
-          metals - overall metallicity
-          am - [alpha/M]
-          nm - [N/M]
-          cm - [C/M]
+          teff= (4750.) Effective temperature (K)
+          logg= (2.5) log10 surface gravity / cm s^-2
+          metals= (0.) overall metallicity
+          am= (0.) [alpha/M]
+          nm= (0.) [N/M]
+          cm= (0.) [C/M]
           vm= if using the 7D library, also specify the microturbulence
        Library options:
           lib= ('GK') spectral library
