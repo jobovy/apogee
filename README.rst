@@ -36,6 +36,10 @@ mirrored locally to use this code). If you want to use a different
 filename-length you can specify, for example, ``--ferre-flen 200`` for
 a length of 200 characters.
 
+If you have already installed FERRE yourself, you should alias the
+FERRE binary to ``ferre`` and FERRE's ascii2bin to ``ascii2bin`` to
+use FERRE within this package.
+
 DEPENDENCIES
 =============
 
