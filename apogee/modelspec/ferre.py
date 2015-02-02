@@ -40,6 +40,7 @@ def write_input_nml(dir,
                     opfile=None,
                     ndim=6,
                     nov=0,
+                    indv=None,
                     synthfile=None,
                     inter=3,
                     errbar=1,
@@ -73,6 +74,8 @@ def write_input_nml(dir,
     HISTORY:
        2015-01-22 - Written - Bovy (IAS)
     """
+    if indv is None:
+        indv= range(1,ndim+1)
     if synthfile is None:
         import apogee.tools.path as appath
         synthfile= appath.ferreModelLibraryPath(header=True)
@@ -81,7 +84,7 @@ def write_input_nml(dir,
         outfile.write('NDIM = %i\n' % ndim)
         outfile.write('NOV = %i\n' % nov)
         indvstr= 'INDV ='
-        for ii in range(1,ndim+1):
+        for ii in indv:
             indvstr+= ' %i' % ii
         outfile.write(indvstr+'\n')
         outfile.write("SYNTHFILE(1) = '%s'\n" % synthfile)

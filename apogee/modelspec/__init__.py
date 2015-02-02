@@ -103,6 +103,8 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
 
 def fit(spec,specerr,
         teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
+        fixteff=False,fixlogg=False,fixmetals=False,fixam=False,fixcm=False,
+        fixnm=False,fixvm=False,
         lib='GK',pca=True,sixd=True,dr=None,
         offile=None,
         inter=3,f_format=1,f_access=None,
@@ -127,6 +129,14 @@ def fit(spec,specerr,
           nm= (0.) [N/M]
           cm= (0.) [C/M]
           vm= if using the 7D library, also specify the microturbulence
+       Fit options:
+          fixteff= (False) if True, fix teff at the input value
+          fixlogg= (False) if True, fix logg at the input value
+          fixmetals= (False) if True, fix metals at the input value
+          fixam= (False) if True, fix am at the input value
+          fixcm= (False) if True, fix cm at the input value
+          fixnm= (False) if True, fix nm at the input value
+          fixvm= (False) if True, fix vm at the input value (only if sixd is False)
        Library options:
           lib= ('GK') spectral library
           pca= (True) if True, use a PCA compressed library
@@ -187,6 +197,22 @@ def fit(spec,specerr,
     if nspec > 1 and not vm is None and isinstance(vm,float):
         vm= vm*numpy.ones(nspec)
     if dr is None: dr= appath._default_dr()
+    # Fix any of the parameters?
+    indv= []
+    if not sixd and not fixvm:
+        indv.append(1)
+    if not fixcm:
+        indv.append(2-sixd)
+    if not fixnm:
+        indv.append(3-sixd)
+    if not fixam:
+        indv.append(4-sixd)
+    if not fixmetals:
+        indv.append(5-sixd)
+    if not fixlogg:
+        indv.append(6-sixd)
+    if not fixteff:
+        indv.append(7-sixd)
     # Setup temporary directory to run FERRE from
     import apogee.modelspec.ferre as ferre
     tmpDir= tempfile.mkdtemp(dir='./')
@@ -199,7 +225,9 @@ def fit(spec,specerr,
         if f_access is None:
             f_access= 1
         ferre.write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
-                              nov=7-sixd,
+                              nov=7-sixd-fixcm-fixnm-fixam-fixmetals\
+                                  -fixlogg-fixteff,
+                              indv=indv,
                               synthfile=appath.ferreModelLibraryPath\
                                   (lib=lib,pca=pca,sixd=sixd,dr=dr,
                                    header=True,unf=False),
