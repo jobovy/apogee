@@ -108,7 +108,7 @@ def fit(spec,specerr,
         lib='GK',pca=True,sixd=True,dr=None,
         offile=None,
         inter=3,f_format=1,f_access=None,
-        errbar=1,indini=[2,1,1,1,3,2],init=1,
+        errbar=1,indini=[1,1,1,2,2,3],init=1,
         verbose=False):
     """
     NAME:
