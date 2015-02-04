@@ -104,6 +104,7 @@ def write_input_nml(dir,
         for ii in range(ndim):
             indinistr+= ' %i' % indini[ii]
         outfile.write(indinistr+'\n')
+        outfile.write('NRUNS = %i\n' % numpy.prod(indini))
         outfile.write('INIT = %i\n' % init)
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
