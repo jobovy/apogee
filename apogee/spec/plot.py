@@ -209,6 +209,7 @@ def waveregions(*args,**kwargs):
         pyplot.figure()
     if overplot:
         yrange= numpy.array(pyplot.gca().get_ylim())
+        kwargs.pop('yrange',None) # pop if there
     elif apStar:
         yrange= kwargs.pop('yrange',[0.,1.1*numpy.nanmax(args[1])])
     else:
