@@ -488,7 +488,7 @@ def windows(*args,**kwargs):
                 *args[3:],**kwargs)
     # Add label
     bovy_plot.bovy_text(r'$\mathrm{%s}$' % ((args[2].lower().capitalize())),
-                        top_left=True,fontsize=10)
+                        top_left=True,fontsize=10,backgroundcolor='w')
     return None
 
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
