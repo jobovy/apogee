@@ -127,7 +127,7 @@ def waveregions(*args,**kwargs):
           startindxs, endindxs= star and end index in the wavelength array of the various chunks
        Plotting-specific keywords
           labelLines= (True) label some lines
-          cleanZero= (True) replace zero entries with NaN
+          cleanZero= (True) replace <= zero entries with NaN
           labelID= A string ID that will be placed in the top-left corner
           labelTeff, labellogg, labelmetals, labelafe= parameter labels that will be placed in the top-right corner
           pyplot.plot args and kwargs
