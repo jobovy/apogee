@@ -54,7 +54,7 @@ def specOnAspcapWavegrid(func):
         out= func(*args,**kwargs)
         if kwargs.get('header',True):
             out, hdr= out
-        if kwargs.get('aspcapWavegrid',True):
+        if kwargs.get('aspcapWavegrid',False):
             if len(out.shape) == 2:
                 newOut= numpy.zeros((7214,out.shape[0]))+numpy.nan
                 out= out.T
