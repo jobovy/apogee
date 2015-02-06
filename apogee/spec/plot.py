@@ -87,7 +87,14 @@ def specPlotInputDecorator(func):
         elif len(args) >= 1 and isinstance(args[0],(list,numpy.ndarray)):
             # spectrum on standard re-sampled wavelength grid
             lam=apStarWavegrid()
-            return func(lam,args[0],*args[1:],**kwargs)
+            if len(args[0]) == 7214: # Input is on ASPCAP grid
+                spec= numpy.zeros(len(lam))
+                spec[322:3242]= args[0][:2920]
+                spec[3648:6048]= args[0][2920:5320]
+                spec[6412:8306]= args[0][5320:]
+            else:
+                spec= args[0]
+            return func(lam,spec,*args[1:],**kwargs)
         elif isinstance(args[0],(int,numpy.short,str)) \
                 and isinstance(args[1],str):
             # location ID and APOGEE ID (loc ID can be string for 1m sample)
