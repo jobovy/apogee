@@ -138,16 +138,23 @@ class rcdist:
            2012-11-15 - Written - Bovy (IAS)
         """
         #Check that this color and Z lies between the bounds
-        if Z < jkzcut(jk) or Z > jkzcut(jk,upper=True) or jk < 0.5 or Z > 0.06:
-            return numpy.nan
+        if isinstance(jk,float): jk= numpy.array([jk])
+        if isinstance(Z,float): Z= numpy.array([Z])
+        if not appmag is None and isinstance(appmag,float):
+            appmag= numpy.array([appmag])
+        out= numpy.empty_like(jk)
+        indx= (Z >= jkzcut(jk))*(Z <= jkzcut(jk,upper=True))\
+            *(jk >= 0.5)*(Z <= 0.06)
+        out[True-indx]= numpy.nan
         if mh:
             absmag= self._interpMag.ev(jk,Z)+dh
         else:
             absmag= self._interpMagH.ev(jk,Z)+dk
         if appmag is None:
-            return absmag
+            out[indx]= absmag
         else:
-            return 10.**((appmag-absmag)/5-2.)
+            out[indx]= 10.**((appmag-absmag)/5-2.)
+        return out
 
 class rcpop:
     """Class that holds functions relating the RC to the full stellar pop"""
