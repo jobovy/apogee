@@ -79,9 +79,11 @@ class rcdist:
         HISTORY:
            2012-11-15 - Written - Bovy (IAS)
         """
+        savefilenameH= None
         if len(args) < 1 or isinstance(args[0],str):
             if len(args) < 1:
                 savefilename= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_mode_jkz_ks_parsec_newlogg.sav')
+                savefilenameH= os.path.join(os.path.dirname(os.path.realpath(__file__)),'data/rcmodel_mode_jkz_h_parsec_newlogg.sav')
             else:
                 savefilename= args[0]
             if os.path.exists(savefilename):
@@ -92,6 +94,12 @@ class rcdist:
                 savefile.close()
             else:
                 raise IOError(savefilename+' file does not exist')
+            if not savefilenameH is None and os.path.exists(savefilenameH):
+                savefile= open(savefilename,'rb')
+                self._meanmagH= pickle.load(savefile)
+                savefile.close()
+            elif not savefilenameH:
+                raise IOError(savefilename+' file does not exist')
         else:
             self._meanmag= args[0]
             self._jks= args[1]
@@ -101,9 +109,15 @@ class rcdist:
                                                          self._zs,
                                                          self._meanmag,
                                                          kx=3,ky=3,s=0.)
+        if not savefilenameH is None:
+            self._interpMagH= interpolate.RectBivariateSpline(self._jks,
+                                                              self._zs,
+                                                              self._meanmagH,
+                                                              kx=3,ky=3,s=0.)
         return None      
 
-    def __call__(self,jk,Z,appmag=None,dk=0.039471):
+    def __call__(self,jk,Z,appmag=None,dk=0.039471,
+                 mh=False,dh=0.081934):
         """
         NAME:
            __call__
@@ -114,6 +128,8 @@ class rcdist:
            Z - metal-content
            appmag - apparent magnitude
            dk= calibration offset (dm= m-M-dk)
+           mh= (False) if True, base the distance on M_H rather than M_Ks
+           dh= calibration offset when using mh (dm=m-M-dh)
         OUTPUT:
            Either:
               - absmag (if appmag is None)
@@ -124,11 +140,14 @@ class rcdist:
         #Check that this color and Z lies between the bounds
         if Z < jkzcut(jk) or Z > jkzcut(jk,upper=True) or jk < 0.5 or Z > 0.06:
             return numpy.nan
-        if appmag is None:
-            return self._interpMag.ev(jk,Z)+dk
+        if mh:
+            absmag= self._interpMag.ev(jk,Z)+dh
         else:
-            absmag= self._interpMag.ev(jk,Z)
-            return 10.**((appmag-absmag-dk)/5-2.)
+            absmag= self._interpMagH.ev(jk,Z)+dk
+        if appmag is None:
+            return absmag
+        else:
+            return 10.**((appmag-absmag)/5-2.)
 
 class rcpop:
     """Class that holds functions relating the RC to the full stellar pop"""
