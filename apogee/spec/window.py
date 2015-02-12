@@ -57,6 +57,8 @@ def waveregions(elem,asIndex=False,pad=0):
        pad= (0) pad on each side by this many log10 wavelengths in 6e-6 (changes how windows are combined)
     OUTPUT:
        (startlams,endlams) or (startindxs, endindxs)
+    BUGS:
+       range that comes out of asIndex=True is (or can be) different from that of asIndex=False
     HISTORY:
        2015-01-26 - Written - Bovy (IAS@KITP)
     """
@@ -154,3 +156,53 @@ def total_dlambda(elem,pad=0):
     """
     si,ei= waveregions(elem,asIndex=False,pad=pad)
     return numpy.sum(ei-si)
+
+def equishwidth(elem,spec,specerr,refspec=None):
+    """
+    NAME:
+       equishwidth
+    PURPOSE:
+       return an equivalent-width-ish quantity for a given element:
+
+       equishwidth = \sum_lam \Delta lam_center of window x (refspec-spec)/refspec x window/specerr^2 / \sum_lam window/specerr^2
+
+       or if refspec == 0:
+
+       equishwidth = \sum_lam \Delta lam_center of window x (1-spec) x window/specerr^2 / \sum_lam window/specerr^2
+
+
+    INPUT:
+       elem - element to consider
+       spec - spectrum on apStarWavegrid (nwave)
+       specerr - error on the spectrum on apStarWavegrid (nwave)
+       refspec= reference spectrum (assumed to be zero if absent)
+    OUTPUT:
+        equivalent-ish-width
+    HISTORY:
+       2015-02-11 - Written - Bovy (IAS@KITP)
+    """
+    if refspec is None:
+        refspec= numpy.zeros_like(spec)
+    # Read windows
+    win= read(elem,apStarWavegrid=True)
+    startindxs, endindxs= waveregions(elem,asIndex=True,pad=0)
+    import apogee.spec.plot as splot
+    lams= splot.apStarWavegrid()
+    startlams= lams[startindxs]
+    endlams= lams[endindxs]
+    outval= 0.
+    norm= 0.
+    for (startindx,endindx,startlam,endlam) \
+            in zip(startindxs,endindxs,startlams,endlams):
+        norm+= numpy.sum(win[startindx:endindx]\
+                                /specerr[startindx:endindx]**2.)
+        if not numpy.all(refspec == 0.):
+            outval+= (endlam-startlam)/(endindx-startindx)\
+                *numpy.sum(win[startindx:endindx]/specerr[startindx:endindx]**2.\
+                               *(1.-spec[startindx:endindx]/refspec[startindx:endindx]))
+        else:
+            outval+= (endlam-startlam)/(endindx-startindx)\
+                *numpy.sum(win[startindx:endindx]/specerr[startindx:endindx]**2.\
+                               *(1.-spec[startindx:endindx]))
+    outval/= norm
+    return outval
