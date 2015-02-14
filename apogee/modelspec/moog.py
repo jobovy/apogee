@@ -47,6 +47,8 @@ def convert_modelAtmosphere(**kwargs):
                            modelfilename],
                           cwd=modeldirname,
                           stdout=stdout,stderr=stderr)
+    stdout.close()
+    stderr.close()
     os.remove(os.path.join(modeldirname,'makemoogmodel.awk'))
     return None
 
