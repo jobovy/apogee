@@ -510,6 +510,46 @@ def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None,
             filename+= 'dat'
         return os.path.join(specReduxPath,modelSpecLibPath,filename)
     
+def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
+                        cfe=0.,afe=0.,vmicro=2.,dr=None):
+    """
+    NAME:
+       modelSpecPath
+    PURPOSE:
+       returns the path of a model spectrum file
+    INPUT:
+       lib= ('GK') spectral library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= 'X'
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    modelAtmosphereLibPath= apogeeModelAtmosphereLibraryDirPath(dr=dr,lib=lib)
+    if dr == '10':
+        raise IOError('Loading model atmospheres for DR10 is not supported at this time')
+    elif dr == '12' or dr == 'X':
+        # Create directory + filename
+        if lib.lower() == 'kurucz_filled':
+            metalsstr= _modelAtmKurucz_metalsString(metals)
+            cfestr= _modelAtmKurucz_cfeString(cfe,metals)
+            afestr= _modelAtmKurucz_afeString(afe,metals)
+            dirname= os.path.join(specReduxPath,modelAtmosphereLibPath,
+                                  metalsstr+cfestr+afestr)
+            filename= 'a'+metalsstr+cfestr+afestr
+            teffstr= _modelAtmKurucz_teffString(teff)
+            loggstr= _modelAtmKurucz_loggString(logg,teff)
+            filename+= teffstr+loggstr+'v20.mod'
+        return os.path.join(dirname,filename)
+    
 def apogeeSpectroReduxDirPath(dr=None):
     """
     NAME:
@@ -550,6 +590,27 @@ def apogeeModelSpectroLibraryDirPath(dr=None,lib='GK'):
             return os.path.join('speclib','asset','kurucz_filled',
                                 'solarisotopes','asF_131216_lsfcombo5v6')
    
+def apogeeModelAtmosphereLibraryDirPath(dr=None,lib='kurucz_filled'):
+    """
+    NAME:
+       apogeeModelAtmosphereLibraryDirPath
+    PURPOSE:
+        returns the path of the model atmospheres within the spectral reduction directory
+    INPUT:
+       dr= return the path corresponding to this data release       
+       lib= ('kurucz_filled') spectral library
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    if dr == '12' or dr == 'X':
+        if lib.lower() == 'kurucz_filled':
+            return os.path.join('speclib','kurucz_filled')
+        elif 'marcs' in lib.lower():
+            return os.path.join('speclib','marcs',lib)
+   
 def _default_dr():
     if _APOGEE_REDUX == _DR10REDUX: dr= '10'
     elif _APOGEE_REDUX == _DR11REDUX: dr= '11'
@@ -563,3 +624,93 @@ def _redux_dr(dr=None):
     elif dr == '11' or dr == '11': return _DR11REDUX
     elif dr == '12': return _DR12REDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
+
+# Functions that give the correct string values for model atmosphere files
+# [M/H]
+_modelAtmKurucz_fehgrid= numpy.array([-5.,-4.5,-4.,-3.5,-3.,-2.75,-2.5,
+                                       -2.25,-2.,-1.75,-1.5,-1.25,-1.,
+                                       -0.75,-0.5,-0.25,0.,0.25,0.5,
+                                       1.,1.5]) 
+def _modelAtmKurucz_metalsString(metals):
+    metalsp= _modelAtmKurucz_fehgrid[numpy.argmin(numpy.fabs(_modelAtmKurucz_fehgrid-metals))]
+    if metalsp >= 0.:
+        metalsstr= 'mp%i%i' % (int(metalsp),int(round((metalsp % 1)*10.)))
+    else:
+        metalsstr= 'mm%i%i' % (int(-metalsp),int(round((-metalsp % 1)*10.)))
+    return metalsstr
+
+# [C/Fe]
+_modelAtmKurucz_cfegrid_lowm= numpy.linspace(-1.,1.,5)
+_modelAtmKurucz_cfegrid_midm= numpy.linspace(-1.5,1.,11)
+_modelAtmKurucz_cfegrid_him= numpy.linspace(-1.5,1.,6)
+def _modelAtmKurucz_cfeString(cfe,metals):
+    if metals <= -3.5:
+        tgrid= _modelAtmKurucz_cfegrid_lowm
+    elif metals >= 1.:
+        tgrid= _modelAtmKurucz_cfegrid_him
+    else:
+        tgrid= _modelAtmKurucz_cfegrid_midm
+    cfep= tgrid[numpy.argmin(numpy.fabs(tgrid-cfe))]
+    if cfep >= 0.:
+        cfestr= 'cp%i%i' % (int(cfep),int(round((cfep % 1)*10.)))
+    else:
+        cfestr= 'cm%i%i' % (int(-cfep),int(round((-cfep % 1)*10.)))
+    return cfestr
+
+# [alpha/Fe]
+_modelAtmKurucz_afegrid_lowm= numpy.linspace(-1.,1.,5)
+_modelAtmKurucz_afegrid_midm= numpy.linspace(-1.5,1.,11)
+_modelAtmKurucz_afegrid_him= numpy.linspace(-1.5,1.,6)
+def _modelAtmKurucz_afeString(afe,metals):
+    if metals <= -3.5:
+        tgrid= _modelAtmKurucz_afegrid_lowm
+    elif metals >= 1.:
+        tgrid= _modelAtmKurucz_afegrid_him
+    else:
+        tgrid= _modelAtmKurucz_afegrid_midm
+    afep= tgrid[numpy.argmin(numpy.fabs(tgrid-afe))]
+    if afep >= 0.:
+        afestr= 'op%i%i' % (int(afep),int(round((afep % 1)*10.)))
+    else:
+        afestr= 'om%i%i' % (int(-afep),int(round((-afep % 1)*10.)))
+    return afestr
+
+# Teff
+_modelAtmKurucz_teffgrid= numpy.array([3500,3750,4000,4250,4500,
+                                       4750,5000,5250,5500,5750,
+                                       6000,6250,6500,6750,7000,
+                                       7250,7500,7750,8000,8250,
+                                       8500,8750,9000,9250,9500,
+                                       9750,10000,10250,10500,
+                                       10750,11000,11250,11500,11750,
+                                       12000,12500,13000,13500,14000,
+                                       14500,15000,15500,16000,16500,
+                                       17000,17500,18000,18500,19000,
+                                       19500,20000,21000,22000,23000,
+                                       24000,25000,26000,27000,28000,
+                                       29000,30000],dtype='int')
+def _modelAtmKurucz_teffString(teff):
+    teffp= _modelAtmKurucz_teffgrid[numpy.argmin(numpy.fabs(_modelAtmKurucz_teffgrid-teff))]
+    return 't%i' % teffp
+
+# log g
+_modelAtmKurucz_logggrid_G= numpy.linspace(0.,5.,11)
+_modelAtmKurucz_logggrid_F= numpy.linspace(1.,5.,9)
+_modelAtmKurucz_logggrid_A= numpy.linspace(2.,5.,7)
+_modelAtmKurucz_logggrid_B= numpy.linspace(3.,5.,5)
+_modelAtmKurucz_logggrid_O= numpy.linspace(4.,5.,3)
+def _modelAtmKurucz_loggString(logg,teff):
+    if teff <= 6000.:
+        tgrid= _modelAtmKurucz_logggrid_G
+    elif teff <= 8000.:
+        tgrid= _modelAtmKurucz_logggrid_F
+    elif teff <= 12000.:
+        tgrid= _modelAtmKurucz_logggrid_A
+    elif teff <= 20000.:
+        tgrid= _modelAtmKurucz_logggrid_B
+    else:
+        tgrid= _modelAtmKurucz_logggrid_O
+    loggp= tgrid[numpy.argmin(numpy.fabs(tgrid-logg))]
+    return 'g%i%i' % (int(loggp),int(round((loggp % 1)*10.)))
+
+
