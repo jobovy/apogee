@@ -12,6 +12,7 @@ import numpy
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
+_PROPRIETARY_URL= 'http://data.sdss.org/sas/bosswork'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
@@ -147,8 +148,8 @@ def apStar(loc_id,apogee_id,dr=None):
     return None
 
 def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
-                  cfe=0.,nfe=0.,afe=0.,vmicro=2.,
-                  dr=None,rmHDU1=True,rmHDU2=True):
+              cfe=0.,nfe=0.,afe=0.,vmicro=2.,
+              dr=None,rmHDU1=True,rmHDU2=True):
     """
     NAME:
        modelSpec
@@ -269,6 +270,40 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
     _download_file(headerDownloadPath,headerFilePath,dr,verbose=True)
     return None
 
+def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
+                    cfe=0.,nfe=0.,afe=0.,vmicro=2.,dr=None):
+    """
+    NAME:
+       modelAtmosphere
+    PURPOSE:
+       download a model atmosphere
+    INPUT:
+       lib= ('kurucz_filled') model atmosphere library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= 'X'
+    # First make sure the file doesn't exist
+    filePath= path.modelAtmospherePath(lib=lib,teff=teff,logg=logg,
+                                       metals=metals,cfe=cfe,afe=afe,
+                                       vmicro=2.)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                'dr%s' % dr),
+                                   _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def _download_file(downloadPath,filePath,dr,verbose=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))
@@ -313,4 +348,4 @@ def _download_file(downloadPath,filePath,dr,verbose=False):
 def _base_url(dr,rc=False):
     if dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
-    else: return -1
+    else: return _PROPRIETARY_URL
