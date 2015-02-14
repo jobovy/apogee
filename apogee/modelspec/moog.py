@@ -1,12 +1,14 @@
 ###############################################################################
 # apogee.modelspec.moog: functions to run MOGG with the APOGEE analysis
 ###############################################################################
+import sys
 import os, os.path
 import shutil
 import tempfile
 import subprocess
 import apogee.tools.path as appath
-_WMIN_DEFAULT= 15150.000
+import apogee.tools.download as download
+_WMIN_DEFAULT= 15000.000
 _WMAX_DEFAULT= 17000.000
 _DW_DEFAULT= 0.10000000
 _WIDTH_DEFAULT= 7.0000000
@@ -101,7 +103,7 @@ def weedout(**kwargs):
         parfile.write("summary_out '/dev/null'\n")
         parfile.write("smoothed_out '/dev/null'\n")
         parfile.write("damping 0\n")
-        parfile.write("model_in '../%s'\n" % outname.replace('.lines','.org'))
+        parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
         parfile.write("lines_in %s\n" % os.path.basename(linelistfilename))
         parfile.write("atmosphere 1\n")
         parfile.write("molecules 2\n")
@@ -130,5 +132,177 @@ def weedout(**kwargs):
                                        os.path.basename(linelistfilename))):
             os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
         os.rmdir(tmpDir)
+    return None
+
+def synth(**kwargs):
+    """
+    NAME:
+       synth
+    PURPOSE:
+       Run a MOOG synthesis
+    INPUT:
+       linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       lib= ('kurucz_filled') spectral library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       SOMETHING
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    # Get the spectral synthesis limits
+    wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
+    wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
+    dw= kwargs.pop('dw',_DW_DEFAULT)
+    width= kwargs.pop('width',_WIDTH_DEFAULT)
+    # Get the filename of the model atmosphere
+    modelfilename= appath.modelAtmospherePath(**kwargs)
+    modeldirname= os.path.dirname(modelfilename)
+    modelbasename= os.path.basename(modelfilename)
+    # Get the name of the linelist
+    linelist= kwargs.pop('linelist',None)
+    if linelist is None:
+        linelistfilename= modelbasename.replace('.mod','.lines')
+        if not os.path.exists(os.path.join(modeldirname,linelistfilename)):
+            raise IOError('No linelist given and not weed-out version found for this atmosphere; either specify a linelist or run weedout first')
+        linelistfilename= os.path.join(modeldirname,linelistfilename)
+    else:
+        linelistfilename= appath.linelistPath(linelist,
+                                              dr=kwargs.get('dr',None))
+    # We will run in a subdirectory of the relevant model atmosphere
+    tmpDir= tempfile.mkdtemp(dir=modeldirname)
+    shutil.copy(linelistfilename,tmpDir)
+    # Also copy the strong lines
+    stronglinesfilename= appath.linelistPath('stronglines.vac',
+                                             dr=kwargs.get('dr',None))
+    if not os.path.exists(stronglinesfilename):
+        download.linelist('stronglines.vac',dr=kwargs.get('dr',None))
+    shutil.copy(stronglinesfilename,tmpDir)
+    # Now write the script file
+    nsynth= 1
+    with open(os.path.join(tmpDir,'synth.par'),'w') as parfile:
+        parfile.write('synth\n')
+        parfile.write('terminal x11\n')
+        parfile.write('plot 1\n')
+        parfile.write("standard_out std.out\n")
+        parfile.write("summary_out '../synth.out'\n")
+        parfile.write("smoothed_out '/dev/null'\n")
+        parfile.write("strong 0\n")
+        parfile.write("damping 0\n")
+        parfile.write("stronglines_in stronglines.vac\n")
+        parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
+        parfile.write("lines_in %s\n" % os.path.basename(linelistfilename))
+        parfile.write("atmosphere 1\n")
+        parfile.write("molecules 2\n")
+        parfile.write("lines 1\n")
+        parfile.write("flux/int 0\n")
+        # Write the isotopes
+        parfile.write("isotopes 17 %i\n" % nsynth)
+        isotopestr= '108.00116'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.001'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '606.01212'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.01'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '606.01213'
+        for ii in range(nsynth):
+            isotopestr+= ' 90'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '606.01313'
+        for ii in range(nsynth):
+            isotopestr+= ' 180'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '607.01214'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.01'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '607.01314'
+        for ii in range(nsynth):
+            isotopestr+= ' 90'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '607.01215'
+        for ii in range(nsynth):
+            isotopestr+= ' 273'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '608.01216'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.01'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '608.01316'
+        for ii in range(nsynth):
+            isotopestr+= ' 90'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '608.01217'
+        for ii in range(nsynth):
+            isotopestr+= ' 1101'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '608.01218'
+        for ii in range(nsynth):
+            isotopestr+= ' 551'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '114.00128'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.011'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '114.00129'
+        for ii in range(nsynth):
+            isotopestr+= ' 20'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '114.00130'
+        for ii in range(nsynth):
+            isotopestr+= ' 30'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '101.00101'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.001'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '101.00102'
+        for ii in range(nsynth):
+            isotopestr+= ' 1000'
+        parfile.write(isotopestr+'\n')
+        isotopestr= '126.00156'
+        for ii in range(nsynth):
+            isotopestr+= ' 1.00'
+        parfile.write(isotopestr+'\n')
+        # Abundances
+        parfile.write("abundances 1 %i\n" % nsynth)
+        # Al for now
+        parfile.write("13 -0.5\n")
+        parfile.write("synlimits\n")
+        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax,dw,width))
+    # Now run synth
+    sys.stdout.write('\r'+"Running MOOG synth ...\r")
+    sys.stdout.flush()
+    try:
+        p= subprocess.Popen(['moogsilent'],
+                            cwd=tmpDir,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        p.stdin.write('synth.par\n')
+        stdout, stderr= p.communicate()
+    except subprocess.CalledProcessError:
+        print("Running synth failed ...")
+    finally:
+        if os.path.exists(os.path.join(tmpDir,'synth.par')):
+            os.remove(os.path.join(tmpDir,'synth.par'))
+        if os.path.exists(os.path.join(tmpDir,'std.out')):
+            os.remove(os.path.join(tmpDir,'std.out'))
+        if os.path.exists(os.path.join(tmpDir,
+                                       os.path.basename(linelistfilename))):
+            os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
+        if os.path.exists(os.path.join(tmpDir,'stronglines.vac')):
+            os.remove(os.path.join(tmpDir,'stronglines.vac'))
+        os.rmdir(tmpDir)
+        sys.stdout.write('\r'+download._ERASESTR+'\r')
+        sys.stdout.flush()        
     return None
 
