@@ -6,6 +6,7 @@ import os, os.path
 import shutil
 import tempfile
 import subprocess
+import numpy
 import apogee.tools.path as appath
 import apogee.tools.download as download
 _WMIN_DEFAULT= 15000.000
@@ -136,13 +137,19 @@ def weedout(**kwargs):
         os.rmdir(tmpDir)
     return None
 
-def synth(**kwargs):
+def synth(*args,**kwargs):
     """
     NAME:
        synth
     PURPOSE:
        Run a MOOG synthesis
-    INPUT:
+    INPUT ARGUMENTS:
+       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
+          [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
+          [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
+          ...
+          [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
+    INPUT KEYWORDS:
        linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
        wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        lib= ('kurucz_filled') spectral library
@@ -187,7 +194,11 @@ def synth(**kwargs):
         download.linelist('stronglines.vac',dr=kwargs.get('dr',None))
     shutil.copy(stronglinesfilename,tmpDir)
     # Now write the script file
-    nsynth= 1
+    if len(args) == 0: #special case that there are *no* differences
+        args= ([26,0.],)
+    nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
+    nsynth= numpy.amax(nsynths) #Take the longest abundance list
+    nabu= len(args)
     with open(os.path.join(tmpDir,'synth.par'),'w') as parfile:
         parfile.write('synth\n')
         parfile.write('terminal x11\n')
@@ -275,9 +286,16 @@ def synth(**kwargs):
             isotopestr+= ' 1.00'
         parfile.write(isotopestr+'\n')
         # Abundances
-        parfile.write("abundances 1 %i\n" % nsynth)
-        # Al for now
-        parfile.write("13 -0.5\n")
+        parfile.write("abundances %i %i\n" % (nabu,nsynth))
+        for ii in range(nabu):
+            abustr= '%i' % args[ii][0]
+            for jj in range(nsynth):
+                try:
+                    abustr+= ' %.3f' % args[ii][jj+1]
+                except IndexError:
+                    abustr+= ' 0.0'
+            parfile.write(abustr+"\n")
+        # Synthesis limits
         parfile.write("synlimits\n")
         parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax,dw,width))
     # Now run synth
