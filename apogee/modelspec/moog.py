@@ -324,5 +324,22 @@ def synth(*args,**kwargs):
         os.rmdir(tmpDir)
         sys.stdout.write('\r'+download._ERASESTR+'\r')
         sys.stdout.flush()        
-    return None
+    # Now read the output
+    with open(os.path.join(modeldirname,'synth.out')) as summfile:
+        wavs= numpy.arange(wmin,wmax+dw,dw)
+        out= numpy.empty((nsynth,len(wavs)))
+        for ii in range(nsynth):
+            # Skip to beginning of synthetic spectrum
+            while True:
+                line= summfile.readline()
+                if line[0] == 'M': break
+            summfile.readline()
+            tout= []
+            while True:
+                line= summfile.readline()
+                if not line or line[0] == 'A': break
+                tout.extend([float(s) for s in line.split()])
+            out[ii]= numpy.array(tout)
+    os.remove(os.path.join(modeldirname,'synth.out'))
+    return (wavs,1.-out)
 
