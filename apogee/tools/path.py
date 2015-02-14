@@ -518,7 +518,7 @@ def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     PURPOSE:
        returns the path of a model spectrum file
     INPUT:
-       lib= ('GK') spectral library
+       lib= ('kurucz_filled') atmosphere library
        teff= (4500) grid-point Teff
        logg= (2.5) grid-point logg
        metals= (0.) grid-point metallicity
@@ -549,6 +549,23 @@ def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
             loggstr= _modelAtmKurucz_loggString(logg,teff)
             filename+= teffstr+loggstr+'v20.mod'
         return os.path.join(dirname,filename)
+    
+def linelistPath(linelist,dr=None):
+    """
+    NAME:
+       linelistPath
+    PURPOSE:
+       returns the path of a linelist
+    INPUT:
+       linelist - name of the linelist
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= 'X'
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    return os.path.join(specReduxPath,'speclib','linelists',linelist)
     
 def apogeeSpectroReduxDirPath(dr=None):
     """

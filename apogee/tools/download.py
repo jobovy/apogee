@@ -295,7 +295,32 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     # First make sure the file doesn't exist
     filePath= path.modelAtmospherePath(lib=lib,teff=teff,logg=logg,
                                        metals=metals,cfe=cfe,afe=afe,
-                                       vmicro=2.)
+                                       vmicro=2.,dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                'dr%s' % dr),
+                                   _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
+def linelist(linelist,dr=None):
+    """
+    NAME:
+       linelist
+    PURPOSE:
+       download a linelist
+    INPUT:
+       linelist - name of the linelist
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= 'X'
+    # First make sure the file doesn't exist
+    filePath= path.linelistPath(linelist,dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
