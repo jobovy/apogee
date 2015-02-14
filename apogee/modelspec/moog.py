@@ -38,7 +38,7 @@ def convert_modelAtmosphere(**kwargs):
     if os.path.exists(os.path.join(modeldirname,outname)): return None
     shutil.copy(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              'scripts/makemoogmodel.awk'),modeldirname)
-    stdout= open(outname,'w')
+    stdout= open(os.path.join(modeldirname,outname),'w')
     stderr= open('/dev/null','w')
     subprocess.check_call(['awk','-f','makemoogmodel.awk',
                            'vmicro=%.1f' % kwargs.get('vmicro',2.),
