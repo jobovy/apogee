@@ -172,12 +172,12 @@ def synth(*args,**kwargs):
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
     width= kwargs.pop('width',_WIDTH_DEFAULT)
+    linelist= kwargs.pop('linelist',None)
     # Get the filename of the model atmosphere
     modelfilename= appath.modelAtmospherePath(**kwargs)
     modeldirname= os.path.dirname(modelfilename)
     modelbasename= os.path.basename(modelfilename)
     # Get the name of the linelist
-    linelist= kwargs.pop('linelist',None)
     if linelist is None:
         linelistfilename= modelbasename.replace('.mod','.lines')
         if not os.path.exists(os.path.join(modeldirname,linelistfilename)):
@@ -331,6 +331,7 @@ def synth(*args,**kwargs):
         sys.stdout.flush()        
     # Now read the output
     wavs= numpy.arange(wmin,wmax+dw,dw)
+    if wavs[-1] > wmax+dw/2.: wavs= wavs[:-1]
     if doflux:
         contdata= numpy.loadtxt(os.path.join(modeldirname,'synth.out'),
                                 converters={0:lambda x: x.replace('D','E'),
