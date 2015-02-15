@@ -152,6 +152,7 @@ def synth(*args,**kwargs):
     INPUT KEYWORDS:
        linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
        wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       doflux= (False) if True, calculate the continuum flux instead
        lib= ('kurucz_filled') spectral library
        teff= (4500) grid-point Teff
        logg= (2.5) grid-point logg
@@ -165,6 +166,7 @@ def synth(*args,**kwargs):
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
+    doflux= kwargs.pop('doflux',False)
     # Get the spectral synthesis limits
     wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
@@ -200,7 +202,10 @@ def synth(*args,**kwargs):
     nsynth= numpy.amax(nsynths) #Take the longest abundance list
     nabu= len(args)
     with open(os.path.join(tmpDir,'synth.par'),'w') as parfile:
-        parfile.write('synth\n')
+        if doflux:
+            parfile.write('doflux\n')
+        else:
+            parfile.write('synth\n')
         parfile.write('terminal x11\n')
         parfile.write('plot 1\n')
         parfile.write("standard_out std.out\n")
@@ -325,21 +330,34 @@ def synth(*args,**kwargs):
         sys.stdout.write('\r'+download._ERASESTR+'\r')
         sys.stdout.flush()        
     # Now read the output
-    with open(os.path.join(modeldirname,'synth.out')) as summfile:
-        wavs= numpy.arange(wmin,wmax+dw,dw)
-        out= numpy.empty((nsynth,len(wavs)))
-        for ii in range(nsynth):
-            # Skip to beginning of synthetic spectrum
-            while True:
-                line= summfile.readline()
-                if line[0] == 'M': break
-            summfile.readline()
-            tout= []
-            while True:
-                line= summfile.readline()
-                if not line or line[0] == 'A': break
-                tout.extend([float(s) for s in line.split()])
-            out[ii]= numpy.array(tout)
+    wavs= numpy.arange(wmin,wmax+dw,dw)
+    if doflux:
+        contdata= numpy.loadtxt(os.path.join(modeldirname,'synth.out'),
+                                converters={0:lambda x: x.replace('D','E'),
+                                            1:lambda x: x.replace('D','E')},
+                                usecols=[0,1])
+        # Wavelength in summary file appears to be wrong from comparing to 
+        # the standard output file
+        out= contdata[:,1]
+        out/= numpy.nanmean(out) # Make the numbers more manageable
+    else:
+        with open(os.path.join(modeldirname,'synth.out')) as summfile:
+            out= numpy.empty((nsynth,len(wavs)))
+            for ii in range(nsynth):
+                # Skip to beginning of synthetic spectrum
+                while True:
+                    line= summfile.readline()
+                    if line[0] == 'M': break
+                summfile.readline()
+                tout= []
+                while True:
+                    line= summfile.readline()
+                    if not line or line[0] == 'A': break
+                    tout.extend([float(s) for s in line.split()])
+                out[ii]= numpy.array(tout)
     os.remove(os.path.join(modeldirname,'synth.out'))
-    return (wavs,1.-out)
+    if doflux:
+        return (wavs,out)
+    else:
+        return (wavs,1.-out)
 
