@@ -482,13 +482,13 @@ Using The Cannon
 ^^^^^^^^^^^^^^^^^
 
 This package has some (currently) limited functionality to apply the
-``Cannon`` `Ness et al. (2015) <http://arxiv.org/abs/1501.07604>`__ to
+``Cannon`` (`Ness et al. 2015 <http://arxiv.org/abs/1501.07604>`__) to
 APOGEE data. So far, a linear fit for an arbitrary set of labels is
 supported by ``apogee.spec.cannon.linfit``, which returns the
 coefficients of the fit, the scatter, and possibly the
 residuals. However, no quadratic or higher-order terms are currently
 implemented and using the coefficients to determine labels for a new
-spectrum is not included either.
+spectrum is not supported either.
 
 Stacking spectra
 ^^^^^^^^^^^^^^^^^
