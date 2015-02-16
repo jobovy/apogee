@@ -140,7 +140,7 @@ BASIC USE
 ==========
 
 File reading
-+++++++++++++
+^^^^^^^^^^^^^
 
 The most basic capability of the code is to read various data produces
 and apply cuts (in *apogee.tools.read*). For example::
@@ -205,7 +205,7 @@ to read the various targeting-related files (see above). These are
 *not* automatically downloaded at this point.
 
 Bitmasks
-+++++++++
+^^^^^^^^^
 
 The module **apogee.tools.bitmask** has some tools for dealing with APOGEE
 bitmasks. In particular, it has methods to turn a numerical bit value
@@ -261,7 +261,7 @@ display the bitmask dictionaries::
 
 
 Plotting
-+++++++++
+^^^^^^^^
 
 The ``apogee`` module also contains some functionality to plot the
 APOGEE spectra in ``apogee.spec.plot``. For example, to make a nice
@@ -363,16 +363,16 @@ ANALYZING SPECTRA
 ==================
 
 Generating model spectra
-+++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``apogee.modelspec`` contains various ways to generate model spectra
 for APOGEE spectra.
 
 Using APOGEE model grids (using FERRE)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
++++++++++++++++++++++++++++++++++++++++
 
 Using MOOG
-^^^^^^^^^^^
++++++++++++
 
 APOGEE SELECTION FUNCTION
 ==========================
