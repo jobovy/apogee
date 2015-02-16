@@ -365,6 +365,9 @@ ANALYZING SPECTRA
 Generating model spectra
 +++++++++++++++++++++++++
 
+``apogee.modelspec`` contains various ways to generate model spectra
+for APOGEE spectra.
+
 Using APOGEE model grids (using FERRE)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
