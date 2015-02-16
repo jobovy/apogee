@@ -478,6 +478,25 @@ In ``apogee.modelspec.ferre.fit`` we can also directly specify a
 spectrum + spectrum error array instead of the ``location_id`` and
 ``apogee_id`` given above.
 
+Using The Cannon
+^^^^^^^^^^^^^^^^^
+
+This package has some (currently) limited functionality to apply the
+``Cannon`` `Ness et al. (2015) <http://arxiv.org/abs/1501.07604>`__ to
+APOGEE data. So far, a linear fit for an arbitrary set of labels is
+supported by ``apogee.spec.cannon.linfit``, which returns the
+coefficients of the fit, the scatter, and possibly the
+residuals. However, no quadratic or higher-order terms are currently
+implemented and using the coefficients to determine labels for a new
+spectrum is not included either.
+
+Stacking spectra
+^^^^^^^^^^^^^^^^^
+
+Very simple stacking functions are included in
+``apogee.spec.stack``. Currently these consist of a (masked)
+median-stacking routine and an inverse-variance stacking.
+
 APOGEE SELECTION FUNCTION
 ==========================
 
