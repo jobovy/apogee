@@ -72,24 +72,23 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
     HISTORY:
        2015-01-23 - Written - Bovy (IAS)
     """
-    import apogee.modelspec.ferre as ferre
     # Setup temporary directory to run FERRE from
     tmpDir= tempfile.mkdtemp(dir='./')
     try:
         # First write the ipf file with the parameters
-        ferre.write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
+        write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
         # Now write the input.nml file
         if f_access is None:
             f_access= 1
-        ferre.write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
-                              nov=0,
-                              synthfile=appath.ferreModelLibraryPath\
-                                  (lib=lib,pca=pca,sixd=sixd,dr=dr,
-                                   header=True,unf=False),
-                              inter=inter,f_format=f_format,
-                              f_access=f_access)
+        write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
+                        nov=0,
+                        synthfile=appath.ferreModelLibraryPath\
+                            (lib=lib,pca=pca,sixd=sixd,dr=dr,
+                             header=True,unf=False),
+                        inter=inter,f_format=f_format,
+                        f_access=f_access)
         # Run FERRE
-        ferre.run_ferre(tmpDir,verbose=verbose)
+        run_ferre(tmpDir,verbose=verbose)
         # Read the output
         out= numpy.loadtxt(os.path.join(tmpDir,'output.dat'))
         if not offile is None:
@@ -149,7 +148,7 @@ def fit(spec,specerr,
        FERRE options:
           inter= (3) order of the interpolation
           errbar= (1) method for calculating the error bars
-          indini= ([2,1,1,1,3,2]) how to initialize the search (int or array/list with ndim entries)
+          indini= ([1,1,1,2,2,3]) how to initialize the search (int or array/list with ndim entries)
           init= (1) if 0, initialize the search at the parameters in the pfile
           f_format= (1) file format (0=ascii, 1=unf)
           f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
@@ -203,45 +202,64 @@ def fit(spec,specerr,
     if dr is None: dr= appath._default_dr()
     # Fix any of the parameters?
     indv= []
+    if isinstance(indini,numpy.ndarray) and \
+            ((not sixd and fixvm) or fixcm or fixnm or fixam or fixmetals \
+                 or fixlogg or fixteff):
+        indini= list(indini)
     if not sixd and not fixvm:
         indv.append(1)
+    else:
+        if isinstance(indini,list): indini[0]= -1
     if not fixcm:
         indv.append(2-sixd)
+    else:
+        if isinstance(indini,list): indini[1-sixd]= -1
     if not fixnm:
         indv.append(3-sixd)
+    else:
+        if isinstance(indini,list): indini[2-sixd]= -1
     if not fixam:
         indv.append(4-sixd)
+    else:
+        if isinstance(indini,list): indini[3-sixd]= -1
     if not fixmetals:
         indv.append(5-sixd)
+    else:
+        if isinstance(indini,list): indini[4-sixd]= -1
     if not fixlogg:
         indv.append(6-sixd)
+    else:
+        if isinstance(indini,list): indini[5-sixd]= -1
     if not fixteff:
         indv.append(7-sixd)
+    else:
+        if isinstance(indini,list): indini[6-sixd]= -1
+    if isinstance(indini,list):
+        while -1 in indini: indini.remove(-1)
     # Setup temporary directory to run FERRE from
-    import apogee.modelspec.ferre as ferre
     tmpDir= tempfile.mkdtemp(dir='./')
     try:
         # First write the ipf file with the parameters
-        ferre.write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
+        write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
         # Write the file with the fluxes and the flux errors
-        ferre.write_ffile(tmpDir,spec,specerr=specerr)
+        write_ffile(tmpDir,spec,specerr=specerr)
         # Now write the input.nml file
         if f_access is None:
             f_access= 1
-        ferre.write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
-                              nov=7-sixd-fixcm-fixnm-fixam-fixmetals\
-                                  -fixlogg-fixteff,
-                              indv=indv,
-                              synthfile=appath.ferreModelLibraryPath\
-                                  (lib=lib,pca=pca,sixd=sixd,dr=dr,
-                                   header=True,unf=False),
-                              ffile='input.frd',erfile='input.err',
-                              opfile='output.opf',
-                              inter=inter,f_format=f_format,
-                              errbar=errbar,indini=indini,init=init,
-                              f_access=f_access)
+        write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
+                        nov=7-sixd-fixcm-fixnm-fixam-fixmetals\
+                            -fixlogg-fixteff,
+                        indv=indv,
+                        synthfile=appath.ferreModelLibraryPath\
+                            (lib=lib,pca=pca,sixd=sixd,dr=dr,
+                             header=True,unf=False),
+                        ffile='input.frd',erfile='input.err',
+                        opfile='output.opf',
+                        inter=inter,f_format=f_format,
+                        errbar=errbar,indini=indini,init=init,
+                        f_access=f_access)
         # Run FERRE
-        ferre.run_ferre(tmpDir,verbose=verbose)
+        run_ferre(tmpDir,verbose=verbose)
         # Read the output
         cols= (1,2,3,4,5,6)
         tmpOut= numpy.loadtxt(os.path.join(tmpDir,'output.opf'),usecols=cols)
@@ -351,7 +369,7 @@ def write_input_nml(dir,
        2015-01-22 - Written - Bovy (IAS)
     """
     if indv is None:
-        indv= range(1,ndim+1)
+        indv= range(1,nov+1)
     if synthfile is None:
         import apogee.tools.path as appath
         synthfile= appath.ferreModelLibraryPath(header=True)
@@ -376,8 +394,8 @@ def write_input_nml(dir,
         outfile.write('ERRBAR = %i\n' % errbar)
         indinistr= 'INDINI ='
         if isinstance(indini,int):
-            indini= numpy.zeros(ndim,dtype='int')+indini
-        for ii in range(ndim):
+            indini= numpy.zeros(nov,dtype='int')+indini
+        for ii in range(nov):
             indinistr+= ' %i' % indini[ii]
         outfile.write(indinistr+'\n')
         outfile.write('NRUNS = %i\n' % numpy.prod(indini))
