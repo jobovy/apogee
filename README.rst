@@ -464,7 +464,7 @@ To fix some of the parameters in the fit, do for example to just fit
    [  4.69824100e+03   2.73600000e+00   2.01069231e-01  -4.21000000e-01
    0.00000000e+00   0.00000000e+00   0.00000000e+00]
 
-and compared to the previous results
+and compared to the previous results::
 
     from apogee.tools import paramIndx
     print (params-xparams)[paramIndx('Teff')]
