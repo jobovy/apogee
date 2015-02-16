@@ -359,6 +359,18 @@ and::
 .. image:: _readme_files/_detectorRedPlot_example.png 
 
 		
+ANALYZING SPECTRA
+==================
+
+Generating model spectra
++++++++++++++++++++++++++
+
+Using APOGEE model grids (using FERRE)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Using MOOG
+^^^^^^^^^^^
+
 APOGEE SELECTION FUNCTION
 ==========================
 
