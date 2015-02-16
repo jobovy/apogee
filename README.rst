@@ -390,7 +390,7 @@ that the ascii version of the library is downloaded and
 format is not machine independent, it is recommended to convert to
 binary locally). **Because the model libraries are quite large, these
 are not downloaded automatically, so you need to run this command to
-download the library)**. Currently only DR12 grids are supported.
+download the library**. Currently only DR12 grids are supported.
 
 With this library, you can generate model spectra using::
 
