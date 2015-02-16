@@ -422,6 +422,62 @@ Using MOOG
 Fitting spectra
 ^^^^^^^^^^^^^^^^^
 
+To replicate the APOGEE data analysis, one can use the APOGEE model
+grids to fit a spectrum. So far this has only been implemented here
+for the overall six (or seven if you vary the microturbulence)
+parameter grid. For example, let's look again at entry 3512 in the
+subsample of S/N > 200 stars in the DR12 red-clump catalog. Load the
+catalog::
+
+	  import apogee.tools.read as apread
+	  data= apread.rcsample()
+	  indx= data['SNR'] > 200.
+	  data= data[indx]
+	
+and now fit entry 3512::
+
+    from apogee.modelspec import ferre
+    # The following takes a while
+    params= ferre.fit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                      lib='GK',pca=True,sixd=True)
+    print params
+    [  4.67245500e+03   2.64900000e+00   2.08730163e-01  -4.43000000e-01
+  -6.40000000e-02   1.10000000e-01   4.90000000e-02]
+
+We can compare this to the official fit::
+
+   fitparams= data[3512]['FPARAM']
+   print fitparams
+   [  4.67250000e+03   2.64860010e+00   2.08765045e-01  -4.42680001e-01
+  -6.43979982e-02   1.10050000e-01   4.94019985e-02]
+   print numpy.fabs(fitparams-params)
+   [  4.50000000e-02   3.99898529e-04   3.48818403e-05   3.19998741e-04
+   3.97998154e-04   5.00002503e-05   4.01998520e-04]
+
+To fix some of the parameters in the fit, do for example to just fit
+``Teff``, ``logg``, and ``metals``::
+
+   xparams= ferre.fit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                     fixam=True,fixcm=True,fixnm=True,
+                     lib='GK',pca=True,sixd=True)
+   print xparams
+   [  4.69824100e+03   2.73600000e+00   2.01069231e-01  -4.21000000e-01
+   0.00000000e+00   0.00000000e+00   0.00000000e+00]
+
+and compared to the previous results
+
+    from apogee.tools import paramIndx
+    print (params-xparams)[paramIndx('Teff')]
+    -25.786
+    print (params-xparams)[paramIndx('logg')]
+    -0.087
+    print (params-xparams)[paramIndx('metals')]
+    -0.022
+
+In ``apogee.modelspec.ferre.fit`` we can also directly specify a
+spectrum + spectrum error array instead of the ``location_id`` and
+``apogee_id`` given above.
+
 APOGEE SELECTION FUNCTION
 ==========================
 
