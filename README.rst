@@ -368,10 +368,53 @@ Generating model spectra
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``apogee.modelspec`` contains various ways to generate model spectra
-for APOGEE spectra.
+for APOGEE spectra. The easiest way is to use grids generated for
+APOGEE data analysis and use FERRE (see above) to interpolate on these
+grids. Using MOOG allows for more flexibility, but this functionality
+is currently under development.
 
 Using APOGEE model grids (using FERRE)
 +++++++++++++++++++++++++++++++++++++++
+
+To use the APOGEE model grids for interpolation, you first need to
+download the grids. This can be done using::
+
+	 from apogee.tools import download
+	 download.ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,convertToBin=True)
+
+This command downloads the main 6D, PCA-compressed 'GK' library used
+for cooler stars (use ``lib='F' for hotter grids). ``unf=False`` means
+that the ascii version of the library is downloaded and
+``convertToBin=True`` converts this ascii library to a binary format
+(there is a .unf file available for download, but because the binary
+format is not machine independent, it is recommended to convert to
+binary locally). **Because the model libraries are quite large, these
+are not downloaded automatically, so you need to run this command to
+download the library)**. Currently only DR12 grids are supported.
+
+With this library, you can generate model spectra using::
+
+     from apogee.modelspec import ferre
+     mspec= ferre.interpolate(4750.,2.5,-0.1,0.1,0.,0.)
+
+which returns a model spectrum on the apStar wavelength grid for
+``Teff=4750``, ``logg=2.5``, ``metals=-0.1``, ``alphafe=0.1``,
+``nfe=0``, and ``cfe=0.`` (in that order). You could plot this, for
+example, with the ``apogee.spec.plot.waveregions`` command above.
+
+Providing an array for each of the 6 (or 7 if you use a library that
+varies the microturbulence) input parameters returns a set of
+spectra. For example::
+
+	 teffs= [4500.,4750.]
+	 s= numpy.ones(2)
+	 mspec= ferre.interpolate(teffs,2.5*s,-0.1*s,0.1*s,0.*s,0.*s)
+	 mspec.shape
+	 (2, 8575)
+
+Asking for tens of spectra simultaneously is more efficient, because
+you only need to run the FERRE setup once (but it becomes inefficient
+for many hundreds...).
 
 Using MOOG
 +++++++++++
