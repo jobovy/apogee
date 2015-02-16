@@ -399,7 +399,7 @@ With this library, you can generate model spectra using::
 
 which returns a model spectrum on the apStar wavelength grid for
 ``Teff=4750``, ``logg=2.5``, ``metals=-0.1``, ``alphafe=0.1``,
-``nfe=0``, and ``cfe=0.`` (in that order). You could plot this, for
+``nfe=0.0``, and ``cfe=0.0`` (in that order). You could plot this, for
 example, with the ``apogee.spec.plot.waveregions`` command above.
 
 Providing an array for each of the 6 (or 7 if you use a library that
