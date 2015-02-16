@@ -11,7 +11,16 @@ def unpack_lsf_params(lsfarr):
     INPUT:
        lsfarr - the parameter array
     OUTPUT:
-       dictionary with unpacked parameters and parameter values
+       dictionary with unpacked parameters and parameter values:
+          binsize: The width of a pixel in X-units
+          Xoffset: An additive x-offset; used for GH parameters that vary globally
+          Horder: The highest Hermite order
+          Porder: Polynomial order array for global variation of each LSF parameter
+          GHcoefs: Polynomial coefficients for sigma and the Horder Hermite parameters
+          Wproftype: Wing profile type
+          nWpar: Number of wing parameters
+          WPorder: Polynomial order for the global variation of each wing parameter          
+          Wcoefs: Polynomial coefficients for the wings parameters
     HISTORY:
        2015-02-15 - Written based on Nidever's code in apogeereduce - Bovy (IAS@KITP)
     """
