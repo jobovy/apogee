@@ -383,8 +383,8 @@ download the grids. This can be done using::
 	 download.ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,convertToBin=True)
 
 This command downloads the main 6D, PCA-compressed 'GK' library used
-for cooler stars (use ``lib='F' for hotter grids). ``unf=False`` means
-that the ascii version of the library is downloaded and
+for cooler stars (use ``lib='F'`` for hotter grids). ``unf=False``
+means that the ascii version of the library is downloaded and
 ``convertToBin=True`` converts this ascii library to a binary format
 (there is a .unf file available for download, but because the binary
 format is not machine independent, it is recommended to convert to
