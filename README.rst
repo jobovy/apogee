@@ -2,7 +2,9 @@ apogee
 -------
 
 Tools for dealing with `SDSS-III <http://sdss3.org/>`__ `APOGEE
-<http://www.sdss3.org/surveys/apogee.php>`__ data.
+<http://www.sdss3.org/surveys/apogee.php>`__ and `SDSS-IV
+<http://sdss.org/>`__ `APOGEE-2
+<http://www.sdss.org/surveys/apogee-2/>`__ data.
 
 .. contents::
 
