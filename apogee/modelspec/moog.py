@@ -181,7 +181,7 @@ def synth(*args,**kwargs):
     if linelist is None:
         linelistfilename= modelbasename.replace('.mod','.lines')
         if not os.path.exists(os.path.join(modeldirname,linelistfilename)):
-            raise IOError('No linelist given and not weed-out version found for this atmosphere; either specify a linelist or run weedout first')
+            raise IOError('No linelist given and no weed-out version found for this atmosphere; either specify a linelist or run weedout first')
         linelistfilename= os.path.join(modeldirname,linelistfilename)
     else:
         linelistfilename= appath.linelistPath(linelist,
@@ -189,6 +189,24 @@ def synth(*args,**kwargs):
     # We will run in a subdirectory of the relevant model atmosphere
     tmpDir= tempfile.mkdtemp(dir=modeldirname)
     shutil.copy(linelistfilename,tmpDir)
+    # Cut the linelist to the desired wavelength range
+    with open(os.path.join(tmpDir,'cutlines.awk'),'w') as awkfile:
+        awkfile.write('$1>%.3f && $1<%.3f\n' %(wmin-width,wmax+width))
+    keeplines= open(os.path.join(tmpDir,'lines.tmp'),'w')
+    stderr= open('/dev/null','w')
+    try:
+        subprocess.check_call(['awk','-f','cutlines.awk',
+                               os.path.basename(linelistfilename)],
+                              cwd=tmpDir,stdout=keeplines,stderr=stderr)
+        keeplines.close()
+        shutil.copy(os.path.join(tmpDir,'lines.tmp'),
+                    os.path.join(tmpDir,os.path.basename(linelistfilename)))
+    except subprocess.CalledProcessError:
+        print("Removing unnecessary linelist entries failed ...")
+    finally:
+        os.remove(os.path.join(tmpDir,'cutlines.awk'))
+        os.remove(os.path.join(tmpDir,'lines.tmp'))
+        stderr.close()
     # Also copy the strong lines
     stronglinesfilename= appath.linelistPath('stronglines.vac',
                                              dr=kwargs.get('dr',None))
@@ -301,8 +319,8 @@ def synth(*args,**kwargs):
                     abustr+= ' 0.0'
             parfile.write(abustr+"\n")
         # Synthesis limits
-        parfile.write("synlimits\n")
-        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax,dw,width))
+        parfile.write("synlimits\n") # Add 0.001 to make sure wmax is included
+        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax+0.001,dw,width))
     # Now run synth
     sys.stdout.write('\r'+"Running MOOG synth ...\r")
     sys.stdout.flush()
