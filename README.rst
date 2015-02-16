@@ -362,6 +362,8 @@ and::
 ANALYZING SPECTRA
 ==================
 
+SECTION UNDER DEVELOPMENT!!!!
+
 Generating model spectra
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -373,6 +375,9 @@ Using APOGEE model grids (using FERRE)
 
 Using MOOG
 +++++++++++
+
+Fitting spectra
+^^^^^^^^^^^^^^^^^
 
 APOGEE SELECTION FUNCTION
 ==========================
@@ -526,7 +531,7 @@ general such that they can also be useful in defining other subsamples
 in APOGEE.
 
 RC catalog tools
-+++++++++++++++++
+^^^^^^^^^^^^^^^^^
 
 The RC catalog is constructed by inspecting the properties of stellar
 isochrones computed by stellar-evolution codes and finding the region
