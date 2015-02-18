@@ -162,7 +162,8 @@ def synth(*args,**kwargs):
        vmicro= (2.) grid-point microturbulence
        dr= return the path corresponding to this data release
     OUTPUT:
-       SOMETHING
+       (wavelengths,spectra (nspec,nwave)) for synth driver
+       (wavelengths,continuum spectr (nwave)) for doflux driver     
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
