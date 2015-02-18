@@ -208,7 +208,7 @@ def fit(spec,specerr,
         indini= list(indini)
     if not sixd and not fixvm:
         indv.append(1)
-    else:
+    elif not sixd:
         if isinstance(indini,list): indini[0]= -1
     if not fixcm:
         indv.append(2-sixd)
