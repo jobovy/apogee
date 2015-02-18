@@ -1,4 +1,5 @@
 import os.path
+import numpy
 from scipy import optimize
 import path as appath
 import download as download
@@ -85,3 +86,59 @@ def air2vac(wave):
        2014-12-04 - Written - Bovy (IAS)
     """
     return optimize.brentq(lambda x: vac2air(x)-wave,wave-100,wave+100.)
+
+def toAspcapGrid(spec):
+    """
+    NAME:
+       toAspcapGrid
+    PURPOSE:
+       convert a spectrum from apStar grid to the ASPCAP grid (w/o the detector gaps)
+    INPUT:
+       spec - spectrum (or whatever) on the apStar grid; either (nwave) or (nspec,nwave)
+    OUTPUT:
+       spectrum (or whatever) on the ASPCAP grid
+    HISTORY:
+       2015-02-17 - Written - Bovy (IAS)
+    """
+    if len(spec.shape) == 2: # (nspec,nwave)
+        out= numpy.zeros((spec.shape[0],7214))
+        oneSpec= False
+    else:
+        oneSpec= True
+        out= numpy.zeros((1,7214))
+        spec= numpy.reshape(spec,(1,len(spec)))
+    out[:,:2920]= spec[:,322:3242]
+    out[:,2920:5320]= spec[:,3648:6048]
+    out[:,5320:]= spec[:,6412:8306]
+    if oneSpec:
+        return out[0]
+    else:
+        return out
+
+def toApStarGrid(spec):
+    """
+    NAME:
+       toApStarGrid
+    PURPOSE:
+       convert a spectrum from the ASPCAP grid (w/o the detector gaps) to the apStar grid
+    INPUT:
+       spec - spectrum (or whatever) on the ASPCAP grid; either (nwave) or (nspec,nwave)
+    OUTPUT:
+       spectrum (or whatever) on the apStar grid
+    HISTORY:
+       2015-02-17 - Written - Bovy (IAS)
+    """
+    if len(spec.shape) == 2: # (nspec,nwave)
+        out= numpy.zeros((spec.shape[0],8575))
+        oneSpec= False
+    else:
+        oneSpec= True
+        out= numpy.zeros((1,8575))
+        spec= numpy.reshape(spec,(1,len(spec)))
+    out[:,322:3242]= spec[:,:2920]
+    out[:,3648:6048]= spec[:,2920:5320]
+    out[:,6412:8306]= spec[:,5320:]
+    if oneSpec:
+        return out[0]
+    else:
+        return out
