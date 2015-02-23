@@ -531,12 +531,12 @@ def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'X'
+    if dr is None: dr= 'bosswork'
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     modelAtmosphereLibPath= apogeeModelAtmosphereLibraryDirPath(dr=dr,lib=lib)
     if dr == '10':
         raise IOError('Loading model atmospheres for DR10 is not supported at this time')
-    elif dr == '12' or dr == 'X':
+    elif dr == '12' or dr == 'bosswork':
         # Create directory + filename
         if lib.lower() == 'kurucz_filled':
             metalsstr= _modelAtmKurucz_metalsString(metals)
@@ -563,7 +563,7 @@ def linelistPath(linelist,dr=None):
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'X'
+    if dr is None: dr= 'bosswork'
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     return os.path.join(specReduxPath,'speclib','linelists',linelist)
     
@@ -581,8 +581,12 @@ def apogeeSpectroReduxDirPath(dr=None):
        2014-11-25 - Written - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    return os.path.join(_APOGEE_DATA,'dr%s' % dr,
-                        'apogee','spectro','redux')
+    if dr.lower() == 'bosswork':
+        return os.path.join(_APOGEE_DATA,'%s' % dr,
+                            'apogee','spectro','redux')
+    else:
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','spectro','redux')
    
 def apogeeModelSpectroLibraryDirPath(dr=None,lib='GK'):
     """
@@ -622,7 +626,7 @@ def apogeeModelAtmosphereLibraryDirPath(dr=None,lib='kurucz_filled'):
        2015-02-13 - Written - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr == '12' or dr == 'X':
+    if dr == '12' or dr == 'bosswork':
         if lib.lower() == 'kurucz_filled':
             return os.path.join('speclib','kurucz_filled')
         elif 'marcs' in lib.lower():
