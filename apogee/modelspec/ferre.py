@@ -7,7 +7,7 @@ import numpy
 from functools import wraps
 import tempfile
 import apogee.tools.path as appath
-from apogee.tools import paramIndx
+from apogee.tools import paramIndx, toAspcapGrid
 from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.tools.read as apread
 def paramArrayInputDecorator(startIndx):
@@ -180,6 +180,15 @@ def fit(spec,specerr,
                                             header=False,aspcapWavegrid=True)
         spec= ispec
         specerr= ispecerr
+    elif isinstance(specerr,(list,numpy.ndarray)) \
+            and isinstance(specerr[0],(float,numpy.float32,
+                                       numpy.float64,numpy.ndarray)) \
+            and ((len(specerr.shape) == 1 and len(specerr) == 8575)
+                 or (len(specerr.shape) == 2 and specerr.shape[1] == 8575)): #array on apStar grid
+        print "Here", spec.shape, specerr.shape
+        spec= toAspcapGrid(spec)
+        specerr= toAspcapGrid(specerr)
+        print "Here again", spec.shape, specerr.shape
     # Make sure the Teff etc. have the right dimensionality
     if len(spec.shape) == 1:
         nspec= 1
@@ -263,7 +272,7 @@ def fit(spec,specerr,
         # Read the output
         cols= (1,2,3,4,5,6)
         tmpOut= numpy.loadtxt(os.path.join(tmpDir,'output.opf'),usecols=cols)
-        if len(spec.shape) == 1:
+        if len(spec.shape) == 1 or spec.shape[0] == 1:
             out= numpy.zeros((1,7))
             tmpOut= numpy.reshape(tmpOut,(1,7-sixd))
         else:
