@@ -101,7 +101,7 @@ def polyfit(*args,**kwargs):
 
 # Getting the labels
 def polylabels(spec,specerr,coeffs,scatter,poly='lin',
-               return_poly=False):
+               return_cov=False,return_poly=False):
     """
     NAME:
        polylabels
@@ -113,6 +113,7 @@ def polylabels(spec,specerr,coeffs,scatter,poly='lin',
        coeffs - array of coefficients from the polynomial fit (ncoeffs,nlambda)
        scatter - array of scatter from the polynomial fit (nlambda))
        poly= ('lin') 'lin' or 'quad' currently
+       return_cov= (False) if True, return the uncertainty covariance matrix for the labels
        return_poly= (False) if True, return the best-fit labels, labels-squared, etc.
     OUTPUT:
        Best-fit labels (nspec,nlabels)
@@ -135,15 +136,28 @@ def polylabels(spec,specerr,coeffs,scatter,poly='lin',
     else:
         nout= nlabels
     out= numpy.empty((nspec,nout))
+    if return_cov:
+        outcov= numpy.empty((nspec,nout,nout))
     # Run through the spectra
     for ii in range(nspec):
         labels= _polyfit_coeffs(spec[ii]-coeffs[0],specerr[ii],
-                                scatter,coeffs[1:].T)
+                                scatter,coeffs[1:].T,
+                                return_cov=return_cov)
+        if return_cov:
+            cov= labels[1]
+            labels= labels[0]
         if return_poly:
             out[ii]= labels
         else:
             out[ii]= labels[:nlabels]
-    return out
+        if return_cov and return_poly:
+            outcov[ii]= cov
+        elif return_cov:
+            outcov[ii]= cov[:nlabels,:nlabels]
+    if return_cov:
+        return (out,outcov)
+    else:
+        return out
     
 # Linear fit
 def _linfit_onewave(spec,specerr,*args,**kwargs):
@@ -231,11 +245,14 @@ def _quadfit_residuals_onewave(coeffs,spec,*args):
     return spec-mspec-coeffs[0]
 
 # Polynomial fit
-def _polyfit_coeffs(spec,specerr,scatter,labelA):
+def _polyfit_coeffs(spec,specerr,scatter,labelA,return_cov=False):
     """For a given scatter, return the best-fit coefficients"""
     Y= spec/(specerr**2.+scatter**2.)
     ATY= numpy.dot(labelA.T,Y)
     CiA= labelA*numpy.tile(1./(specerr**2.+scatter**2.),(labelA.shape[1],1)).T
     ATCiA= numpy.dot(labelA.T,CiA)
-    return numpy.dot(linalg.inv(ATCiA),ATY)
-
+    ATCiAinv= linalg.inv(ATCiA)
+    if return_cov:
+        return (numpy.dot(ATCiAinv,ATY),ATCiAinv)
+    else:
+        return numpy.dot(ATCiAinv,ATY)
