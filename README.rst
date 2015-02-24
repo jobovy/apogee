@@ -488,9 +488,10 @@ This package has some (currently) limited functionality to apply the
 APOGEE data. So far, a linear or a quadratic fit for an arbitrary set
 of labels is supported by ``apogee.spec.cannon.linfit`` and
 ``apogee.spec.cannon.quadfit``, which returns the coefficients of the
-fit, the scatter, and possibly the residuals. However, using the
-coefficients to determine labels for a new spectrum is not supported
-currently.
+fit, the scatter, and possibly the residuals. Using the coefficients
+to determine labels for a new spectrum is supported through
+``apogee.spec.cannon.polylabels`` (although this implementation takes
+a shortcut to avoid the necessary non-linear optimization).
 
 Stacking spectra
 ^^^^^^^^^^^^^^^^^
