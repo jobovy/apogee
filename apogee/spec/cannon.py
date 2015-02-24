@@ -99,6 +99,52 @@ def polyfit(*args,**kwargs):
     if return_residuals: out= out+(outresiduals,)
     return out
 
+# Getting the labels
+def polylabels(spec,specerr,coeffs,scatter,poly='lin',
+               return_poly=False):
+    """
+    NAME:
+       polylabels
+    PURPOSE:
+       Get the labels using a polynomial fit
+    INPUT:
+       spec - spectrum/a to fit (nlambda) or (nspec,nlambda)
+       specerrs - error/s on the spectra (nlambda) or (nspec,nlambda); assume no covariances
+       coeffs - array of coefficients from the polynomial fit (ncoeffs,nlambda)
+       scatter - array of scatter from the polynomial fit (nlambda))
+       poly= ('lin') 'lin' or 'quad' currently
+       return_poly= (False) if True, return the best-fit labels, labels-squared, etc.
+    OUTPUT:
+       Best-fit labels (nspec,nlabels)
+       if return_poly, the best-fit linear, quadratic, ... terms are returned
+    HISTORY:
+       2015-02-23 - Written - Bovy (IAS@KITP)
+    """
+    if len(spec.shape) == 1:
+        spec= numpy.reshape(spec,(1,len(spec)))
+        specerr= numpy.reshape(specerr,(1,len(specerr)))
+    # Setup output
+    nspec= spec.shape[0]
+    ncoeffs= coeffs.shape[0]
+    if 'lin' in poly:
+        nlabels= ncoeffs-1
+    elif 'quad' in poly:
+        nlabels= int((-3+numpy.sqrt(9+8*(ncoeffs-1))))//2
+    if return_poly:
+        nout= ncoeffs-1
+    else:
+        nout= nlabels
+    out= numpy.empty((nspec,nout))
+    # Run through the spectra
+    for ii in range(nspec):
+        labels= _polyfit_coeffs(spec[ii]-coeffs[0],specerr[ii],
+                                scatter,coeffs[1:].T)
+        if return_poly:
+            out[ii]= labels
+        else:
+            out[ii]= labels[:nlabels]
+    return out
+    
 # Linear fit
 def _linfit_onewave(spec,specerr,*args,**kwargs):
     """Do a polynomial fit to one wavelength"""
