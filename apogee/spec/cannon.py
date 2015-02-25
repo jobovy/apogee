@@ -1,9 +1,11 @@
 ###############################################################################
 # apogee.spec.cannon: Cannon (Ness et al. 2015)-like operations on the spectra
 ###############################################################################
+import sys
 import numpy
 from numpy import linalg
 from scipy import optimize
+from apogee.util import _ERASESTR
 def linfit(*args,**kwargs):
     """
     NAME:
@@ -83,6 +85,8 @@ def polyfit(*args,**kwargs):
     outresiduals= numpy.zeros((nspec,nwave))+numpy.nan
     # Loop through the pixels and fit the model
     for ii in range(nwave):
+        sys.stdout.write('\r'+"Working on pixel %i / %i ...\r" % (ii+1,nwave))
+        sys.stdout.flush()
         if numpy.all(numpy.isnan(spec[:,ii])): #when given input on APOGEE grid
             continue
         tfit= _fit_onewave(spec[:,ii],specerr[:,ii],*args[2:],
@@ -95,6 +99,8 @@ def polyfit(*args,**kwargs):
         outscatter[ii]= ts
         if return_residuals:
             outresiduals[:,ii]= tr
+    sys.stdout.write('\r'+_ERASESTR+'\r')
+    sys.stdout.flush()
     out= (outcoeffs,outscatter,)
     if return_residuals: out= out+(outresiduals,)
     return out
@@ -240,7 +246,7 @@ def _quadfit_residuals_onewave(coeffs,spec,*args):
         mspec+= coeffs[ii+1]*args[ii]
     for ii in range(len(args)):
         for jj in range(ii,len(args)):
-            mspec+= coeffs[len(args)+1+(ii*(2*len(args)+1-ii))//2+jj]\
+            mspec+= coeffs[len(args)+1+(ii*(2*len(args)+1-ii))//2+jj-ii]\
                 *args[ii]*args[jj]
     return spec-mspec-coeffs[0]
 
