@@ -221,6 +221,11 @@ def waveregions(*args,**kwargs):
         yrange= kwargs.pop('yrange',[0.,1.1*numpy.nanmax(args[1])])
     else:
         yrange= kwargs.pop('yrange',[0.2,1.2])
+    # Deal with the label
+    if apStar:
+        ylabel= kwargs.pop('ylabel',r'$f_\lambda(\lambda)\,(10^{-17}\,\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$')
+    else:
+        ylabel= kwargs.pop('ylabel',r'$f/f_c(\lambda)$')
     kwargs['zorder']= kwargs.get('zorder',10)
     for ii in range(nregions):
         # Setup the axes
@@ -265,10 +270,7 @@ def waveregions(*args,**kwargs):
             nullfmt   = NullFormatter()         # no labels
             thisax.yaxis.set_major_formatter(nullfmt)
         elif not overplot:
-            if apStar:
-                pyplot.ylabel(kwargs.get('ylabel',r'$f_\lambda(\lambda)\,(10^{-17}\,\mathrm{erg\, s}^{-1}\,\mathrm{cm}^{-2}\,\AA^{-1})$'))
-            else:
-                pyplot.ylabel(kwargs.get('ylabel',r'$f/f_c(\lambda)$'))
+            pyplot.ylabel(ylabel)
         # Remove spines between different wavelength regions
         if ii == 0 and not nregions == 1:
             thisax.spines['right'].set_visible(False)
