@@ -240,7 +240,7 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
     if not os.path.exists(filePath):
         # Create the file path    
         downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                    'dr%s' % dr),
+                                                    _dr_string(dr)),
                                        _base_url(dr=dr))
         _download_file(downloadPath,filePath,dr,verbose=True)
         if convertToBin:
@@ -374,3 +374,7 @@ def _base_url(dr,rc=False):
     if dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
     else: return _PROPRIETARY_URL
+
+def _dr_string(dr):
+    if dr == 'bosswork': return 'bosswork'
+    else: return 'dr%s' % dr

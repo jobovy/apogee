@@ -509,6 +509,24 @@ def ferreModelLibraryPath(lib='GK',pca=True,sixd=True,unf=False,dr=None,
         else:
             filename+= 'dat'
         return os.path.join(specReduxPath,modelSpecLibPath,filename)
+    elif dr == 'bosswork':
+        if pca and sixd:
+            filename= 'p6_aps'
+        elif pca:
+            filename= 'p_aps'
+        else:
+            filename= 'f_'
+        if 'ms' in lib:
+            filename+= '%s_140529_lsfcombo5v6_w123.' % lib
+        else:
+            filename+= 'as%s_131216_lsfcombo5v6_w123.' % lib.upper()
+        if header:
+            filename+= 'hdr'
+        elif unf:
+            filename+= 'unf'
+        else:
+            filename+= 'dat'
+        return os.path.join(specReduxPath,modelSpecLibPath,filename)
     
 def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
                         cfe=0.,afe=0.,vmicro=2.,dr=None):
@@ -610,6 +628,10 @@ def apogeeModelSpectroLibraryDirPath(dr=None,lib='GK'):
         elif lib.lower() == 'f':
             return os.path.join('speclib','asset','kurucz_filled',
                                 'solarisotopes','asF_131216_lsfcombo5v6')
+    elif dr == 'bosswork':
+        if lib.lower() == 'msgk':
+            return os.path.join('speclib','moog','kurucz_filled',
+                                'solarisotopes','msGK_140529_lsfcombo5v6')
    
 def apogeeModelAtmosphereLibraryDirPath(dr=None,lib='kurucz_filled'):
     """
