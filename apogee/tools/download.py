@@ -215,7 +215,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     return None
 
 def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
-                      convertToBin=True):
+                      convertToBin=True,spider=False):
     """
     NAME:
        ferreModelLibrary
@@ -228,6 +228,7 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
        sixd= (True) if True, download the 6D library (w/o vmicro)
        unf= (False) if True, download the binary library (otherwise ascii)
        convertToBin= (True) if True and not unf, convert the ascii file to binary using ferre's ascii2bin (which has to be on the path)
+       spider= (False) if True, run wget as a spider (doesn't download)
     OUTPUT:
        (none; just downloads; also downloads the corresponding .hdr)
     HISTORY:
@@ -242,8 +243,8 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
         downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                     _dr_string(dr)),
                                        _base_url(dr=dr))
-        _download_file(downloadPath,filePath,dr,verbose=True)
-        if convertToBin:
+        _download_file(downloadPath,filePath,dr,verbose=True,spider=spider)
+        if convertToBin and not spider:
             sys.stdout.write('\r'+"Converting ascii model library to binary (can take a few minutes) ...\r")
             sys.stdout.flush()
             try:
@@ -267,11 +268,12 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
     headerDownloadPath= headerFilePath.replace(os.path.join(path._APOGEE_DATA,
                                                             _dr_string(dr)),
                                                _base_url(dr=dr))
-    _download_file(headerDownloadPath,headerFilePath,dr,verbose=True)
+    _download_file(headerDownloadPath,headerFilePath,dr,verbose=True,
+                   spider=spider)
     return None
 
 def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
-                    cfe=0.,nfe=0.,afe=0.,vmicro=2.,dr=None):
+                    cfe=0.,nfe=0.,afe=0.,vmicro=2.,dr=None,spider=False):
     """
     NAME:
        modelAtmosphere
@@ -286,6 +288,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
        afe= (0.) grid-point alpha-enhancement
        vmicro= (2.) grid-point microturbulence
        dr= return the path corresponding to this data release
+       spider= (False) if True, run wget as a spider (doesn't download)
     OUTPUT:
        (none; just downloads)
     HISTORY:
@@ -301,10 +304,10 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
-    _download_file(downloadPath,filePath,dr,verbose=True)
+    _download_file(downloadPath,filePath,dr,verbose=True,spider=spider)
     return None
 
-def linelist(linelist,dr=None):
+def linelist(linelist,dr=None,spider=False):
     """
     NAME:
        linelist
@@ -313,6 +316,7 @@ def linelist(linelist,dr=None):
     INPUT:
        linelist - name of the linelist
        dr= return the path corresponding to this data release
+       spider= (False) if True, run wget as a spider (doesn't download)
     OUTPUT:
        (none; just downloads)
     HISTORY:
@@ -326,10 +330,10 @@ def linelist(linelist,dr=None):
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
-    _download_file(downloadPath,filePath,dr,verbose=True)
+    _download_file(downloadPath,filePath,dr,verbose=True,spider=spider)
     return None
 
-def _download_file(downloadPath,filePath,dr,verbose=False):
+def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))
     sys.stdout.flush()
@@ -348,8 +352,9 @@ def _download_file(downloadPath,filePath,dr,verbose=False):
             cmd= ['wget','%s' % downloadPath,
                   '-O','%s' % tmp_savefilename]
             if not verbose: cmd.append('-q')
+            if spider: cmd.append('--spider')
             subprocess.check_call(cmd)
-            shutil.move(tmp_savefilename,filePath)
+            if not spider: shutil.move(tmp_savefilename,filePath)
             downloading= False
             if interrupted:
                 raise KeyboardInterrupt
