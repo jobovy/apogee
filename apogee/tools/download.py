@@ -35,7 +35,7 @@ def allStar(dr=None):
     # Create the file path, hacked from aspcapStar path
     aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
     downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
-                                               'dr%s' % dr),
+                                               _dr_string(dr)),
                                   _base_url(dr=dr))
     head, tail= os.path.split(downloadPath) #strips off filename
     downloadPath, tail= os.path.split(head) #strips off location_id
@@ -63,7 +63,7 @@ def allVisit(dr=None):
     # Create the file path, hacked from aspcapStar path
     aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
     downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
-                                               'dr%s' % dr),
+                                               _dr_string(dr)),
                                   _base_url(dr=dr))
     head, tail= os.path.split(downloadPath) #strips off filename
     downloadPath, tail= os.path.split(head) #strips off location_id
@@ -116,7 +116,7 @@ def aspcapStar(loc_id,apogee_id,dr=None):
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                'dr%s' % dr),
+                                                _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
     return None
@@ -142,7 +142,7 @@ def apStar(loc_id,apogee_id,dr=None):
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                'dr%s' % dr),
+                                                _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
     return None
@@ -179,7 +179,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                'dr%s' % dr),
+                                                _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     # Post-processing of the file, removing the big first HDU or the first two for local storage
@@ -265,7 +265,7 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
         headerFilePath= filePath.replace('.dat','.hdr')
     if os.path.exists(headerFilePath): return None
     headerDownloadPath= headerFilePath.replace(os.path.join(path._APOGEE_DATA,
-                                                            'dr%s' % dr),
+                                                            _dr_string(dr)),
                                                _base_url(dr=dr))
     _download_file(headerDownloadPath,headerFilePath,dr,verbose=True)
     return None
@@ -299,7 +299,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                'dr%s' % dr),
+                                                _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
@@ -324,7 +324,7 @@ def linelist(linelist,dr=None):
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                'dr%s' % dr),
+                                                _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
