@@ -585,6 +585,29 @@ def linelistPath(linelist,dr=None):
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     return os.path.join(specReduxPath,'speclib','linelists',linelist)
     
+def apWavePath(chip,dr=None):
+    """
+    NAME:
+       apWavePath
+    PURPOSE:
+       returns the path of an apWave file
+    INPUT:
+       chip - chip 'a', 'b', or 'c'
+       dr= return the path corresponding to this data release      
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-02-27 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '10':
+        return os.path.join(specReduxPath,'r3','cal','wave',
+                            'apWave-%s-02420038.fits' % chip)
+    elif dr == '12':
+        return os.path.join(specReduxPath,'r5','cal','wave',
+                            'apWave-%s-02420038.fits' % chip)
+    
 def apogeeSpectroReduxDirPath(dr=None):
     """
     NAME:
