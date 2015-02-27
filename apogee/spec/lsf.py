@@ -1,10 +1,16 @@
 ###############################################################################
 # apogee.spec.lsf: Utilities to work with APOGEE LSFs
 ###############################################################################
+from functools import wraps
 import math
 import numpy
-from scipy import special
+from scipy import special, interpolate
+import apogee.tools.read as apread
 _SQRTTWO= numpy.sqrt(2.)
+# Load wavelength solutions
+_WAVEPIX_A= apread.apWave('a',ext=2)
+_WAVEPIX_B= apread.apWave('b',ext=2)
+_WAVEPIX_C= apread.apWave('c',ext=2)
 def raw(x,xcenter,params):
     """
     NAME:
@@ -139,4 +145,60 @@ def unpack_lsf_params(lsfarr):
     for ii in range(out['nWpar']):
         Wcoefs[ii,:out['WPorder'][ii]+1]= Wpar[WingcoeffStart[ii]:WingcoeffStart[ii]+out['WPorder'][ii]+1]
     out['Wcoefs']= Wcoefs
+    return out
+
+def scalarDecorator(func):
+    """Decorator to return scalar outputs as a set for wave2pix and pix2wave"""
+    @wraps(func)
+    def scalar_wrapper(*args,**kwargs):
+        if numpy.array(args[0]).shape == ():
+            scalarOut= True
+            newargs= (numpy.array([args[0]]),)
+            for ii in range(1,len(args)):
+                newargs= newargs+(args[ii],)
+            args= newargs
+        else:
+            scalarOut= False
+        result= func(*args,**kwargs)
+        if scalarOut:
+            return result[0]
+        else:
+            return result
+    return scalar_wrapper
+
+@scalarDecorator
+def wave2pix(wave,chip,fiber=0):
+    """
+    NAME:
+       wave2pix
+    PURPOSE:
+       convert wavelength to pixel
+    INPUT:
+       wavelength - wavelength (\AA)
+       chip - chip to use ('a', 'b', or 'c')
+       fiber= (0) fiber to use the wavelength solution of
+    OUTPUT:
+       pixel in the chip
+    HISTORY:
+        2015-02-27 - Written - Bovy (IAS)
+    """
+    if chip == 'a':
+        wave0= _WAVEPIX_A[fiber]
+    if chip == 'b':
+        wave0= _WAVEPIX_B[fiber]
+    if chip == 'c':
+        wave0= _WAVEPIX_C[fiber]
+    pix= numpy.arange(len(wave0))
+    # Need to sort into ascending order
+    sindx= numpy.argsort(wave0)
+    wave0= wave0[sindx]
+    pix= pix[sindx]
+    # Start from a linear baseline
+    baseline= numpy.polynomial.Polynomial.fit(wave0,pix,1)
+    ip= interpolate.InterpolatedUnivariateSpline(wave0,pix/baseline(wave0),
+                                                 k=3)
+    out= baseline(wave)*ip(wave)
+    # NaN for out of bounds
+    out[wave > wave0[-1]]= numpy.nan
+    out[wave < wave0[0]]= numpy.nan
     return out
