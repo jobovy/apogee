@@ -12,7 +12,7 @@ import numpy
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
-_PROPRIETARY_URL= 'http://data.sdss.org/sas/bosswork'
+_PROPRIETARY_URL= 'https://data.sdss.org/sas/bosswork'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
