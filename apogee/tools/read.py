@@ -616,6 +616,27 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
         out[5320:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
         return out
 
+def apWave(chip,ext=1,dr=None):
+    """
+    NAME:
+       apWave
+    PURPOSE:
+       open an apWave file
+    INPUT:
+       chip - chip 'a', 'b', or 'c'
+       ext= (1) extension to read
+       dr= return the path corresponding to this data release      
+    OUTPUT:
+       contents of HDU 2
+    HISTORY:
+       2015-02-27 - Written - Bovy (IAS)
+    """
+    filePath= path.apWavePath(chip,dr=dr)
+    if not os.path.exists(filePath):
+        download.apWave(chip,dr=dr)
+    data= fitsio.read(filePath,ext)
+    return data
+
 def mainIndx(data):
     """
     NAME:
