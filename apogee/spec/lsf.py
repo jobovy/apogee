@@ -5,12 +5,12 @@ import math
 import numpy
 from scipy import special
 _SQRTTWO= numpy.sqrt(2.)
-def eval(x,xcenter,params):
+def raw(x,xcenter,params):
     """
     NAME:
-       eval
+       raw
     PURPOSE:
-       Evaluate the APOGEE LSF
+       Evaluate the raw APOGEE LSF (on the native pixel scale)
     INPUT:
        x - Array of X values for which to compute the LSF (in pixel offset relative to xcenter; the LSF is calculated at the x offsets for each xcenter)
        xcenter - Position of the LSF center (in pixel units)
