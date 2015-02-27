@@ -188,17 +188,54 @@ def wave2pix(wave,chip,fiber=0):
         wave0= _WAVEPIX_B[fiber]
     if chip == 'c':
         wave0= _WAVEPIX_C[fiber]
-    pix= numpy.arange(len(wave0))
+    pix0= numpy.arange(len(wave0))
     # Need to sort into ascending order
     sindx= numpy.argsort(wave0)
     wave0= wave0[sindx]
-    pix= pix[sindx]
+    pix0= pix0[sindx]
     # Start from a linear baseline
-    baseline= numpy.polynomial.Polynomial.fit(wave0,pix,1)
-    ip= interpolate.InterpolatedUnivariateSpline(wave0,pix/baseline(wave0),
+    baseline= numpy.polynomial.Polynomial.fit(wave0,pix0,1)
+    ip= interpolate.InterpolatedUnivariateSpline(wave0,pix0/baseline(wave0),
                                                  k=3)
     out= baseline(wave)*ip(wave)
     # NaN for out of bounds
     out[wave > wave0[-1]]= numpy.nan
     out[wave < wave0[0]]= numpy.nan
+    return out
+
+@scalarDecorator
+def pix2wave(pix,chip,fiber=0):
+    """
+    NAME:
+       pix2wave
+    PURPOSE:
+       convert pixel to wavelength
+    INPUT:
+       pix - pixel
+       chip - chip to use ('a', 'b', or 'c')
+       fiber= (0) fiber to use the wavelength solution of
+    OUTPUT:
+       wavelength in \AA
+    HISTORY:
+        2015-02-27 - Written - Bovy (IAS)
+    """
+    if chip == 'a':
+        wave0= _WAVEPIX_A[fiber]
+    if chip == 'b':
+        wave0= _WAVEPIX_B[fiber]
+    if chip == 'c':
+        wave0= _WAVEPIX_C[fiber]
+    pix0= numpy.arange(len(wave0))
+    # Need to sort into ascending order
+    sindx= numpy.argsort(pix0)
+    wave0= wave0[sindx]
+    pix0= pix0[sindx]
+    # Start from a linear baseline
+    baseline= numpy.polynomial.Polynomial.fit(pix0,wave0,1)
+    ip= interpolate.InterpolatedUnivariateSpline(pix0,wave0/baseline(pix0),
+                                                 k=3)
+    out= baseline(pix)*ip(pix)
+    # NaN for out of bounds
+    out[pix < 0]= numpy.nan
+    out[pix > 2047]= numpy.nan
     return out
