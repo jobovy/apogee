@@ -6,6 +6,22 @@ import numpy
 from apogee.tools.read import modelspecOnApStarWavegrid
 _MINWIDTH= 3.5 #minimum width of a window in \AA
 
+def path(elem):
+    """
+    NAME:
+       path
+    PURPOSE:
+       return the path of a window file
+    INPUT:
+       elem - element
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-02-27 - Written - Bovy (IAS)
+    """
+    return os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                   'filter/%s.filt' \
+                                       % ((elem.lower().capitalize())))
 @modelspecOnApStarWavegrid
 def read(elem,apStarWavegrid=True):
     """
@@ -21,11 +37,7 @@ def read(elem,apStarWavegrid=True):
     HISTORY:
        2015-01-25 - Written - Bovy (IAS)
     """
-    win=\
-        numpy.loadtxt(os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   'filter/%s.filt' \
-                                       % ((elem.lower().capitalize()))))
-    return win
+    return numpy.loadtxt(path(elem))
 
 def num(elem,pad=0):
     """
