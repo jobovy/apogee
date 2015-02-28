@@ -2,6 +2,7 @@
 # ferre.py: module for interacting with Carlos Allende Prieto's FERRE code
 ###############################################################################
 import os, os.path
+import copy
 import subprocess
 import numpy
 from functools import wraps
@@ -10,6 +11,7 @@ import apogee.tools.path as appath
 from apogee.tools import paramIndx, toAspcapGrid
 from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.tools.read as apread
+import apogee.spec.window as apwindow
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -115,7 +117,7 @@ def fit(spec,specerr,
         verbose=False):
     """
     NAME:
-       ifit
+       fit
     PURPOSE:
        Fit a model spectrum to a given data spectrum
     INPUT:
@@ -211,6 +213,7 @@ def fit(spec,specerr,
     if dr is None: dr= appath._default_dr()
     # Fix any of the parameters?
     indv= []
+    indini= copy.copy(indini) # need to copy bc passed by reference
     if isinstance(indini,numpy.ndarray) and \
             ((not sixd and fixvm) or fixcm or fixnm or fixam or fixmetals \
                  or fixlogg or fixteff):
@@ -288,7 +291,241 @@ def fit(spec,specerr,
                 numpy.log10(2.478-0.325*out[:,paramIndx('LOGG')])
         else:
             out[:,paramIndx('LOG10VDOP')]= tmpOut[:,0]
-        if nspec == 1: out= out[0,:]
+        if not offile is None:
+            os.rename(os.path.join(tmpDir,'output.dat'),offile)
+    finally:
+        # Clean up
+        if os.path.exists(os.path.join(tmpDir,'input.ipf')):
+            os.remove(os.path.join(tmpDir,'input.ipf'))
+        if os.path.exists(os.path.join(tmpDir,'input.frd')):
+            os.remove(os.path.join(tmpDir,'input.frd'))
+        if os.path.exists(os.path.join(tmpDir,'input.err')):
+            os.remove(os.path.join(tmpDir,'input.err'))
+        if os.path.exists(os.path.join(tmpDir,'input.nml')):
+            os.remove(os.path.join(tmpDir,'input.nml'))
+        if os.path.exists(os.path.join(tmpDir,'output.dat')):
+            os.remove(os.path.join(tmpDir,'output.dat'))
+        if os.path.exists(os.path.join(tmpDir,'output.opf')):
+            os.remove(os.path.join(tmpDir,'output.opf'))
+        os.rmdir(tmpDir)
+    return out
+
+def elemfit(spec,specerr,elem,
+            fparam=None,
+            teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
+            fixteff=True,fixlogg=True,fixmetals=None,fixam=None,
+            fixcm=None,
+            fixnm=None,fixvm=True,
+            lib='GK',pca=True,sixd=True,dr=None,
+            offile=None,
+            inter=3,f_format=1,f_access=None,
+            errbar=1,indini=[1,1,1,2,2,3],init=0,
+            verbose=False):
+    """
+    NAME:
+       fit
+    PURPOSE:
+       Fit a model spectrum to a given data spectrum for a given element window
+    INPUT:
+       Either:
+          (1) location ID - single or list/array of location IDs
+              APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
+          (2) spec - spectrum: can be (nwave) or (nspec,nwave)
+              specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       elem - element to fit (e.g., 'Al')
+       Input parameters (can be 1D arrays); only used when init=0
+          Either:
+             (1) fparam= (None) output of ferre.fit
+             (2) teff= (4750.) Effective temperature (K)
+                 logg= (2.5) log10 surface gravity / cm s^-2
+                 metals= (0.) overall metallicity
+                 am= (0.) [alpha/M]
+                 nm= (0.) [N/M]
+                 cm= (0.) [C/M]
+                 vm= if using the 7D library, also specify the microturbulence
+       Fit options:
+          fixteff= (True) if True, fix teff at the input value
+          fixlogg= (True) if True, fix logg at the input value
+          fixvm= (True) if True, fix vm at the input value (only if sixd is False)
+       The following are set to False based on the element being fit (C -> fixcm=False, N -> fixnm=False, O,Mg,S,Si,Ca,Ti -> fixam=False, rest -> fixmetals=False)
+          fixmetals= (None) if True, fix metals at the input value
+          fixam= (None) if True, fix am at the input value
+          fixcm= (None) if True, fix cm at the input value
+          fixnm= (None) if True, fix nm at the input value
+       Library options:
+          lib= ('GK') spectral library
+          pca= (True) if True, use a PCA compressed library
+          sixd= (True) if True, use the 6D library (w/o vm)
+          dr= data release
+       FERRE options:
+          inter= (3) order of the interpolation
+          errbar= (1) method for calculating the error bars
+          indini= ([1,1,1,2,2,3]) how to initialize the search (int or array/list with ndim entries)
+          init= (0) if 0, initialize the search at the parameters in the pfile
+          f_format= (1) file format (0=ascii, 1=unf)
+          f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+       Output options:
+          offile= (None) if offile is set, the FERRE OFFILE is saved to this file, otherwise this file is removed
+       verbose= (False) if True, run FERRE in verbose mode
+    OUTPUT:
+       best-fit parameters (nspec,nparams); in the same order as the FPARAM APOGEE data product (fixed inputs are repeated in the output)
+    HISTORY:
+       2015-02-27 - Written - Bovy (IAS)
+    """
+    # Parse input
+    if isinstance(specerr,str): # locID+APOGEE-ID; array
+        ispec= apread.aspcapStar(spec,specerr,ext=1,header=False,
+                                 aspcapWavegrid=True)
+        ispecerr= apread.aspcapStar(spec,specerr,ext=2,header=False,
+                                    aspcapWavegrid=True)
+        spec= ispec
+        specerr= ispecerr
+    elif (isinstance(specerr,(list,numpy.ndarray)) \
+              and isinstance(specerr[0],str)): # locID+APOGEE-ID; array
+        nspec= len(specerr)
+        ispec= numpy.empty((nspec,7214))
+        ispecerr= numpy.empty((nspec,7214))
+        for ii in range(nspec):
+            ispec[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=1,
+                                         header=False,aspcapWavegrid=True)
+            ispecerr[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=2,
+                                            header=False,aspcapWavegrid=True)
+        spec= ispec
+        specerr= ispecerr
+    elif isinstance(specerr,(list,numpy.ndarray)) \
+            and isinstance(specerr[0],(float,numpy.float32,
+                                       numpy.float64,numpy.ndarray)) \
+            and ((len(specerr.shape) == 1 and len(specerr) == 8575)
+                 or (len(specerr.shape) == 2 and specerr.shape[1] == 8575)): #array on apStar grid
+        spec= toAspcapGrid(spec)
+        specerr= toAspcapGrid(specerr)
+    # Parse fparam
+    if not fparam is None:
+        teff= fparam[:,paramIndx('TEFF')]
+        logg= fparam[:,paramIndx('LOGG')]
+        metals= fparam[:,paramIndx('METALS')]
+        am= fparam[:,paramIndx('ALPHA')]
+        nm= fparam[:,paramIndx('N')]
+        cm= fparam[:,paramIndx('C')]
+        if sixd:
+            vm= None
+        else:
+            vm= fparam[:,paramIndx('LOG10VDOP')]        
+    # Make sure the Teff etc. have the right dimensionality
+    if len(spec.shape) == 1:
+        nspec= 1
+    else:
+        nspec= spec.shape[0]
+    if nspec > 1 and isinstance(teff,float):
+        teff= teff*numpy.ones(nspec)
+    if nspec > 1 and isinstance(logg,float):
+        logg= logg*numpy.ones(nspec)
+    if nspec > 1 and isinstance(metals,float):
+        metals= metals*numpy.ones(nspec)
+    if nspec > 1 and isinstance(am,float):
+        am= am*numpy.ones(nspec)
+    if nspec > 1 and isinstance(nm,float):
+        nm= nm*numpy.ones(nspec)
+    if nspec > 1 and isinstance(cm,float):
+        cm= cm*numpy.ones(nspec)
+    if nspec > 1 and not vm is None and isinstance(vm,float):
+        vm= vm*numpy.ones(nspec)
+    if dr is None: dr= appath._default_dr()
+    # Set fixXX based on element being fit, first set None to True
+    if fixcm is None: fixcm= True
+    if fixnm is None: fixnm= True
+    if fixam is None: fixam= True
+    if fixmetals is None: fixmetals= True
+    if elem.lower() == 'c':
+        fixcm= False
+    elif elem.lower() == 'n':
+        fixnm= False
+    elif elem.lower() in ['o','mg','s','si','ca','ti']:
+        fixam= False
+    else:
+        fixmetals= False
+    # Fix any of the parameters?
+    indv= []
+    indini= copy.copy(indini) # need to copy bc passed by reference
+    if isinstance(indini,numpy.ndarray) and \
+            ((not sixd and fixvm) or fixcm or fixnm or fixam or fixmetals \
+                 or fixlogg or fixteff):
+        indini= list(indini)
+    if not sixd and not fixvm:
+        indv.append(1)
+    elif not sixd:
+        if isinstance(indini,list): indini[0]= -1
+    if not fixcm:
+        indv.append(2-sixd)
+    else:
+        if isinstance(indini,list): indini[1-sixd]= -1
+    if not fixnm:
+        indv.append(3-sixd)
+    else:
+        if isinstance(indini,list): indini[2-sixd]= -1
+    if not fixam:
+        indv.append(4-sixd)
+    else:
+        if isinstance(indini,list): indini[3-sixd]= -1
+    if not fixmetals:
+        indv.append(5-sixd)
+    else:
+        if isinstance(indini,list): indini[4-sixd]= -1
+    if not fixlogg:
+        indv.append(6-sixd)
+    else:
+        if isinstance(indini,list): indini[5-sixd]= -1
+    if not fixteff:
+        indv.append(7-sixd)
+    else:
+        if isinstance(indini,list): indini[6-sixd]= -1
+    if isinstance(indini,list):
+        while -1 in indini: indini.remove(-1)
+    if init == 0: indini= 0
+    # Setup temporary directory to run FERRE from
+    tmpDir= tempfile.mkdtemp(dir='./')
+    try:
+        # First write the ipf file with the parameters
+        write_ipf(tmpDir,teff,logg,metals,am,nm,cm,vm=vm)
+        # Write the file with the fluxes and the flux errors
+        write_ffile(tmpDir,spec,specerr=specerr)
+        # Now write the input.nml file
+        if f_access is None:
+            f_access= 1
+        write_input_nml(tmpDir,'input.ipf','output.dat',ndim=7-sixd,
+                        nov=7-sixd-fixcm-fixnm-fixam-fixmetals\
+                            -fixlogg-fixteff,
+                        indv=indv,
+                        synthfile=appath.ferreModelLibraryPath\
+                            (lib=lib,pca=pca,sixd=sixd,dr=dr,
+                             header=True,unf=False),
+                        ffile='input.frd',erfile='input.err',
+                        opfile='output.opf',
+                        inter=inter,f_format=f_format,
+                        errbar=errbar,indini=indini,init=init,
+                        f_access=f_access,
+                        filterfile=apwindow.path(elem))
+        # Run FERRE
+        run_ferre(tmpDir,verbose=verbose)
+        # Read the output
+        cols= (1,2,3,4,5,6)
+        tmpOut= numpy.loadtxt(os.path.join(tmpDir,'output.opf'),usecols=cols)
+        if len(spec.shape) == 1 or spec.shape[0] == 1:
+            out= numpy.zeros((1,7))
+            tmpOut= numpy.reshape(tmpOut,(1,7-sixd))
+        else:
+            out= numpy.zeros((nspec,7))
+        out[:,paramIndx('TEFF')]= tmpOut[:,-1]
+        out[:,paramIndx('LOGG')]= tmpOut[:,-2]
+        out[:,paramIndx('METALS')]= tmpOut[:,-3]
+        out[:,paramIndx('ALPHA')]= tmpOut[:,-4]
+        out[:,paramIndx('N')]= tmpOut[:,-5]
+        out[:,paramIndx('C')]= tmpOut[:,-6]
+        if sixd and dr == '12':
+            out[:,paramIndx('LOG10VDOP')]=\
+                numpy.log10(2.478-0.325*out[:,paramIndx('LOGG')])
+        else:
+            out[:,paramIndx('LOG10VDOP')]= tmpOut[:,0]
         if not offile is None:
             os.rename(os.path.join(tmpDir,'output.dat'),offile)
     finally:
@@ -345,6 +582,7 @@ def write_input_nml(dir,
                     nov=0,
                     indv=None,
                     synthfile=None,
+                    filterfile=None,
                     inter=3,
                     errbar=1,
                     indini=0,
@@ -366,6 +604,7 @@ def write_input_nml(dir,
        ndim= (6) number of dimensions/parameters
        nov= (0) number of parameters to search (0=interpolation)
        synthfile= (default ferreModelLibraryPath in apogee.tools.path) file name of the model grid's header
+       filterfile= (None) name of the file with weights to apply to the chi^2 (as weight x diff/err^2); typically an elemental abundance window
        inter= (3) order of the interpolation
        errbar= (1) method for calculating the error bars
        indini= (0) how to initialize the search
@@ -399,6 +638,8 @@ def write_input_nml(dir,
         if not opfile is None:
             outfile.write("OPFILE = '%s'\n" % opfile)
         outfile.write("OFFILE = '%s'\n" % offile)
+        if not filterfile is None:
+            outfile.write("FILTERFILE = '%s'\n" % filterfile)           
         outfile.write('INTER = %i\n' % inter)
         outfile.write('ERRBAR = %i\n' % errbar)
         indinistr= 'INDINI ='
@@ -407,7 +648,10 @@ def write_input_nml(dir,
         for ii in range(nov):
             indinistr+= ' %i' % indini[ii]
         outfile.write(indinistr+'\n')
-        outfile.write('NRUNS = %i\n' % numpy.prod(indini))
+        if init == 0:
+            outfile.write('NRUNS = 1\n')
+        else:
+            outfile.write('NRUNS = %i\n' % numpy.prod(indini))
         outfile.write('INIT = %i\n' % init)
         outfile.write('F_FORMAT = %i\n' % f_format)
         outfile.write('F_ACCESS = %i\n' % f_access)
