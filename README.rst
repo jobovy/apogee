@@ -443,8 +443,8 @@ and now fit entry 3512::
     params= ferre.fit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
                       lib='GK',pca=True,sixd=True)
     print params
-    [  4.67245500e+03   2.64900000e+00   2.08730163e-01  -4.43000000e-01
-  -6.40000000e-02   1.10000000e-01   4.90000000e-02]
+    [[  4.67245500e+03   2.64900000e+00   2.08730163e-01  -4.43000000e-01
+  -6.40000000e-02   1.10000000e-01   4.90000000e-02]]
 
 We can compare this to the official fit::
 
@@ -463,8 +463,8 @@ To fix some of the parameters in the fit, do for example to just fit
                      fixam=True,fixcm=True,fixnm=True,
                      lib='GK',pca=True,sixd=True)
    print xparams
-   [  4.69824100e+03   2.73600000e+00   2.01069231e-01  -4.21000000e-01
-   0.00000000e+00   0.00000000e+00   0.00000000e+00]
+   [[  4.69824100e+03   2.73600000e+00   2.01069231e-01  -4.21000000e-01
+   0.00000000e+00   0.00000000e+00   0.00000000e+00]]
 
 and compared to the previous results::
 
@@ -479,6 +479,41 @@ and compared to the previous results::
 In ``apogee.modelspec.ferre.fit`` we can also directly specify a
 spectrum + spectrum error array instead of the ``location_id`` and
 ``apogee_id`` given above.
+
+To fit for the abundances of individual elements use
+``ferre.elemfit``. By default this function replicates the standard
+ASPCAP fit: the grid dimension 'C', 'N', 'ALPHAFE', or 'METALS' is
+varied based on whether the particular element is 'C', 'N', an alpha
+element, or one of the remaining elements). For example, for the star
+above we can get the Mg abundance by doing (we use ``params`` from
+above as the baseline stellar-parameter fit)::
+
+    mgparams= ferre.elemfit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                      'Mg',params,
+                      lib='GK',pca=True,sixd=True)
+
+The output is the full standard 7D output, but only the 'ALPHAFE'
+dimension was varied. Therefore, the [Mg/M] measurement is::
+
+	  print mgparams[0,paramIndx('ALPHA')]
+	  -0.007
+
+which we can compare to the official data product, which is in
+'FELEM'::
+
+	from apogee.tools import elemIndx
+	print data[3512]['FELEM'][elemIndx('Mg')]
+	-0.0078463
+
+To for example also let the effective temperature float in the Mg abundance fit you can do::
+
+   mgparams= ferre.elemfit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                      'Mg',params,
+                      lib='GK',pca=True,sixd=True,fixteff=False)
+   print mgparams[0,paramIndx('ALPHA')]
+   -0.016
+
+That is, the Mg abundance only changes by 0.01 dex.
 
 Using The Cannon
 ^^^^^^^^^^^^^^^^^
