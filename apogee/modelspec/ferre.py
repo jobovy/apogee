@@ -12,6 +12,7 @@ from apogee.tools import paramIndx, toAspcapGrid
 from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.tools.read as apread
 import apogee.spec.window as apwindow
+import apogee.spec.cannon as cannon
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -113,7 +114,7 @@ def fit(spec,specerr,
         lib='GK',pca=True,sixd=True,dr=None,
         offile=None,
         inter=3,f_format=1,f_access=None,
-        errbar=1,indini=[1,1,1,2,2,3],init=1,
+        errbar=1,indini=[1,1,1,2,2,3],init=1,initcannon=False,
         verbose=False):
     """
     NAME:
@@ -154,6 +155,8 @@ def fit(spec,specerr,
           init= (1) if 0, initialize the search at the parameters in the pfile
           f_format= (1) file format (0=ascii, 1=unf)
           f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+       Other options:
+          initcannon= (False) If True, initialize a single run by first running the Cannon using the default Cannon fit (sets init=0)
        Output options:
           offile= (None) if offile is set, the FERRE OFFILE is saved to this file, otherwise this file is removed
        verbose= (False) if True, run FERRE in verbose mode
@@ -187,10 +190,18 @@ def fit(spec,specerr,
                                        numpy.float64,numpy.ndarray)) \
             and ((len(specerr.shape) == 1 and len(specerr) == 8575)
                  or (len(specerr.shape) == 2 and specerr.shape[1] == 8575)): #array on apStar grid
-        print "Here", spec.shape, specerr.shape
         spec= toAspcapGrid(spec)
         specerr= toAspcapGrid(specerr)
-        print "Here again", spec.shape, specerr.shape
+    # Initialize using the Cannon?
+    if initcannon:
+        init= 0 # just run one fit using the Cannon as a starting guess
+        initparams= cannon.polylabels(spec,specerr)
+        if not fixteff: teff= initparams[:,0]
+        if not fixlogg: logg= initparams[:,1]
+        if not fixmetals: metals= initparams[:,2]
+        if not fixam: am= initparams[:,3]
+        if not fixcm: cm= numpy.zeros_like(initparams[:,0])
+        if not fixnm: nm= numpy.zeros_like(initparams[:,0])
     # Make sure the Teff etc. have the right dimensionality
     if len(spec.shape) == 1:
         nspec= 1
