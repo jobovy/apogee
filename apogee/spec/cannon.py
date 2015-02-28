@@ -106,7 +106,7 @@ def polyfit(*args,**kwargs):
     return out
 
 # Getting the labels
-def polylabels(spec,specerr,coeffs,scatter,poly='lin',
+def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
                return_cov=False,return_poly=False):
     """
     NAME:
@@ -116,8 +116,8 @@ def polylabels(spec,specerr,coeffs,scatter,poly='lin',
     INPUT:
        spec - spectrum/a to fit (nlambda) or (nspec,nlambda)
        specerrs - error/s on the spectra (nlambda) or (nspec,nlambda); assume no covariances
-       coeffs - array of coefficients from the polynomial fit (ncoeffs,nlambda)
-       scatter - array of scatter from the polynomial fit (nlambda))
+       coeffs= array of coefficients from the polynomial fit (ncoeffs,nlambda); if not set the default fit is used
+       scatter= array of scatter from the polynomial fit (nlambda)); if not set the default fit is used
        poly= ('lin') 'lin' or 'quad' currently
        return_cov= (False) if True, return the uncertainty covariance matrix for the labels
        return_poly= (False) if True, return the best-fit labels, labels-squared, etc.
@@ -130,6 +130,11 @@ def polylabels(spec,specerr,coeffs,scatter,poly='lin',
     if len(spec.shape) == 1:
         spec= numpy.reshape(spec,(1,len(spec)))
         specerr= numpy.reshape(specerr,(1,len(specerr)))
+    # Load default fit if necessary
+    if coeffs is None:
+        from apogee.spec._train_cannon import load_fit
+        coeffs, scatter= load_fit()
+        poly= 'quad'
     # Setup output
     nspec= spec.shape[0]
     ncoeffs= coeffs.shape[0]
