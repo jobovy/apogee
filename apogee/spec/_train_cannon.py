@@ -11,7 +11,7 @@ def train_quadfit(\
                                   'training_apokasc_gc_ind_feh_fix.txt'),
     outfilename=os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              'cannon','trained',
-                             'trained_apokasc_gc_ind_feh_fix.fits')):
+                             'trained_apokasc_gc_ind_feh_fix.txt')):
     """
     NAME:
        train_quadfit
@@ -19,7 +19,7 @@ def train_quadfit(\
        train a quadratic polynomial fit to training data
     INPUT:
        trainingfilename= name of the file that has the training data
-       outfilename= name of the file that will hold the output
+       outfilename= name of the file that will hold the output (scatter is in file with .txt replaced by _scatter.txt)
     OUTPUT:
        (none; just writes the output to a file)
     HISTORY:
@@ -43,6 +43,25 @@ def train_quadfit(\
     numpy.savetxt(outfilename.replace('.txt','_scatter.txt'),qout[1])
     return None
 
+def load_fit(\
+    outfilename=os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                             'cannon','trained',
+                             'trained_apokasc_gc_ind_feh_fix.txt')):
+    """
+    NAME:
+       load_fit
+    PURPOSE:
+       load the coefficients and scatter from a Cannon fit
+    INPUT:
+       outfilename= name of the file that will hold the output (scatter is in file with .txt replaced by _scatter.txt)
+    OUTPUT:
+       (coefficients (ncoeffs,nlambda),scatter (nlambda))
+    HISTORY:
+       2015-02-28 - Written - Bovy (IAS)
+    """
+    return (numpy.loadtxt(outfilename),
+            numpy.loadtxt(outfilename.replace('.txt','_scatter.txt')))
+
 def _read_training(trainingfilename):
     # Read the training set
     with open(trainingfilename,'r') as tfile:
@@ -62,3 +81,4 @@ def _read_training(trainingfilename):
         outlabels= outlabels\
             +(numpy.array([labels[ii][jj] for ii in range(nstar)]),)
     return (loc_ids,ap_ids,outlabels)
+
