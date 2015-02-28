@@ -4,9 +4,11 @@
 import os, os.path
 import numpy
 from apogee.tools.read import modelspecOnApStarWavegrid
+from apogee.tools.path import _default_dr
+from apogee.tools.download import _dr_string
 _MINWIDTH= 3.5 #minimum width of a window in \AA
 
-def path(elem):
+def path(elem,dr=None):
     """
     NAME:
        path
@@ -14,16 +16,19 @@ def path(elem):
        return the path of a window file
     INPUT:
        elem - element
+       dr= return the path corresponding to this data release       
     OUTPUT:
        path string
     HISTORY:
        2015-02-27 - Written - Bovy (IAS)
     """
+    if dr is None: dr= _default_dr()
     return os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                   'filter/%s.filt' \
-                                       % ((elem.lower().capitalize())))
+                                   'filter/%s/%s.filt' \
+                                       % (_dr_string(dr),
+                                          (elem.lower().capitalize())))
 @modelspecOnApStarWavegrid
-def read(elem,apStarWavegrid=True):
+def read(elem,apStarWavegrid=True,dr=None):
     """
     NAME:
        read
@@ -32,12 +37,13 @@ def read(elem,apStarWavegrid=True):
     INPUT:
        elem - element
        apStarWavegrid= (True) if True, output the window onto the apStar wavelength grid, otherwise just give the ASPCAP version (blue+green+red directly concatenated)
+       dr= read the window corresponding to this data release       
     OUTPUT:
        Array with window weights
     HISTORY:
        2015-01-25 - Written - Bovy (IAS)
     """
-    return numpy.loadtxt(path(elem))
+    return numpy.loadtxt(path(elem,dr=dr))
 
 def num(elem,pad=0):
     """

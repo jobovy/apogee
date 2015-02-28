@@ -504,7 +504,7 @@ def elemfit(spec,specerr,elem,
                         inter=inter,f_format=f_format,
                         errbar=errbar,indini=indini,init=init,
                         f_access=f_access,
-                        filterfile=apwindow.path(elem))
+                        filterfile=apwindow.path(elem,dr=dr))
         # Run FERRE
         run_ferre(tmpDir,verbose=verbose)
         # Read the output
