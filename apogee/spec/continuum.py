@@ -15,8 +15,9 @@ def pixels_cannon(*args,**kwargs):
           spec - spectra to fit (nspec,nlambda)
           specerrs - errors on the spectra (nspec,nlambda); assume no covariances
           label1, label2, ... - labels (nspec); best to subtract reference values before running this
-          type= ('linear') type of Cannon to run:
-             'linear' - linear Cannon (currently the only supported)
+          type= ('lin') type of Cannon to run:
+             'lin' - linear Cannon
+             'quad' - quadratic Cannon
         b) Output from a previous Cannon run:
           coefficients - coefficients from the fit (ncoeffs,nlambda)
           scatter - scatter from the fit (nlambda)
@@ -34,21 +35,30 @@ def pixels_cannon(*args,**kwargs):
        2015-02-05 - Written - Bovy (IAS@KITP)
     """
     # Grab kwargs
-    type= kwargs.pop('type','linear')
+    type= kwargs.pop('type','lin')
     # Parse input
-    spec= args[0]
-    specerr= args[1]
-    # Determine the type of input
-    if len(specerr.shape) == 2:
-        # Run the Cannon
-        if type.lower() == 'linear':
-            coeffs, scatter= cannon.linfit(*args)
+    if len(args) == 0: # Use default fit
+        from apogee.spec._train_cannon import load_fit
+        coeffs, scatter, baseline_labels= load_fit()
+        type= 'quad'
     else:
-        coeffs= spec
-        scatter= specerr
+        spec= args[0]
+        specerr= args[1]
+        # Determine the type of input
+        if len(specerr.shape) == 2:
+            # Run the Cannon
+            if type.lower() == 'lin':
+                coeffs, scatter= cannon.linfit(*args)
+            elif type.lower() == 'quad':
+                coeffs, scatter= cannon.quadfit(*args)
+        else:
+            coeffs= spec
+            scatter= specerr
     ncoeffs= coeffs.shape[0]
-    if type.lower() == 'linear':
+    if type.lower() == 'lin':
         nlabels= ncoeffs-1
+    elif type.lower() == 'quad':
+        nlabels= int((-3+numpy.sqrt(9+8*(ncoeffs-1))))//2
     # Determine continuum pixels
     out= numpy.ones(len(scatter),dtype='bool')
     # Deviation from baseline
@@ -56,10 +66,10 @@ def pixels_cannon(*args,**kwargs):
     # Large dependence on labels
     maxs= numpy.zeros(nlabels)
     maxs[0]= kwargs.get('label1_max',10.**-5.)
-    maxs[1]= kwargs.get('label2_max',0.0045)
-    maxs[2]= kwargs.get('label3_max',0.0085)
+    maxs[1]= kwargs.get('label2_max',0.005)
+    maxs[2]= kwargs.get('label3_max',0.01)
     for ii in range(nlabels-3):
-        maxs[ii+3]= kwargs.get('label%i_max' % (ii+4),10.**-3.)
+        maxs[ii+3]= kwargs.get('label%i_max' % (ii+4),0.03)
     for ii in range(1,nlabels+1):
         out[numpy.fabs(coeffs[ii]) > maxs[ii-1]]= False
     # Large residuals
