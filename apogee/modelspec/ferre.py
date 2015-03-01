@@ -8,11 +8,11 @@ import numpy
 from functools import wraps
 import tempfile
 import apogee.tools.path as appath
-from apogee.tools import paramIndx, toAspcapGrid, _ELEM_SYMBOL
+from apogee.tools import paramIndx,_ELEM_SYMBOL
 from apogee.tools.read import modelspecOnApStarWavegrid
-import apogee.tools.read as apread
 import apogee.spec.window as apwindow
 import apogee.spec.cannon as cannon
+from apogee.modelspec import specFitInput
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -107,6 +107,7 @@ def interpolate(teff,logg,metals,am,nm,cm,vm=None,
         os.rmdir(tmpDir)
     return out
 
+@specFitInput
 def fit(spec,specerr,
         teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
         fixteff=False,fixlogg=False,fixmetals=False,fixam=False,fixcm=False,
@@ -165,33 +166,6 @@ def fit(spec,specerr,
     HISTORY:
        2015-01-29 - Written - Bovy (IAS)
     """
-    # Parse input
-    if isinstance(specerr,str): # locID+APOGEE-ID; array
-        ispec= apread.aspcapStar(spec,specerr,ext=1,header=False,
-                                 aspcapWavegrid=True)
-        ispecerr= apread.aspcapStar(spec,specerr,ext=2,header=False,
-                                    aspcapWavegrid=True)
-        spec= ispec
-        specerr= ispecerr
-    elif (isinstance(specerr,(list,numpy.ndarray)) \
-              and isinstance(specerr[0],str)): # locID+APOGEE-ID; array
-        nspec= len(specerr)
-        ispec= numpy.empty((nspec,7214))
-        ispecerr= numpy.empty((nspec,7214))
-        for ii in range(nspec):
-            ispec[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=1,
-                                         header=False,aspcapWavegrid=True)
-            ispecerr[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=2,
-                                            header=False,aspcapWavegrid=True)
-        spec= ispec
-        specerr= ispecerr
-    elif isinstance(specerr,(list,numpy.ndarray)) \
-            and isinstance(specerr[0],(float,numpy.float32,
-                                       numpy.float64,numpy.ndarray)) \
-            and ((len(specerr.shape) == 1 and len(specerr) == 8575)
-                 or (len(specerr.shape) == 2 and specerr.shape[1] == 8575)): #array on apStar grid
-        spec= toAspcapGrid(spec)
-        specerr= toAspcapGrid(specerr)
     # Initialize using the Cannon?
     if initcannon:
         init= 0 # just run one fit using the Cannon as a starting guess
@@ -321,6 +295,7 @@ def fit(spec,specerr,
         os.rmdir(tmpDir)
     return out
 
+@specFitInput
 def elemfitall(*args,**kwargs):
     """
     NAME:
@@ -393,6 +368,7 @@ def elemfitall(*args,**kwargs):
         out[elem.capitalize()]= tout
     return out
 
+@specFitInput
 def elemfit(spec,specerr,elem,
             fparam=None,
             teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
@@ -455,33 +431,6 @@ def elemfit(spec,specerr,elem,
     HISTORY:
        2015-02-27 - Written - Bovy (IAS)
     """
-    # Parse input
-    if isinstance(specerr,str): # locID+APOGEE-ID; array
-        ispec= apread.aspcapStar(spec,specerr,ext=1,header=False,
-                                 aspcapWavegrid=True)
-        ispecerr= apread.aspcapStar(spec,specerr,ext=2,header=False,
-                                    aspcapWavegrid=True)
-        spec= ispec
-        specerr= ispecerr
-    elif (isinstance(specerr,(list,numpy.ndarray)) \
-              and isinstance(specerr[0],str)): # locID+APOGEE-ID; array
-        nspec= len(specerr)
-        ispec= numpy.empty((nspec,7214))
-        ispecerr= numpy.empty((nspec,7214))
-        for ii in range(nspec):
-            ispec[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=1,
-                                         header=False,aspcapWavegrid=True)
-            ispecerr[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=2,
-                                            header=False,aspcapWavegrid=True)
-        spec= ispec
-        specerr= ispecerr
-    elif isinstance(specerr,(list,numpy.ndarray)) \
-            and isinstance(specerr[0],(float,numpy.float32,
-                                       numpy.float64,numpy.ndarray)) \
-            and ((len(specerr.shape) == 1 and len(specerr) == 8575)
-                 or (len(specerr.shape) == 2 and specerr.shape[1] == 8575)): #array on apStar grid
-        spec= toAspcapGrid(spec)
-        specerr= toAspcapGrid(specerr)
     # Parse fparam
     if not fparam is None:
         teff= fparam[:,paramIndx('TEFF')]

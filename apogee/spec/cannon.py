@@ -6,6 +6,7 @@ import numpy
 from numpy import linalg
 from scipy import optimize
 from apogee.util import _ERASESTR
+from apogee.modelspec import specFitInput
 def linfit(*args,**kwargs):
     """
     NAME:
@@ -106,6 +107,7 @@ def polyfit(*args,**kwargs):
     return out
 
 # Getting the labels
+@specFitInput
 def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
                return_cov=False,return_poly=False):
     """
