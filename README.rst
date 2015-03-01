@@ -568,12 +568,7 @@ is what is used by the ``initcannon=True`` option of
 ``apogee.modelspec.ferre.fit`` above to initialize the FERRE fit)::
 
 	     import apogee.spec.cannon
-	     import apogee.tools.read as apread
-	     # Load the spectrum
-	     spec= apread.aspcapStar(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=1,header=False,aspcapWavegrid=True)
-	     specerr= apread.aspcapStar(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=2,header=False,aspcapWavegrid=True)
-	     # Run the Cannon
-	     apogee.spec.cannon.polylabels(spec,specerr)
+	     apogee.spec.cannon.polylabels(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'])
 	     array([[  4.80598726e+03,   2.22568929e+00,  -4.12532522e-01,
 	               8.04473056e-02]])
 
