@@ -457,9 +457,10 @@ We can compare this to the official fit::
    3.97998154e-04   5.00002503e-05   4.01998520e-04]
 
 To initialize the fit by first running the ``Cannon`` (`Ness et
-al. 2015 <http://arxiv.org/abs/1501.07604>`__) with a default set of
-coefficients, do (this is much faster than the standard fit, because
-the standard fit starts from twelve different initial conditions)::
+al. 2015 <http://arxiv.org/abs/1501.07604>`__; see below) with a
+default set of coefficients, do (this is much faster than the standard
+fit, because the standard fit starts from twelve different initial
+conditions)::
 
    ferre.fit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
                     lib='GK',pca=True,sixd=True,initcannon=True)
@@ -560,7 +561,23 @@ of labels is supported by ``apogee.spec.cannon.linfit`` and
 fit, the scatter, and possibly the residuals. Using the coefficients
 to determine labels for a new spectrum is supported through
 ``apogee.spec.cannon.polylabels`` (although this implementation takes
-a shortcut to avoid the necessary non-linear optimization). 
+a shortcut to avoid the necessary non-linear
+optimization). ``apogee.spec.cannon.polylabels`` has a default set of
+coefficients and scatter, so you can run for the example above (this
+is what is used by the ``initcannon=True`` option of
+``apogee.modelspec.ferre.fit`` above to initialize the FERRE fit)::
+
+	     import apogee.spec.cannon
+	     import apogee.tools.read as apread
+	     # Load the spectrum
+	     spec= apread.aspcapStar(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=1,header=False,aspcapWavegrid=True)
+	     specerr= apread.aspcapStar(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],ext=2,header=False,aspcapWavegrid=True)
+	     # Run the Cannon
+	     apogee.spec.cannon.polylabels(spec,specerr)
+	     array([[  4.80598726e+03,   2.22568929e+00,  -4.12532522e-01,
+	               8.04473056e-02]])
+
+which returns ``(Teff,logg,metals,[a/Fe])``.
 
 Stacking spectra
 ^^^^^^^^^^^^^^^^^
