@@ -456,6 +456,19 @@ We can compare this to the official fit::
    [  4.50000000e-02   3.99898529e-04   3.48818403e-05   3.19998741e-04
    3.97998154e-04   5.00002503e-05   4.01998520e-04]
 
+To initialize the fit by first running the ``Cannon`` (`Ness et
+al. 2015 <http://arxiv.org/abs/1501.07604>`__) with a default set of
+coefficients, do (this is much faster than the standard fit, because
+the standard fit starts from twelve different initial conditions)::
+
+   ferre.fit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                    lib='GK',pca=True,sixd=True,initcannon=True)
+   array([[  4.65617700e+03,   2.60000000e+00,   2.12986185e-01,
+             -4.40000000e-01,  -1.29000000e-01,   1.30000000e-01,
+             2.80000000e-02]])
+
+This gives a fit that is very close to the standard ASPCAP fit.
+
 To fix some of the parameters in the fit, do for example to just fit
 ``Teff``, ``logg``, and ``metals``::
 
@@ -515,6 +528,27 @@ To for example also let the effective temperature float in the Mg abundance fit 
 
 That is, the Mg abundance only changes by 0.01 dex.
 
+To fit for all of the elemental abundances you can use ``elemfitall'',
+which returns a dictionary of abundances relative to hydrogen for all
+APOGEE elements::
+
+	felem= ferre.elemfitall(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],fparam=params,lib='GK',pca=True,sixd=True)
+
+We can compare this to the pipeline products, for example for Ni::
+
+	print felem['Ni']
+	[-0.453]
+	print data[3512]['FELEM'][elemIndx('Ni')]
+	-0.45136
+
+or for Si (which in the standard pipeline product is given as [Si/Fe])::
+
+	print felem['Si']
+	[-0.204]
+	print data[3512]['FELEM'][elemIndx('Si')]+params[:,paramIndx('METALS')] 
+	[-0.20453]
+
+
 Using The Cannon
 ^^^^^^^^^^^^^^^^^
 
@@ -526,7 +560,7 @@ of labels is supported by ``apogee.spec.cannon.linfit`` and
 fit, the scatter, and possibly the residuals. Using the coefficients
 to determine labels for a new spectrum is supported through
 ``apogee.spec.cannon.polylabels`` (although this implementation takes
-a shortcut to avoid the necessary non-linear optimization).
+a shortcut to avoid the necessary non-linear optimization). 
 
 Stacking spectra
 ^^^^^^^^^^^^^^^^^
