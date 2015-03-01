@@ -11,7 +11,8 @@ def train_quadfit(\
                                   'training_apokasc_gc_ind_feh_fix.txt'),
     outfilename=os.path.join(os.path.dirname(os.path.realpath(__file__)),
                              'cannon','trained',
-                             'trained_apokasc_gc_ind_feh_fix.txt')):
+                             'trained_apokasc_gc_ind_feh_fix.txt'),
+    baseline_labels=[4500.,2.,-0.3,0.05]):
     """
     NAME:
        train_quadfit
@@ -20,6 +21,7 @@ def train_quadfit(\
     INPUT:
        trainingfilename= name of the file that has the training data
        outfilename= name of the file that will hold the output (scatter is in file with .txt replaced by _scatter.txt)
+       baseline_labels= baseline to subtract from the labels
     OUTPUT:
        (none; just writes the output to a file)
     HISTORY:
@@ -27,6 +29,10 @@ def train_quadfit(\
     """
     # Read the training data
     loc_ids, ap_ids, labels= _read_training(trainingfilename)
+    new_labels= (labels[0]-baseline_labels[0],)
+    for ii in range(1,len(labels)):
+        new_labels= new_labels+(labels[ii]-baseline_labels[ii],)
+    labels= new_labels
     # Load the spectra for these data
     spec= numpy.empty((len(loc_ids),7214))
     specerr= numpy.empty((len(loc_ids),7214))
@@ -41,6 +47,8 @@ def train_quadfit(\
     # Save to file
     numpy.savetxt(outfilename,qout[0])
     numpy.savetxt(outfilename.replace('.txt','_scatter.txt'),qout[1])
+    numpy.savetxt(outfilename.replace('.txt','_baseline_labels.txt'),
+                  baseline_labels)
     return None
 
 def load_fit(\
@@ -55,12 +63,13 @@ def load_fit(\
     INPUT:
        outfilename= name of the file that will hold the output (scatter is in file with .txt replaced by _scatter.txt)
     OUTPUT:
-       (coefficients (ncoeffs,nlambda),scatter (nlambda))
+       (coefficients (ncoeffs,nlambda),scatter (nlambda),baseline_labels (nlabels))
     HISTORY:
        2015-02-28 - Written - Bovy (IAS)
     """
     return (numpy.loadtxt(outfilename),
-            numpy.loadtxt(outfilename.replace('.txt','_scatter.txt')))
+            numpy.loadtxt(outfilename.replace('.txt','_scatter.txt')),
+            numpy.loadtxt(outfilename.replace('.txt','_baseline_labels.txt')))
 
 def _read_training(trainingfilename):
     # Read the training set

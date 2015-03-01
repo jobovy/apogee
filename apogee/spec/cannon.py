@@ -109,7 +109,7 @@ def polyfit(*args,**kwargs):
 # Getting the labels
 @specFitInput
 def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
-               return_cov=False,return_poly=False):
+               return_cov=False,return_poly=False,baseline_labels=None):
     """
     NAME:
        polylabels
@@ -123,6 +123,7 @@ def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
        poly= ('lin') 'lin' or 'quad' currently
        return_cov= (False) if True, return the uncertainty covariance matrix for the labels
        return_poly= (False) if True, return the best-fit labels, labels-squared, etc.
+       baseline_labels= baseline to add to the labels (baseline that was subtracted before the fit)
     OUTPUT:
        Best-fit labels (nspec,nlabels)
        if return_poly, the best-fit linear, quadratic, ... terms are returned
@@ -135,7 +136,7 @@ def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
     # Load default fit if necessary
     if coeffs is None:
         from apogee.spec._train_cannon import load_fit
-        coeffs, scatter= load_fit()
+        coeffs, scatter, baseline_labels= load_fit()
         poly= 'quad'
     # Setup output
     nspec= spec.shape[0]
@@ -167,6 +168,8 @@ def polylabels(spec,specerr,coeffs=None,scatter=None,poly='lin',
             outcov[ii]= cov
         elif return_cov:
             outcov[ii]= cov[:nlabels,:nlabels]
+    if not baseline_labels is None:
+        out+= baseline_labels
     if return_cov:
         return (out,outcov)
     else:
