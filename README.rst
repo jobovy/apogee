@@ -529,7 +529,7 @@ To for example also let the effective temperature float in the Mg abundance fit 
 
 That is, the Mg abundance only changes by 0.01 dex.
 
-To fit for all of the elemental abundances you can use ``elemfitall'',
+To fit for all of the elemental abundances you can use ``elemfitall``,
 which returns a dictionary of abundances relative to hydrogen for all
 APOGEE elements::
 
@@ -542,7 +542,7 @@ We can compare this to the pipeline products, for example for Ni::
 	print data[3512]['FELEM'][elemIndx('Ni')]
 	-0.45136
 
-or for Si (which in the standard pipeline product is given as [Si/Fe])::
+or for Si (which in the standard pipeline product is given as [Si/Fe], so we have to add [Fe/H])::
 
 	print felem['Si']
 	[-0.204]
