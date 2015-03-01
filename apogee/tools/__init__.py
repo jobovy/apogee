@@ -51,7 +51,7 @@ def elemIndx(elem):
     HISTORY:
        2014-08-19 - Written - Bovy (IAS)
     """
-    if not _INDEX_ARRAYS_LOADED: raise ImportError("paramIndx function cannot be used, because the allStar file could not be properly loaded")
+    if not _INDEX_ARRAYS_LOADED: raise ImportError("elemIndx function cannot be used, because the allStar file could not be properly loaded")
     try:
         return _ELEM_SYMBOL.index(elem.lower())
     except ValueError:
