@@ -22,13 +22,13 @@ def pixels_cannon(*args,**kwargs):
           coefficients - coefficients from the fit (ncoeffs,nlambda)
           scatter - scatter from the fit (nlambda)
     KEYWORDS:
-       baseline_dev= (0.05) maximum deviation from baseline
+       baseline_dev= (0.015) maximum deviation from baseline
        label1_max= (10.**-5.) maximum deviation in first linear coefficient
-       label2_max= (0.0045) similar for the second
-       label3_max= (0.0085) similar for the third
-       same with default 10**-3.
+       label2_max= (0.006) similar for the second
+       label3_max= (0.012) similar for the third
+       labelN_max= same with default 0.03
        ...
-       scatter_max= (0.01) maximum scatter of residuals
+       scatter_max= (0.015) maximum scatter of residuals
     OUTPUT:
        Boolean index into the wavelength range with True for continuum pixels
     HISTORY:
@@ -66,13 +66,13 @@ def pixels_cannon(*args,**kwargs):
     # Large dependence on labels
     maxs= numpy.zeros(nlabels)
     maxs[0]= kwargs.get('label1_max',10.**-5.)
-    maxs[1]= kwargs.get('label2_max',0.005)
-    maxs[2]= kwargs.get('label3_max',0.01)
+    maxs[1]= kwargs.get('label2_max',0.006)
+    maxs[2]= kwargs.get('label3_max',0.012)
     for ii in range(nlabels-3):
         maxs[ii+3]= kwargs.get('label%i_max' % (ii+4),0.03)
     for ii in range(1,nlabels+1):
         out[numpy.fabs(coeffs[ii]) > maxs[ii-1]]= False
     # Large residuals
-    out[scatter > kwargs.get('scatter_max',0.01)]= False
+    out[scatter > kwargs.get('scatter_max',0.015)]= False
     return out
     
