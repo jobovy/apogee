@@ -8,7 +8,7 @@ import numpy
 from functools import wraps
 import tempfile
 import apogee.tools.path as appath
-from apogee.tools import paramIndx, toAspcapGrid
+from apogee.tools import paramIndx, toAspcapGrid, _ELEM_SYMBOL
 from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.tools.read as apread
 import apogee.spec.window as apwindow
@@ -321,6 +321,78 @@ def fit(spec,specerr,
         os.rmdir(tmpDir)
     return out
 
+def elemfitall(*args,**kwargs):
+    """
+    NAME:
+       elemfitall
+    PURPOSE:
+       Fit a model spectrum to a given data spectrum for all element windows
+    INPUT:
+       Either:
+          (1) location ID - single or list/array of location IDs
+              APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
+          (2) spec - spectrum: can be (nwave) or (nspec,nwave)
+              specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       Input parameters (can be 1D arrays); only used when init=0
+          Either:
+             (1) fparam= (None) output of ferre.fit
+             (2) teff= (4750.) Effective temperature (K)
+                 logg= (2.5) log10 surface gravity / cm s^-2
+                 metals= (0.) overall metallicity
+                 am= (0.) [alpha/M]
+                 nm= (0.) [N/M]
+                 cm= (0.) [C/M]
+                 vm= if using the 7D library, also specify the microturbulence
+       Fit options:
+          fixteff= (True) if True, fix teff at the input value
+          fixlogg= (True) if True, fix logg at the input value
+          fixvm= (True) if True, fix vm at the input value (only if sixd is False)
+       The following are set to False based on the element being fit (C -> fixcm=False, N -> fixnm=False, O,Mg,S,Si,Ca,Ti -> fixam=False, rest -> fixmetals=False)
+          fixmetals= (None) if True, fix metals at the input value
+          fixam= (None) if True, fix am at the input value
+          fixcm= (None) if True, fix cm at the input value
+          fixnm= (None) if True, fix nm at the input value
+       Library options:
+          lib= ('GK') spectral library
+          pca= (True) if True, use a PCA compressed library
+          sixd= (True) if True, use the 6D library (w/o vm)
+          dr= data release
+       FERRE options:
+          inter= (3) order of the interpolation
+          errbar= (1) method for calculating the error bars
+          indini= ([1,1,1,2,2,3]) how to initialize the search (int or array/list with ndim entries)
+          init= (0) if 0, initialize the search at the parameters in the pfile
+          f_format= (1) file format (0=ascii, 1=unf)
+          f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+       Output options:
+          offile= (None) if offile is set, the FERRE OFFILE is saved to this file, otherwise this file is removed
+       verbose= (False) if True, run FERRE in verbose mode
+    OUTPUT:
+       dictionary with best-fit ELEM_H (nspec)
+    HISTORY:
+       2015-03-01 - Written - Bovy (IAS)
+    """
+    # METALS for normalization
+    if not kwargs.get('fparam',None) is None:
+        metals= kwargs.get('fparam')[:,paramIndx('METALS')]
+    else:
+        metals= kwargs.get('metals',0.)
+    # Run through and fit all elements
+    out= {}
+    for elem in _ELEM_SYMBOL:
+        targs= args+(elem.capitalize(),)
+        tefit= elemfit(*targs,**kwargs)
+        if elem.lower() == 'c':
+            tout= tefit[:,paramIndx('C')]+metals
+        elif elem.lower() == 'n':
+            tout= tefit[:,paramIndx('N')]+metals
+        elif elem.lower() in ['o','mg','s','si','ca','ti']:
+            tout= tefit[:,paramIndx('ALPHA')]+metals
+        else:
+            tout= tefit[:,paramIndx('METALS')]
+        out[elem.capitalize()]= tout
+    return out
+
 def elemfit(spec,specerr,elem,
             fparam=None,
             teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
@@ -334,7 +406,7 @@ def elemfit(spec,specerr,elem,
             verbose=False):
     """
     NAME:
-       fit
+       elemfit
     PURPOSE:
        Fit a model spectrum to a given data spectrum for a given element window
     INPUT:
