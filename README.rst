@@ -572,7 +572,9 @@ is what is used by the ``initcannon=True`` option of
 	     array([[  4.80598726e+03,   2.22568929e+00,  -4.12532522e-01,
 	               8.04473056e-02]])
 
-which returns ``(Teff,logg,metals,[a/Fe])``.
+which returns ``(Teff,logg,metals,[a/Fe])``. This default Cannon setup
+was not trained on dwarfs, which will therefore come out in funny
+parts of parameter space.
 
 Stacking spectra
 ^^^^^^^^^^^^^^^^^
