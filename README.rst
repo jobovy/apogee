@@ -368,7 +368,7 @@ do::
 	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si')
 	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si',ext=3,overplot=True)
 
-which gives (each ``x`` tick mark is 2 U+212B)
+which gives (each ``x`` tick mark is 2 unicode::`U+212B`)
 
 .. image:: _readme_files/_windowsPlot_example_Si.png
 
