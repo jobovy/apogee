@@ -368,14 +368,14 @@ do::
 	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si')
 	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si',ext=3,overplot=True)
 
-which gives
+which gives (each ``x`` tick mark is 2 U+212B)
 
 .. image:: _readme_files/_windowsPlot_example_Si.png
 
-`C`, `N`, `O`, and `Fe` have so many windows that a single plot
+``C``, ``N``, ``O``, and ``Fe`` have so many windows that a single plot
 becomes overcrowded, so for those elements you have the option to plot
 the first half or the second half of the windows by giving the element
-as `C1` or `C2`, respectively::
+as ``C1`` or ``C2``, respectively::
 
    splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Fe1')
    splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Fe1',ext=3,overplot=True)
