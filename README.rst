@@ -384,6 +384,12 @@ as ``C1`` or ``C2``, respectively::
 
 .. image:: _readme_files/_windowsPlot_example_Fe1.png
 
+``apogee.spec.plot.windows`` also has the option to overplot the weights of the windows. For example::
+
+     splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Al',plot_weights=True)
+
+.. image:: _readme_files/_windowsPlot_example_Al.png
+
 The module ``apogee.spec.window`` has various utilities to deal with
 the windows.
 		
