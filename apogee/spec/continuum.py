@@ -3,6 +3,66 @@
 ###############################################################################
 import numpy
 from apogee.spec import cannon
+from apogee.tools import toAspcapGrid, toApStarGrid
+def fit(spec,specerr,cont_pixels=None,deg=2):
+    """
+    NAME:
+       fit
+    PURPOSE:
+       fit the continuum with a Chebyshev polynomial based on a set of continuum pixels
+    INPUT:
+       spec - spectra to fit (nspec,nlambda)
+       specerr - errors on the spectra (nspec,nlambda); assume no covariances
+       cont_pixels= (None; loads default) boolean index in the ASPCAP wavelength grid with True for continuum pixels
+       deg= (2) order of the polynomial to fit
+    OUTPUT:
+       continuum (nspec,nlambda)
+    HISTORY:
+       2015-03-01 - Written - Bovy (IAS)
+    """
+    # Parse input
+    if spec.shape[1] == 8575:
+        tspec= toAspcapGrid(spec)
+        tspecerr= toAspcapGrid(specerr)
+    else:
+        tspec= spec
+        tspecerr= specerr
+    if cont_pixels is None:
+        cont_pixels= pixels_cannon()
+    # Now fit each detector separately
+    cont= numpy.empty_like(tspec)
+    # Rescale wavelengths
+    bluewav= numpy.arange(2920)/2919.*2.-1.
+    greenwav= numpy.arange(2400)/2399.*2.-1.
+    redwav= numpy.arange(1894)/1893.*2.-1.
+    # Split the continuum pixels
+    blue_pixels= cont_pixels[:2920]
+    green_pixels= cont_pixels[2920:5320]
+    red_pixels= cont_pixels[5320:]
+    # Loop through the data
+    for ii in range(spec.shape[0]):
+        # Blue
+        chpoly= numpy.polynomial.Chebyshev.fit(bluewav[blue_pixels],
+                                               tspec[ii,:2920][blue_pixels],
+                                               2,
+                                               w=1./tspecerr[ii,:2920][blue_pixels])
+        cont[ii,:2920]= chpoly(bluewav)
+        # Green
+        chpoly= numpy.polynomial.Chebyshev.fit(greenwav[green_pixels],
+                                               tspec[ii,2920:5320][green_pixels],
+                                               2,
+                                               w=1./tspecerr[ii,2920:5320][green_pixels])
+        cont[ii,2920:5320]= chpoly(greenwav)
+        # Red
+        chpoly= numpy.polynomial.Chebyshev.fit(redwav[red_pixels],
+                                               tspec[ii,5320:][red_pixels],
+                                               2,
+                                               w=1./tspecerr[ii,5320:][red_pixels])
+        cont[ii,5320:]= chpoly(redwav)
+    if spec.shape[1] == 8575:
+        cont= toApStarGrid(cont)
+    return cont
+
 def pixels_cannon(*args,**kwargs):
     """
     NAME:
