@@ -360,6 +360,30 @@ and::
 
 .. image:: _readme_files/_detectorRedPlot_example.png 
 
+It is also possible to plot the parts of a spectrum corresponding to
+the abundance windows used by APOGEE's abundance determination. For
+example, to plot the spectrum and the best fit for the window for Si
+do::
+
+	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si')
+	 splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Si',ext=3,overplot=True)
+
+which gives
+
+.. image:: _readme_files/_windowsPlot_example_Si.png
+
+`C`, `N`, `O`, and `Fe` have so many windows that a single plot
+becomes overcrowded, so for those elements you have the option to plot
+the first half or the second half of the windows by giving the element
+as `C1` or `C2`, respectively::
+
+   splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Fe1')
+   splot.windows(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],'Fe1',ext=3,overplot=True)
+
+.. image:: _readme_files/_windowsPlot_example_Fe1.png
+
+The module ``apogee.spec.window`` has various utilities to deal with
+the windows.
 		
 ANALYZING SPECTRA
 ==================
