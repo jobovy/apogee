@@ -77,6 +77,13 @@ if _INSTALL_FERRE:
             for line in fin:
                 fout.write(line.replace('flen=120','flen=%i' % _FERRE_FLEN))
     os.rename('tmp.f90','share.f90')
+    # Change output format in ferre.f90
+    with open("tmp.f90", "w") as fout:
+        with open("ferre.f90", "r") as fin:
+            for line in fin:
+                fout.write(line.replace("write(3,'(1x,a30,100(1x,F9.3))')",
+                                        "write(3,'(1x,a40,100(1x,F9.4))')"))
+    os.rename('tmp.f90','ferre.f90')
     try:
         if _FERRE_NO_OPENMP:
             subprocess.check_call(['make','OPT=-O2'])
