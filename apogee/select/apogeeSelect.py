@@ -1453,6 +1453,25 @@ class apogeeEffectiveSelect:
         self._dmap3d= dmap3d
         return None
 
+    def __call__(self,location,dist):
+        """
+        NAME:
+           __call__
+        PURPOSE:
+           evaluate the effective selection function
+        INPUT:
+           location - location_id (single location)
+           dist - distance in kpc (most efficient for arrays)
+        OUTPUT:
+           effective selection function
+        HISTORY:
+           2015-03-06 - Written - Bovy (IAS)
+        """
+        # Extract the distribution of A_H at this distance from the dust map
+        lcen, bcen= self._apoSel.glonGlat(location)
+        pixarea, ah= self._dmap3d.dust_vals_disk(lcen,bcen,dist,
+                                                 self._apoSel.radius(location))
+
 def _append_field_recarray(recarray, name, new):
     new = numpy.asarray(new)
     newdtype = numpy.dtype(recarray.dtype.descr + [(name, new.dtype)])
