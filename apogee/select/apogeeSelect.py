@@ -11,6 +11,12 @@ warnings.filterwarnings('ignore','.*invalid value encountered in .*',) #turn-off
 ##APOGEE TOOLS
 import apogee.tools.read as apread
 import apogee.tools.path as appath
+try:
+    import mwdust
+except ImportError:
+    _MWDUSTLOADED= False
+else:
+    _MWDUSTLOADED= True
 #Commissioning plates
 _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4829,4830,4809,4813,4814,4817,
@@ -1413,6 +1419,38 @@ class apogeeSelect:
         self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
+        return None
+
+class apogeeEffectiveSelect:
+    """Class that contains effective selection functions for APOGEE targets"""
+    def __init__(self,apoSel,MH=-1.49,dmap3d=None):
+        """
+        NAME:
+           __init__
+        PURPOSE:
+           load the effective selection function
+        INPUT:
+           apoSel - an apogeeSelect object with the apogee selection function for the sample that you are interested in
+           MH= (-1.49) absolute magnitude in H of the standard candle used or an array with samples of the absolute magnitude distribution for the tracer that you are using
+           dmap3d= if given, a mwdust.Dustmap3D object that returns the H-band extinction in 3D; if not set use the Green15 Pan-STARRS map
+        OUTPUT:
+           object
+        HISTORY:
+           2015-03-06 - Start - Bovy (IAS)
+        """
+        self._apoSel= apoSel
+        if isinstance(MH,(int,float)):
+            self._MH= numpy.array([MH])
+        elif isinstance(MH,list):
+            self._MH= numpy.array(MH)
+        else:
+            self._MH= MH
+        # Parse dust map
+        if dmap3d is None:
+            if not _MWDUSTLOADED:
+                raise ImportError("mwdust module not installed, required for extinction tools; download and install from http://github.com/jobovy/mwdust")
+            dmap3d= mwdust.Green15(filter='2MASS H ')
+        self._dmap3d= dmap3d
         return None
 
 def _append_field_recarray(recarray, name, new):
