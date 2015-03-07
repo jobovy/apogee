@@ -635,7 +635,12 @@ the *locations=* keyword, e.g.::
        apo= apogee.select.apogeeSelect(locations=[4240,4241,4242])
 
 will only load the fields *030+00*, *060+00*, and *090+00*. Locations
-are identified using their location_id.
+are identified using their location_id. Because loading the selection
+function takes a long time, you might want to pickle it to save it
+(this is supported); to reduce the size of the object and pickle, you
+could ``del apo._specdata`` and ``del apo._photdata`` if you don't
+want to make any plots (see below) with the unpickled object
+(evaluating the selection function does not require these attributes).
 
 The basic algorithm to determine the selection function is very simple:
 
