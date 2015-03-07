@@ -1460,7 +1460,7 @@ class apogeeEffectiveSelect:
         if dmap3d is None:
             if not _MWDUSTLOADED:
                 raise ImportError("mwdust module not installed, required for extinction tools; download and install from http://github.com/jobovy/mwdust")
-            dmap3d= mwdust.Green15(filter='2MASS H ')
+            dmap3d= mwdust.Green15(filter='2MASS H')
         self._dmap3d= dmap3d
         return None
 
@@ -1493,16 +1493,17 @@ class apogeeEffectiveSelect:
         hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
         selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.)) 
                       for c in cohorts)
-        print "FIX"
-        totarea= 7. 
+        totarea= (1.-numpy.cos(self._apoSel.radius(location)/180.*numpy.pi))\
+            *2.*numpy.pi
         for cohort in cohorts:
             if numpy.isnan(hmins[cohort]):
                 continue
             for mh in MH:
                 indx= (hmins[cohort]-mh-distmod < ah)\
-                    (hmaxs[cohort]-mh-distmod > ah)
+                    *(hmaxs[cohort]-mh-distmod > ah)
                 for ii in range(len(dist)):
-                    out[ii]+= selfunc[c]*numpy.sum(pixarea[indx[:,ii]])/totarea
+                    out[ii]+= selfunc[cohort]\
+                        *numpy.sum(pixarea[indx[:,ii]])/totarea
         return out/len(MH)
 
 def _append_field_recarray(recarray, name, new):
