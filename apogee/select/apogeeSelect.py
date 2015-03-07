@@ -1493,8 +1493,7 @@ class apogeeEffectiveSelect:
         hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
         selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.)) 
                       for c in cohorts)
-        totarea= (1.-numpy.cos(self._apoSel.radius(location)/180.*numpy.pi))\
-            *2.*numpy.pi
+        totarea= numpy.sum(pixarea)
         for cohort in cohorts:
             if numpy.isnan(hmins[cohort]):
                 continue
