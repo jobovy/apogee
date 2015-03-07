@@ -1421,6 +1421,17 @@ class apogeeSelect:
         self._apogeeField= apogeeField
         return None
 
+    def __getstate__(self):
+        pdict= copy.copy(self.__dict__)
+        del pdict['_selfunc']
+        return pdict
+
+    def __setstate__(self,pdict):
+        self.__dict__= pdict
+        self._determine_selection(sample=self._sample,sftype=self._sftype,
+                                  minnspec=self._minnspec)
+        return None
+
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
     def __init__(self,apoSel,MH=-1.49,dmap3d=None):
