@@ -1453,7 +1453,7 @@ class apogeeEffectiveSelect:
         self._dmap3d= dmap3d
         return None
 
-    def __call__(self,location,dist):
+    def __call__(self,location,dist,MH=None):
         """
         NAME:
            __call__
@@ -1462,15 +1462,37 @@ class apogeeEffectiveSelect:
         INPUT:
            location - location_id (single location)
            dist - distance in kpc (most efficient for arrays)
+           MH= (object-wide default) absolute magnitude in H of the standard candle used or an array with samples of the absolute magnitude distribution for the tracer that you are using
         OUTPUT:
            effective selection function
         HISTORY:
            2015-03-06 - Written - Bovy (IAS)
         """
+        if MH is None: MH= self._MH
+        distmod= 5.*numpy.log10(dist)+10.
         # Extract the distribution of A_H at this distance from the dust map
         lcen, bcen= self._apoSel.glonGlat(location)
-        pixarea, ah= self._dmap3d.dust_vals_disk(lcen,bcen,dist,
+        pixarea, ah= self._dmap3d.dust_vals_disk(lcen[0],bcen[0],dist,
                                                  self._apoSel.radius(location))
+        distmod= numpy.tile(distmod,(ah.shape[0],1))       
+        out= numpy.zeros_like(dist)
+        # Cache the values of the selection function
+        cohorts= ['short','medium','long']
+        hmins= dict((c,self._apoSel.Hmin(location,cohort=c)) for c in cohorts)
+        hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
+        selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.)) 
+                      for c in cohorts)
+        print "FIX"
+        totarea= 7. 
+        for cohort in cohorts:
+            if numpy.isnan(hmins[cohort]):
+                continue
+            for mh in MH:
+                indx= (hmins[cohort]-mh-distmod < ah)\
+                    (hmaxs[cohort]-mh-distmod > ah)
+                for ii in range(len(dist)):
+                    out[ii]+= selfunc[c]*numpy.sum(pixarea[indx[:,ii]])/totarea
+        return out/len(MH)
 
 def _append_field_recarray(recarray, name, new):
     new = numpy.asarray(new)
