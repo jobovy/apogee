@@ -405,6 +405,7 @@ class apogeeSelect:
                          or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
                 statIndx[ii]= True
         #self._specdata_plateIncomplete= plateIncomplete
+        del self._apogeeDesign
         return statIndx*apread.mainIndx(specdata)
                      
     def plot_selfunc_xy(self,cohort='all',
@@ -1416,7 +1417,6 @@ class apogeeSelect:
         apogeeField= _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])
         apogeeField= _append_field_recarray(apogeeField,'GLAT',fieldlb[:,1])
         #Save these
-        self._apogeePlate= apogeePlate
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
         return None
