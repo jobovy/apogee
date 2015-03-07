@@ -628,8 +628,9 @@ is loaded using::
    apo= apogee.select.apogeeSelect()
 
 which will load the selection function for the full sample (this will
-take a few minutes). If only a few fields are needed, only those
-fields can be loaded by supplying the *locations=* keyword, e.g.::
+take a few minutes; seems to take about 20 minutes for DR12). If only
+a few fields are needed, only those fields can be loaded by supplying
+the *locations=* keyword, e.g.::
 
        apo= apogee.select.apogeeSelect(locations=[4240,4241,4242])
 
