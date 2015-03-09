@@ -17,6 +17,7 @@ except ImportError:
     _MWDUSTLOADED= False
 else:
     _MWDUSTLOADED= True
+_DEGTORAD= numpy.pi/180.
 #Commissioning plates
 _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4829,4830,4809,4813,4814,4817,
@@ -293,6 +294,25 @@ class apogeeSelect:
         if len(set(radii)) > 1:
             warnings.warn("Different designs for this field have different radii; returning the first of these...")
         return radii[0]
+
+    def area(self,location_id):
+        """
+        NAME:
+           area
+        PURPOSE:
+           return the area around glonGlat from which targets were drawn for this field
+        INPUT:
+           location_id - field location ID          
+        OUTPUT:
+           area in deg^2
+        HISTORY:
+           2015-03-09 - Written - Bovy (IAS)
+        """
+        radius= self.radius(location_id)
+        tarea= (1.-numpy.cos(radius*_DEGTORAD))*2.*numpy.pi/_DEGTORAD**2.
+        # Remove central hole of radius 5'
+        tarea-= (1.-numpy.cos(_DEGTORAD/12.))*2.*numpy.pi/_DEGTORAD**2.
+        return tarea
 
     def Hmin(self,location_id,cohort='short'):
         """
