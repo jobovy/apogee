@@ -125,5 +125,5 @@ setup(name='apogee',
                           'https://github.com/jobovy/isodist/tarball/master#egg=isodist'],
       install_requires=['numpy','scipy','matplotlib',
                         'fitsio','esutil','galpy',
-                        'isodist']
+                        'isodist','periodictable']
       )
