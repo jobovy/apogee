@@ -154,6 +154,8 @@ def waveregions(*args,**kwargs):
     noskipdiags= kwargs.pop('_noskipdiags',False)
     labelwav= kwargs.pop('_labelwav',False)
     plotw= kwargs.pop('_plotw',None)
+    markLines= kwargs.pop('markLines',False)
+    markwav= kwargs.pop('_markwav',None)
     # Labels
     labelID= kwargs.pop('labelID',None)
     labelTeff= kwargs.pop('labelTeff',None)
@@ -309,6 +311,10 @@ def waveregions(*args,**kwargs):
         if labelLines:
             _label_all_lines(args[0][startindx],args[0][endindx],
                              thisax,args[0],args[1])
+        # Mark the lines
+        if markLines:
+           _mark_lines(markwav,args[0][startindx],args[0][endindx],
+                       thisax,args[0],args[1])
         # Label the largest round wavelength in angstrom for windows
         if labelwav:
             bovy_plot.bovy_text(2*numpy.floor((xrange[1]-(nregions > 15))/2.),
@@ -433,6 +439,7 @@ def windows(*args,**kwargs):
           +element string (e.g., 'Al'); Adding 1 and 2 splits the windows into two
     KEYWORDS:
        plot_weights= (False) if True, also plot the weights for the windows (assumes that the spectrum is on the apStarWavegrid)
+       markLines= mark the location of 'lines' (see apogee.spec.window.lines)
        apogee.spec.plot.waveregions keywords
     OUTPUT:
        plot to output
@@ -492,6 +499,10 @@ def windows(*args,**kwargs):
                                          [0.,1.1*numpy.nanmax(args[1])])
         else:
             kwargs['yrange']= kwargs.get('yrange',[0.,1.2])
+    # mark the 'lines'
+    markLines= kwargs.get('markLines',not 'overplot' in kwargs)
+    if markLines:
+        kwargs['_markwav']= apwindow.lines(args[2])
     # Plot
     waveregions(args[0],args[1],startindxs=si,endindxs=ei,
                 *args[3:],**kwargs)
@@ -569,6 +580,14 @@ def elements(elem,*args,**kwargs):
         bovy_plot._add_ticks(yticks=True,xticks=False)
     return None
         
+def _mark_lines(linewavs,wavemin,wavemax,thisax,lams,spec):
+    for linewav in linewavs:
+        spindx= numpy.argmin(numpy.fabs(linewav-lams))
+        ylevel= numpy.nanmin(spec[spindx-2:spindx+3])
+        thisax.plot([linewav-_LAMBDASUB,linewav-_LAMBDASUB],
+                    [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
+    return None
+
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
     _label_lines('mg',wavemin,wavemax,thisax,lams,spec)
