@@ -581,11 +581,13 @@ def elements(elem,*args,**kwargs):
     return None
         
 def _mark_lines(linewavs,wavemin,wavemax,thisax,lams,spec):
+    ylims= thisax.get_ylim()
+    yspan= ylims[1]-ylims[0]
     for linewav in linewavs:
         spindx= numpy.argmin(numpy.fabs(linewav-lams))
         ylevel= numpy.nanmin(spec[spindx-2:spindx+3])
         thisax.plot([linewav-_LAMBDASUB,linewav-_LAMBDASUB],
-                    [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
+                    [ylevel-0.35*yspan,ylevel-0.1*yspan],'k-',zorder=0)
     return None
 
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
