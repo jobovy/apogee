@@ -4,6 +4,7 @@ from scipy import optimize
 import path as appath
 import download as download
 import fitsio
+from periodictable import elements
 try:
     # Need to have allStar
     filePath= appath.allStarPath()
@@ -16,7 +17,9 @@ else:
     _INDEX_ARRAYS_LOADED= True
     _PARAM_SYMBOL= [index.strip().lower() for index in indexArrays['PARAM_SYMBOL'].flatten()]
     _ELEM_SYMBOL= [index.strip().lower() for index in indexArrays['ELEM_SYMBOL'].flatten()]
-
+    _ELEM_NUMBER_DICT= dict((elem,
+                             elements.__dict__[elem.capitalize()].number)
+                            for elem in _ELEM_SYMBOL)
 def paramIndx(param):
     """
     NAME:
