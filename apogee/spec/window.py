@@ -194,7 +194,7 @@ def lines(elem):
     wavs= splot.apStarWavegrid()
     # Find peaks
     indx= (numpy.roll(win,1) < win)*(numpy.roll(win,-1) < win)\
-        *(win > 0.03)
+        *(win > 0.1)
     return wavs[indx]
 
 def equishwidth(elem,spec,specerr,refspec=None):
