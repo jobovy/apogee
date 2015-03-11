@@ -60,6 +60,24 @@ def elemIndx(elem):
     except ValueError:
         raise KeyError("Element %s is not part of the APOGEE elements (can't do everything!) or something went wrong)" % elem)
 
+def atomic_number(elem):
+    """
+    NAME:
+       atomic_number
+    PURPOSE:
+       return the atomic number of a given element
+    INPUT:
+       elem - element
+    OUTPUT:
+       atomic number
+    HISTORY:
+       2015-03-10 - Written - Bovy (IAS)
+    """
+    try:
+        return _ELEM_NUMBER_DICT[elem.lower()]
+    except (NameError,KeyError):
+        return elements.__dict__[elem.lower().capitalize].number
+
 def vac2air(wave):
     """
     NAME:
