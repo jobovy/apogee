@@ -521,7 +521,7 @@ def elements(elem,*args,**kwargs):
     wrtFe= True
     for el in elem:
         xs.append(atomic_number(el))
-        names.append(el.lower().capitalize())
+        names.append(r'$\mathrm{%s}$' % el.lower().capitalize())
         try:
             ys.append(elem[el]-elem['Fe'])
         except KeyError:
@@ -543,6 +543,7 @@ def elements(elem,*args,**kwargs):
                         yrange=yrange,zorder=2,
                         **kwargs)
     pyplot.xticks(list(xs),names)
+    pyplot.tick_params(axis='x',labelsize=11.)
     if wrtFe:
         bovy_plot.bovy_plot([4,numpy.amax(xs)+2],[0.,0.],'-',lw=2.,
                             color='0.65',overplot=True,zorder=0)
