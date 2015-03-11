@@ -175,6 +175,28 @@ def total_dlambda(elem,pad=0):
     si,ei= waveregions(elem,asIndex=False,pad=pad)
     return numpy.sum(ei-si)
 
+def lines(elem):
+    """
+    NAME:
+       lines
+    PURPOSE:
+       return the location of peaks in the window weight ('lines') for a given element
+    INPUT:
+       elem - element
+    OUTPUT:
+       wavelengths of peaks in \AA
+    HISTORY:
+       2015-03-11 - Written - Bovy (IAS)
+    """
+    # Load the window
+    win= read(elem,apStarWavegrid=True)
+    import apogee.spec.plot as splot
+    wavs= splot.apStarWavegrid()
+    # Find peaks
+    indx= (numpy.roll(win,1) < win)*(numpy.roll(win,-1) < win)\
+        *(win > 0.03)
+    return wavs[indx]
+
 def equishwidth(elem,spec,specerr,refspec=None):
     """
     NAME:
