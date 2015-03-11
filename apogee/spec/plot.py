@@ -508,6 +508,8 @@ def elements(elem,*args,**kwargs):
        make a plot of measurements of the elemental abundances vs. atomic number
     INPUT:
        elem - dictionary with elemental abundances relative to H
+       wrtFe= (True) if True, plot elements wrt Fe on the left Y
+       inclwrtH= (True) if True, indicate what X/H is on the right Y
        bovy_plot.bovy_plot args and kwargs
     OUTPUT:
        plot to output
@@ -518,35 +520,47 @@ def elements(elem,*args,**kwargs):
     xs= []
     names= []
     ys= []
-    wrtFe= True
+    wrtFe= kwargs.pop('wrtFe',True)
     for el in elem:
         xs.append(atomic_number(el))
         names.append(r'$\mathrm{%s}$' % el.lower().capitalize())
         try:
+            if not wrtFe: raise KeyError
             ys.append(elem[el]-elem['Fe'])
         except KeyError:
             ys.append(elem[el])
             wrtFe= False
     xs= numpy.array(xs,dtype='int')
     ys= numpy.array(ys)
+    names= numpy.array(names)
+    # sort
+    sindx= numpy.argsort(xs)
+    xs= xs[sindx]
+    ys= ys[sindx]
+    names= names[sindx]
+    # add second y axis?
+    inclwrtH= kwargs.pop('inclwrtH',True)
     if wrtFe:
         feh= elem['Fe']
-        ylabel=r'$[\mathrm{X/Fe}]$'
+        ylabel= kwargs.pop('ylabel',r'$[\mathrm{X/Fe}]$')
     else:
-        ylabel=r'$[\mathrm{X/H}]$'
+        ylabel= kwargs.pop('ylabel',r'$[\mathrm{X/H}]$')
     if not kwargs.get('overplot',False):
         bovy_plot.bovy_print(fig_width=7.,fig_height=4.)
-    yrange=kwargs.get('yrange',[-0.5,0.5])
+    basezorder= kwargs.pop('zorder',0)
+    yrange=kwargs.pop('yrange',[-0.5,0.5])
+    ls= kwargs.pop('ls','-')
+    lw= kwargs.pop('lw',0.25)
     bovy_plot.bovy_plot(xs,ys,*args,
                         ylabel=ylabel,
                         xrange=[4,numpy.amax(xs)+2],
-                        yrange=yrange,zorder=2,
+                        yrange=yrange,zorder=2+basezorder,ls=ls,lw=lw,
                         **kwargs)
     pyplot.xticks(list(xs),names)
     pyplot.tick_params(axis='x',labelsize=11.)
-    if wrtFe:
+    if wrtFe and inclwrtH:
         bovy_plot.bovy_plot([4,numpy.amax(xs)+2],[0.,0.],'-',lw=2.,
-                            color='0.65',overplot=True,zorder=0)
+                            color='0.65',overplot=True,zorder=basezorder)
         ax= pyplot.gca()
         ax2= ax.twinx()
         ax2.set_ylim(yrange[0]+feh,yrange[1]+feh)
