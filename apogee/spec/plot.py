@@ -9,7 +9,7 @@ import matplotlib.ticker as ticker
 from matplotlib.ticker import NullFormatter
 import apogee.spec.window as apwindow
 import apogee.tools.read as apread
-from apogee.tools import air2vac
+from apogee.tools import air2vac, atomic_number
 _LOG10LAMBDA0= 4.179 
 _DLOG10LAMBDA= 6.*10.**-6.
 _NLAMBDA= 8575
@@ -500,6 +500,60 @@ def windows(*args,**kwargs):
                         top_left=True,fontsize=10,backgroundcolor='w')
     return None
 
+def elements(elem,*args,**kwargs):
+    """
+    NAME:
+       elements
+    PURPOSE:
+       make a plot of measurements of the elemental abundances vs. atomic number
+    INPUT:
+       elem - dictionary with elemental abundances relative to H
+       bovy_plot.bovy_plot args and kwargs
+    OUTPUT:
+       plot to output
+    HISTORY:
+       2015-03-10 - Written - Bovy (IAS)
+    """
+    # Process the input dictionary
+    xs= []
+    names= []
+    ys= []
+    wrtFe= True
+    for el in elem:
+        xs.append(atomic_number(el))
+        names.append(el.lower().capitalize())
+        try:
+            ys.append(elem[el]-elem['Fe'])
+        except KeyError:
+            ys.append(elem[el])
+            wrtFe= False
+    xs= numpy.array(xs,dtype='int')
+    ys= numpy.array(ys)
+    if wrtFe:
+        feh= elem['Fe']
+        ylabel=r'$[\mathrm{X/Fe}]$'
+    else:
+        ylabel=r'$[\mathrm{X/H}]$'
+    if not kwargs.get('overplot',False):
+        bovy_plot.bovy_print(fig_width=7.,fig_height=4.)
+    yrange=kwargs.get('yrange',[-0.5,0.5])
+    bovy_plot.bovy_plot(xs,ys,*args,
+                        ylabel=ylabel,
+                        xrange=[4,numpy.amax(xs)+2],
+                        yrange=yrange,zorder=2,
+                        **kwargs)
+    pyplot.xticks(list(xs),names)
+    if wrtFe:
+        bovy_plot.bovy_plot([4,numpy.amax(xs)+2],[0.,0.],'-',lw=2.,
+                            color='0.65',overplot=True,zorder=0)
+        ax= pyplot.gca()
+        ax2= ax.twinx()
+        ax2.set_ylim(yrange[0]+feh,yrange[1]+feh)
+        ax2.set_ylabel(r'$[\mathrm{X/H}]$')
+        pyplot.sca(ax2)
+        bovy_plot._add_ticks(yticks=True,xticks=False)
+    return None
+        
 def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
     _label_lines('mg',wavemin,wavemax,thisax,lams,spec)
