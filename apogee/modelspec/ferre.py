@@ -577,6 +577,113 @@ def elemfit(spec,specerr,elem,
         os.rmdir(tmpDir)
     return out
 
+@specFitInput
+def elemchi2(spec,specerr,
+             elem,elem_linspace=(-0.5,0.5,11),
+             fparam=None,
+             teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
+             lib='GK',pca=True,sixd=True,dr=None,
+             offile=None,
+             inter=3,f_format=1,f_access=None,
+             verbose=False):
+    """
+    NAME:
+       elemchi2
+    PURPOSE:
+       Calculate the chi^2 for a given element
+    INPUT:
+       Either:
+          (1) location ID - single or list/array of location IDs
+              APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
+          (2) spec - spectrum: can be (nwave) or (nspec,nwave)
+              specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       elem - element to consider (e.g., 'Al')
+       elem_linspace= ((-0.5,0.5,11)) numpy.linspace range of abundance, relative to the relevant value in fparam / metals,am,nm,cm
+       Input parameters (can be 1D arrays)
+          Either:
+             (1) fparam= (None) output of ferre.fit
+             (2) teff= (4750.) Effective temperature (K)
+                 logg= (2.5) log10 surface gravity / cm s^-2
+                 metals= (0.) overall metallicity
+                 am= (0.) [alpha/M]
+                 nm= (0.) [N/M]
+                 cm= (0.) [C/M]
+                 vm= if using the 7D library, also specify the microturbulence
+       Library options:
+          lib= ('GK') spectral library
+          pca= (True) if True, use a PCA compressed library
+          sixd= (True) if True, use the 6D library (w/o vm)
+          dr= data release
+       FERRE options:
+          inter= (3) order of the interpolation
+          f_format= (1) file format (0=ascii, 1=unf)
+          f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+       verbose= (False) if True, run FERRE in verbose mode
+    OUTPUT:
+       chi^2
+    HISTORY:
+       2015-03-12 - Written - Bovy (IAS)
+    """
+    # Parse fparam
+    if not fparam is None:
+        teff= fparam[:,paramIndx('TEFF')]
+        logg= fparam[:,paramIndx('LOGG')]
+        metals= fparam[:,paramIndx('METALS')]
+        am= fparam[:,paramIndx('ALPHA')]
+        nm= fparam[:,paramIndx('N')]
+        cm= fparam[:,paramIndx('C')]
+        if sixd:
+            vm= None
+        else:
+            vm= fparam[:,paramIndx('LOG10VDOP')]        
+    # Read the weights
+    weights= apwindow.read(elem,apStarWavegrid=False,dr=dr)
+    weights/= numpy.sum(weights)
+    # Decide which parameter to vary
+    nspec= len(teff)
+    nvelem= elem_linspace[2]
+    var_elem= numpy.tile(numpy.linspace(*elem_linspace),(nspec,1))   
+    if elem.lower() == 'c':
+        cm= var_elem+numpy.tile(cm,(nvelem,1)).T
+    elif elem.lower() == 'n':
+        nm= var_elem+numpy.tile(nm,(nvelem,1)).T
+    elif elem.lower() in ['o','mg','s','si','ca','ti']:
+        am= var_elem+numpy.tile(am,(nvelem,1)).T
+    else:
+        metals= var_elem+numpy.tile(metals,(nvelem,1)).T
+    # Upgrade dimensionality of other parameters for interpolate input
+    teff= numpy.tile(teff,(nvelem,1)).T
+    logg= numpy.tile(logg,(nvelem,1)).T
+    if not sixd:
+        vm= numpy.tile(vm,(nvelem,1)).T.flatten()
+    if not elem.lower() == 'c':
+        cm= numpy.tile(cm,(nvelem,1)).T
+    if not elem.lower() == 'n':
+        nm= numpy.tile(nm,(nvelem,1)).T
+    if not elem.lower() in ['o','mg','s','si','ca','ti']:
+        am= numpy.tile(am,(nvelem,1)).T
+    if elem.lower() in ['c','n','o','mg','s','si','ca','ti']:
+        metals= numpy.tile(metals,(nvelem,1)).T
+    # Get interpolated spectra, [nspec,nwave]
+    ispec= interpolate(teff.flatten(),logg.flatten(),metals.flatten(),
+                       am.flatten(),nm.flatten(),cm.flatten(),vm=vm,
+                       lib=lib,pca=pca,sixd=sixd,dr=dr,
+                       inter=inter,f_format=f_format,f_access=f_access,
+                       verbose=verbose,apStarWavegrid=False)
+    dspec= numpy.tile(spec,(1,nvelem)).reshape((nspec*nvelem,spec.shape[1]))
+    dspecerr= numpy.tile(specerr,
+                         (1,nvelem)).reshape((nspec*nvelem,spec.shape[1]))
+    tchi2= _chi2(ispec,dspec,dspecerr,numpy.tile(weights,(nspec*nvelem,1)))
+    return numpy.reshape(tchi2,(nspec,nvelem))
+
+def _chi2(mspec,spec,specerr,weights=None):
+    """Internal function that calculates the chi^2 for a given model,
+     assumes that the wavelength axis==-1"""
+    if not weights is None:
+        return numpy.sum(weights*(mspec-spec)**2./specerr**2,axis=-1)
+    else:
+        return numpy.sum((mspec-spec)**2./specerr**2,axis=-1)
+
 def run_ferre(dir,verbose=False):
     """
     NAME:
