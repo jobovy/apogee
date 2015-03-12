@@ -308,6 +308,7 @@ def elemfitall(*args,**kwargs):
               APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
           (2) spec - spectrum: can be (nwave) or (nspec,nwave)
               specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       estimate_err= (False) if True, estimate the error from Delta chi^2=1; only works for errors <~ 0.3 dex, code returns numpy.nan when error is larger
        Input parameters (can be 1D arrays); only used when init=0
           Either:
              (1) fparam= (None) output of ferre.fit
@@ -343,7 +344,7 @@ def elemfitall(*args,**kwargs):
           offile= (None) if offile is set, the FERRE OFFILE is saved to this file, otherwise this file is removed
        verbose= (False) if True, run FERRE in verbose mode
     OUTPUT:
-       dictionary with best-fit ELEM_H (nspec)
+       dictionary with best-fit ELEM_H (nspec), contains e_ELEM when estimate_err; this does not include the (potentially correlated) error on METALS for those elements fit relative to Fe
     HISTORY:
        2015-03-01 - Written - Bovy (IAS)
     """
@@ -357,6 +358,9 @@ def elemfitall(*args,**kwargs):
     for elem in _ELEM_SYMBOL:
         targs= args+(elem.capitalize(),)
         tefit= elemfit(*targs,**kwargs)
+        if kwargs.get('estimate_err',False):
+            tefit, terr= tefit
+            out['e_'+elem.capitalize()]= terr
         if elem.lower() == 'c':
             tout= tefit[:,paramIndx('C')]+metals
         elif elem.lower() == 'n':
@@ -375,6 +379,7 @@ def elemfit(spec,specerr,elem,
             fixteff=True,fixlogg=True,fixmetals=None,fixam=None,
             fixcm=None,
             fixnm=None,fixvm=True,
+            estimate_err=False,
             lib='GK',pca=True,sixd=True,dr=None,
             offile=None,
             inter=3,f_format=1,f_access=None,
@@ -392,6 +397,7 @@ def elemfit(spec,specerr,elem,
           (2) spec - spectrum: can be (nwave) or (nspec,nwave)
               specerr - spectrum errors: can be (nwave) or (nspec,nwave)
        elem - element to fit (e.g., 'Al')
+       estimate_err= (False) if True, estimate the error from Delta chi^2=1; only works for errors <~ 0.3 dex, code returns numpy.nan when error is larger
        Input parameters (can be 1D arrays); only used when init=0
           Either:
              (1) fparam= (None) output of ferre.fit
@@ -428,6 +434,7 @@ def elemfit(spec,specerr,elem,
        verbose= (False) if True, run FERRE in verbose mode
     OUTPUT:
        best-fit parameters (nspec,nparams); in the same order as the FPARAM APOGEE data product (fixed inputs are repeated in the output)
+       if estimate_err: tuple with best-fit (see above) and error on the element abundance
     HISTORY:
        2015-02-27 - Written - Bovy (IAS)
     """
@@ -575,7 +582,32 @@ def elemfit(spec,specerr,elem,
         if os.path.exists(os.path.join(tmpDir,'output.opf')):
             os.remove(os.path.join(tmpDir,'output.opf'))
         os.rmdir(tmpDir)
-    return out
+    if estimate_err:
+        # Determine the chi2 and the error
+        elem_linspace= (-0.5,0.5,51)
+        elems= numpy.linspace(*elem_linspace)
+        c2= elemchi2(spec,specerr,elem,
+                     elem_linspace=elem_linspace,
+                     fparam=out,lib=lib,pca=pca,sixd=sixd,dr=dr,
+                     inter=inter,f_format=f_format,f_access=f_access,
+                     verbose=verbose)
+        from scipy import interpolate, optimize
+        outerr= numpy.empty(nspec)
+        for ii in range(nspec):
+            spl= \
+                interpolate.InterpolatedUnivariateSpline(elems,
+                                                         c2[ii]-numpy.amin(c2[ii]))
+            try:
+                ul= optimize.brentq(lambda x: spl(x)-1.,
+                                    0.,elem_linspace[1]-0.01)
+                ll= optimize.brentq(lambda x: spl(x)-1.,
+                                    elem_linspace[0]+0.01,0.)
+                outerr[ii]= (ul-ll)/2.
+            except ValueError:
+                outerr[ii]= numpy.nan
+        return (out,outerr)
+    else:
+        return out
 
 @specFitInput
 def elemchi2(spec,specerr,
