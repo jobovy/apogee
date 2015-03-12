@@ -533,7 +533,10 @@ def elements(elem,*args,**kwargs):
     ys= []
     wrtFe= kwargs.pop('wrtFe',True)
     for el in elem:
-        xs.append(atomic_number(el))
+        try:
+            xs.append(atomic_number(el))
+        except KeyError: # ignore things that aren't known elements
+            continue
         names.append(r'$\mathrm{%s}$' % el.lower().capitalize())
         try:
             if not wrtFe: raise KeyError
