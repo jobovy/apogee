@@ -579,7 +579,7 @@ def elemfit(spec,specerr,elem,
 
 @specFitInput
 def elemchi2(spec,specerr,
-             elem,elem_linspace=(-0.5,0.5,11),
+             elem,elem_linspace=(-0.5,0.5,11),tophat=False,
              fparam=None,
              teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
              lib='GK',pca=True,sixd=True,dr=None,
@@ -599,6 +599,7 @@ def elemchi2(spec,specerr,
               specerr - spectrum errors: can be (nwave) or (nspec,nwave)
        elem - element to consider (e.g., 'Al')
        elem_linspace= ((-0.5,0.5,11)) numpy.linspace range of abundance, relative to the relevant value in fparam / metals,am,nm,cm
+       tophat= (False) if True, don't use the value of weights, just use them to define windows that have weight equal to one
        Input parameters (can be 1D arrays)
           Either:
              (1) fparam= (None) output of ferre.fit
@@ -636,11 +637,18 @@ def elemchi2(spec,specerr,
             vm= None
         else:
             vm= fparam[:,paramIndx('LOG10VDOP')]        
-    # Read the weights
-    weights= apwindow.read(elem,apStarWavegrid=False,dr=dr)
-    weights/= numpy.sum(weights)
-    # Decide which parameter to vary
+    # parse spec, specerr input
     nspec= len(teff)
+    if len(spec.shape) == 1:
+        spec= numpy.reshape(spec,(1,spec.shape[0]))
+        specerr= numpy.reshape(specerr,(1,specerr.shape[0]))
+    # Read the weights
+    if tophat:
+        weights= apwindow.tophat(elem,apStarWavegrid=False,dr=dr)
+    else:
+        weights= apwindow.read(elem,apStarWavegrid=False,dr=dr)
+        weights/= numpy.mean(weights[weights > 0.])
+    # Decide which parameter to vary
     nvelem= elem_linspace[2]
     var_elem= numpy.tile(numpy.linspace(*elem_linspace),(nspec,1))   
     if elem.lower() == 'c':
