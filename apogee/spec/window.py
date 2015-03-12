@@ -4,6 +4,7 @@
 import os, os.path
 import numpy
 from apogee.tools.read import modelspecOnApStarWavegrid
+from apogee.tools import toAspcapGrid
 from apogee.tools.path import _default_dr
 from apogee.tools.download import _dr_string
 _MINWIDTH= 3.5 #minimum width of a window in \AA
@@ -63,7 +64,7 @@ def num(elem,pad=0):
     si, ei= waveregions(elem,asIndex=True,pad=pad)
     return len(si)
 
-def waveregions(elem,asIndex=False,pad=0):
+def waveregions(elem,asIndex=False,pad=0,dr=None):
     """
     NAME:
        waveregions
@@ -73,6 +74,7 @@ def waveregions(elem,asIndex=False,pad=0):
        elem - element
        asIndx= (False) if yes, return the indices into an apStar-like wavelength grid rather than the wavelengths directly
        pad= (0) pad on each side by this many log10 wavelengths in 6e-6 (changes how windows are combined)
+       dr= read the window corresponding to this data release       
     OUTPUT:
        (startlams,endlams) or (startindxs, endindxs)
     BUGS:
@@ -81,7 +83,7 @@ def waveregions(elem,asIndex=False,pad=0):
        2015-01-26 - Written - Bovy (IAS@KITP)
     """
     # Load the window
-    win= read(elem,apStarWavegrid=True)
+    win= read(elem,apStarWavegrid=True,dr=dr)
     # Calculate number of contiguous regions, assume this is not at the edge
     mask= ((win > 0.)*(True-numpy.isnan(win))).astype('int')
     dmaskp= numpy.roll(mask,-1)-mask
@@ -139,7 +141,7 @@ def waveregions(elem,asIndex=False,pad=0):
         return (10.**numpy.array(newStartl10lams),
                 10.**numpy.array(newEndl10lams))
 
-def tophat(elem):
+def tophat(elem,dr=None,apStarWavegrid=True):
     """
     NAME:
        tophat
@@ -147,6 +149,8 @@ def tophat(elem):
        return an array with True in the window of a given element and False otherwise
     INPUT:
        elem - element     
+       dr= read the window corresponding to this data release       
+       apStarWavegrid= (True) if True, output the window onto the apStar wavelength grid, otherwise just give the ASPCAP version (blue+green+red directly concatenated)
     OUTPUT:
        array on apStar grid
     HISTORY:
@@ -154,9 +158,10 @@ def tophat(elem):
     """
     import apogee.spec.plot as splot
     out= numpy.zeros(splot._NLAMBDA,dtype='bool')
-    for si,ei in zip(*waveregions(elem,asIndex=True)):
+    for si,ei in zip(*waveregions(elem,asIndex=True,dr=dr)):
         out[si+1:ei]= True
-    return out
+    if not apStarWavegrid: return toAspcapGrid(out)
+    else: return out
 
 def total_dlambda(elem,pad=0):
     """
