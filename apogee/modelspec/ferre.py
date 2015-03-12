@@ -647,7 +647,7 @@ def elemchi2(spec,specerr,
         weights= apwindow.tophat(elem,apStarWavegrid=False,dr=dr)
     else:
         weights= apwindow.read(elem,apStarWavegrid=False,dr=dr)
-        weights/= numpy.mean(weights[weights > 0.])
+        weights/= numpy.sum(weights)
     # Decide which parameter to vary
     nvelem= elem_linspace[2]
     var_elem= numpy.tile(numpy.linspace(*elem_linspace),(nspec,1))   
