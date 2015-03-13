@@ -6,11 +6,52 @@ import math
 import numpy
 from scipy import special, interpolate
 import apogee.tools.read as apread
+from apogee.spec.plot import apStarWavegrid
 _SQRTTWO= numpy.sqrt(2.)
 # Load wavelength solutions
 _WAVEPIX_A= apread.apWave('a',ext=2)
 _WAVEPIX_B= apread.apWave('b',ext=2)
 _WAVEPIX_C= apread.apWave('c',ext=2)
+def eval(x,fiber='combo'):
+    """
+    NAME:
+       eval
+    PURPOSE:
+       evaluate the LSF for a given fiber
+    INPUT:
+       x - Array of X values for which to compute the LSF (in pixel offset relative to pixel centers; the LSF is calculated at the x offsets for each pixel center)
+       fiber= ('combo') fiber number or 'combo' for an average LSF (using zero-based indexing)
+    OUTPUT:
+       LSF(x|pixel center)
+    HISTORY:
+       2015-03-12 - Written based on Jon H's code (based on David N's code) - Bovy (IAS)
+    """
+    # Parse fiber input
+    if isinstance(fiber,str) and fiber.lower() == 'combo':
+        fiber= [50,100,150,200,250,300]
+    elif isinstance(fiber,int):
+        fiber= [fiber]
+    elif not isinstance(fiber,list) and isinstance(fiber[0],int):
+        raise ValueError('fiber input to apogee.spec.lsf.eval not understood ...')
+    wav= apStarWavegrid()
+    out= numpy.zeros((len(wav),len(x)))
+    for chip in ['a','b','c']:
+        # Get pixel array for this chip, use fiber[0] for consistency if >1 fib
+        pix= wave2pix(wav,chip,fiber[0])
+        dx= numpy.roll(pix,-1,)-pix
+        dx[-1]= dx[-2]
+        xs= numpy.tile(x,(len(wav),1))\
+            *numpy.tile(dx,(len(x),1)).T # nwav,nx       
+        gd= True-numpy.isnan(pix)
+        # Read LSF file for this chip
+        lsfpars= apread.apLSF(chip,ext=0)
+        # Loop through the fibers
+        for fib in fiber:
+            out[gd]+= raw(xs[gd],pix[gd],lsfpars[:,300-fib])
+    out[out<0.]= 0.
+    out/= numpy.tile(numpy.sum(out,axis=1),(len(x),1)).T
+    return out
+
 def raw(x,xcenter,params):
     """
     NAME:
@@ -18,7 +59,7 @@ def raw(x,xcenter,params):
     PURPOSE:
        Evaluate the raw APOGEE LSF (on the native pixel scale)
     INPUT:
-       x - Array of X values for which to compute the LSF (in pixel offset relative to xcenter; the LSF is calculated at the x offsets for each xcenter)
+       x - Array of X values for which to compute the LSF (in pixel offset relative to xcenter; the LSF is calculated at the x offsets for each xcenter if x is 1D, otherwise x has to be [nxcenter,nx]))
        xcenter - Position of the LSF center (in pixel units)
        lsfarr - the parameter array (from the LSF HDUs in the APOGEE data products)
     OUTPUT:
@@ -26,6 +67,9 @@ def raw(x,xcenter,params):
     HISTORY:
        2015-02-26 - Written based on Nidever's code in apogeereduce - Bovy (IAS)
     """
+    # Parse x
+    if len(x.shape) == 1:
+        x= numpy.tile(x,(len(xcenter),1))
     # Unpack the LSF parameters
     params= unpack_lsf_params(params)
     # Get the wing parameters at each x
@@ -53,15 +97,15 @@ def raw(x,xcenter,params):
 def _gausshermitebin(x,params,binsize):
     """Evaluate the integrated Gauss-Hermite function"""
     ncenter= params.shape[1]
-    out= numpy.empty((ncenter,len(x)))
-    integ= numpy.empty((params.shape[0]-1,len(x)))
+    out= numpy.empty((ncenter,x.shape[1]))
+    integ= numpy.empty((params.shape[0]-1,x.shape[1]))
     for ii in range(ncenter):
         poly= numpy.polynomial.HermiteE(params[1:,ii])
         # Convert to regular polynomial basis for easy integration
         poly= poly.convert(kind=numpy.polynomial.Polynomial)
         # Integrate and add up
-        w1= (x-0.5*binsize)/params[0,ii]
-        w2= (x+0.5*binsize)/params[0,ii]
+        w1= (x[ii]-0.5*binsize)/params[0,ii]
+        w2= (x[ii]+0.5*binsize)/params[0,ii]
         eexp1= numpy.exp(-0.5*w1**2.)
         eexp2= numpy.exp(-0.5*w2**2.)
         integ[0]= numpy.sqrt(numpy.pi/2.)\
@@ -79,11 +123,11 @@ def _gausshermitebin(x,params,binsize):
 def _wingsbin(x,params,binsize,Wproftype):
     """Evaluate the wings of the LSF"""
     ncenter= params.shape[1]
-    out= numpy.empty((ncenter,len(x)))
+    out= numpy.empty((ncenter,x.shape[1]))
     for ii in range(ncenter):
         if Wproftype == 1: # Gaussian
-            w1=(x-0.5*binsize)/params[1,ii]
-            w2=(x+0.5*binsize)/params[1,ii]
+            w1=(x[ii]-0.5*binsize)/params[1,ii]
+            w2=(x[ii]+0.5*binsize)/params[1,ii]
             out[ii]= params[0,ii]/2.*(special.erf(w2/_SQRTTWO)\
                                           -special.erf(w1/_SQRTTWO))
     return out
@@ -148,7 +192,7 @@ def unpack_lsf_params(lsfarr):
     return out
 
 def scalarDecorator(func):
-    """Decorator to return scalar outputs as a set for wave2pix and pix2wave"""
+    """Decorator to return scalar outputs for wave2pix and pix2wave"""
     @wraps(func)
     def scalar_wrapper(*args,**kwargs):
         if numpy.array(args[0]).shape == ():
@@ -167,7 +211,7 @@ def scalarDecorator(func):
     return scalar_wrapper
 
 @scalarDecorator
-def wave2pix(wave,chip,fiber=0):
+def wave2pix(wave,chip,fiber=300):
     """
     NAME:
        wave2pix
@@ -176,18 +220,18 @@ def wave2pix(wave,chip,fiber=0):
     INPUT:
        wavelength - wavelength (\AA)
        chip - chip to use ('a', 'b', or 'c')
-       fiber= (0) fiber to use the wavelength solution of
+       fiber= (300) fiber to use the wavelength solution of
     OUTPUT:
        pixel in the chip
     HISTORY:
         2015-02-27 - Written - Bovy (IAS)
     """
     if chip == 'a':
-        wave0= _WAVEPIX_A[fiber]
+        wave0= _WAVEPIX_A[300-fiber]
     if chip == 'b':
-        wave0= _WAVEPIX_B[fiber]
+        wave0= _WAVEPIX_B[300-fiber]
     if chip == 'c':
-        wave0= _WAVEPIX_C[fiber]
+        wave0= _WAVEPIX_C[300-fiber]
     pix0= numpy.arange(len(wave0))
     # Need to sort into ascending order
     sindx= numpy.argsort(wave0)
@@ -204,7 +248,7 @@ def wave2pix(wave,chip,fiber=0):
     return out
 
 @scalarDecorator
-def pix2wave(pix,chip,fiber=0):
+def pix2wave(pix,chip,fiber=300):
     """
     NAME:
        pix2wave
@@ -213,18 +257,18 @@ def pix2wave(pix,chip,fiber=0):
     INPUT:
        pix - pixel
        chip - chip to use ('a', 'b', or 'c')
-       fiber= (0) fiber to use the wavelength solution of
+       fiber= (300) fiber to use the wavelength solution of
     OUTPUT:
        wavelength in \AA
     HISTORY:
         2015-02-27 - Written - Bovy (IAS)
     """
     if chip == 'a':
-        wave0= _WAVEPIX_A[fiber]
+        wave0= _WAVEPIX_A[300-fiber]
     if chip == 'b':
-        wave0= _WAVEPIX_B[fiber]
+        wave0= _WAVEPIX_B[300-fiber]
     if chip == 'c':
-        wave0= _WAVEPIX_C[fiber]
+        wave0= _WAVEPIX_C[300-fiber]
     pix0= numpy.arange(len(wave0))
     # Need to sort into ascending order
     sindx= numpy.argsort(pix0)
