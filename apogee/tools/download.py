@@ -358,6 +358,31 @@ def apWave(chip,dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
+def apLSF(chip,dr=None):
+    """
+    NAME:
+       apLSF
+    PURPOSE:
+       download an apLSF file
+    INPUT:
+       chip - chip 'a', 'b', or 'c'
+       dr= return the path corresponding to this data release      
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-03-12 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apLSFPath(chip,dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                _dr_string(dr)),
+                                   _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))

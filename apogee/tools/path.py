@@ -608,6 +608,29 @@ def apWavePath(chip,dr=None):
         return os.path.join(specReduxPath,'r5','cal','wave',
                             'apWave-%s-02420038.fits' % chip)
     
+def apLSFPath(chip,dr=None):
+    """
+    NAME:
+       apLSFPath
+    PURPOSE:
+       returns the path of an apLSF file
+    INPUT:
+       chip - chip 'a', 'b', or 'c'
+       dr= return the path corresponding to this data release      
+    OUTPUT:
+       path string
+    HISTORY:
+       2015-03-12 - Written - Bovy (IAS)
+    """
+    if dr is None: dr= _default_dr()
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '10':
+        return os.path.join(specReduxPath,'r3','cal','lsf',
+                            'apLSF-%s-02490024.fits' % chip)
+    elif dr == '12':
+        return os.path.join(specReduxPath,'r5','cal','lsf',
+                            'apLSF-%s-02490024.fits' % chip)
+    
 def apogeeSpectroReduxDirPath(dr=None):
     """
     NAME:

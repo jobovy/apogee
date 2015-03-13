@@ -627,13 +627,34 @@ def apWave(chip,ext=1,dr=None):
        ext= (1) extension to read
        dr= return the path corresponding to this data release      
     OUTPUT:
-       contents of HDU 2
+       contents of HDU ext
     HISTORY:
        2015-02-27 - Written - Bovy (IAS)
     """
     filePath= path.apWavePath(chip,dr=dr)
     if not os.path.exists(filePath):
         download.apWave(chip,dr=dr)
+    data= fitsio.read(filePath,ext)
+    return data
+
+def apLSF(chip,ext=1,dr=None):
+    """
+    NAME:
+       apLSF
+    PURPOSE:
+       open an apLSF file
+    INPUT:
+       chip - chip 'a', 'b', or 'c'
+       ext= (1) extension to read
+       dr= return the path corresponding to this data release      
+    OUTPUT:
+       contents of HDU ext
+    HISTORY:
+       2015-03-12 - Written - Bovy (IAS)
+    """
+    filePath= path.apLSFPath(chip,dr=dr)
+    if not os.path.exists(filePath):
+        download.apLSF(chip,dr=dr)
     data= fitsio.read(filePath,ext)
     return data
 
