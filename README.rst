@@ -567,9 +567,9 @@ That is, the Mg abundance only changes by 0.01 dex. ``elemfit`` can also return 
      print mgparams[0,paramIndx('ALPHA')], mgerr
      -0.0068 [ 0.0519986]
 
-if the estimated uncertainty is NaN, then it is larger than about 0.3
+If the estimated uncertainty is NaN, then it is larger than about 0.3
 dex. To fully map the chi squared curve for a given element, you can
-use ``elemchi2``. Clever use of this will also allow one to
+use ``ferre.elemchi2``. Clever use of this will also allow one to
 investigate correlations between the elemental abundance and stellar
 parameters.
 
@@ -595,7 +595,7 @@ or for Si (which in the standard pipeline product is given as [Si/Fe], so we hav
 
 ``elemfitall`` can also estimate uncertainties in all of the
 abundances by setting the keyword ``estimate_err=True``; uncertainties
-are returned as keys 'e_*'.
+are returned as keys 'e_X'.
 
 
 Using The Cannon
