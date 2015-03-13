@@ -616,7 +616,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
         out[5320:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
         return out
 
-def apWave(chip,ext=1,dr=None):
+def apWave(chip,ext=2,dr=None):
     """
     NAME:
        apWave
@@ -624,7 +624,7 @@ def apWave(chip,ext=1,dr=None):
        open an apWave file
     INPUT:
        chip - chip 'a', 'b', or 'c'
-       ext= (1) extension to read
+       ext= (2) extension to read
        dr= return the path corresponding to this data release      
     OUTPUT:
        contents of HDU ext
@@ -637,7 +637,7 @@ def apWave(chip,ext=1,dr=None):
     data= fitsio.read(filePath,ext)
     return data
 
-def apLSF(chip,ext=1,dr=None):
+def apLSF(chip,ext=0,dr=None):
     """
     NAME:
        apLSF
@@ -645,7 +645,7 @@ def apLSF(chip,ext=1,dr=None):
        open an apLSF file
     INPUT:
        chip - chip 'a', 'b', or 'c'
-       ext= (1) extension to read
+       ext= (0) extension to read
        dr= return the path corresponding to this data release      
     OUTPUT:
        contents of HDU ext
