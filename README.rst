@@ -559,7 +559,19 @@ To for example also let the effective temperature float in the Mg abundance fit 
    print mgparams[0,paramIndx('ALPHA')]
    -0.016
 
-That is, the Mg abundance only changes by 0.01 dex.
+That is, the Mg abundance only changes by 0.01 dex. ``elemfit`` can also return an estimate of the error on the abundance, for example, do::
+
+     mgparams, mgerr= ferre.elemfit(data[3512]['LOCATION_ID'],data[3512]['APOGEE_ID'],
+                      'Mg',params,
+                      lib='GK',pca=True,sixd=True,estimate_err=True)
+     print mgparams[0,paramIndx('ALPHA')], mgerr
+     -0.0068 [ 0.0519986]
+
+if the estimated uncertainty is NaN, then it is larger than about 0.3
+dex. To fully map the chi squared curve for a given element, you can
+use ``elemchi2``. Clever use of this will also allow one to
+investigate correlations between the elemental abundance and stellar
+parameters.
 
 To fit for all of the elemental abundances you can use ``elemfitall``,
 which returns a dictionary of abundances relative to hydrogen for all
@@ -580,6 +592,10 @@ or for Si (which in the standard pipeline product is given as [Si/Fe], so we hav
 	[-0.204]
 	print data[3512]['FELEM'][elemIndx('Si')]+params[:,paramIndx('METALS')] 
 	[-0.20453]
+
+``elemfitall`` can also estimate uncertainties in all of the
+abundances by setting the keyword ``estimate_err=True``; uncertainties
+are returned as keys 'e_*'.
 
 
 Using The Cannon
