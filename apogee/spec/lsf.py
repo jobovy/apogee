@@ -4,7 +4,7 @@
 from functools import wraps
 import math
 import numpy
-from scipy import special, interpolate, sparse
+from scipy import special, interpolate, sparse, ndimage
 import apogee.tools.read as apread
 from apogee.spec.plot import apStarWavegrid
 _SQRTTWO= numpy.sqrt(2.)
@@ -12,7 +12,7 @@ _SQRTTWO= numpy.sqrt(2.)
 _WAVEPIX_A= apread.apWave('a',ext=2)
 _WAVEPIX_B= apread.apWave('b',ext=2)
 _WAVEPIX_C= apread.apWave('c',ext=2)
-def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo'):
+def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
     """
     NAME:
        convolve
@@ -24,6 +24,7 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo'):
        lsf= (None) pre-calculated LSF array from apogee.spec.lsf.eval
        xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
        fiber= if lsf is None, the LSF is calculated for this fiber
+       vmacro= (6.) Gaussian macroturbulence smoothing to apply as well
     OUTPUT:
        spectrum on apStar wavelength grid
     HISTORY:
@@ -41,12 +42,19 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo'):
     dowav= l10wav[1]-l10wav[0]
     tmpwav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
     tmp= numpy.empty(len(l10wav)*hires)   
+    # Setup vmacro
+    if not vmacro is None:
+        sigvm= vmacro/3./10.**5./numpy.log(10.)*hires/dowav
     # Interpolate the input spectrum, starting from a polynomial baseline
     baseline= numpy.polynomial.Polynomial.fit(wav,spec,4)
     ip= interpolate.InterpolatedUnivariateSpline(wav,spec/baseline(wav),
                                                  k=3)
-    tmp= sparse.csr_matrix(baseline(tmpwav)*ip(tmpwav))
+    tmp= baseline(tmpwav)*ip(tmpwav)
+    # Add macroturbulence
+    if not vmacro is None:
+        tmp= ndimage.gaussian_filter1d(tmp,sigvm,mode='constant')
     # Use sparse representations to quickly calculate the convolution
+    tmp= sparse.csr_matrix(tmp)
     return (lsf*tmp.T).toarray()[::hires,0]
 
 def sparsify(lsf):
