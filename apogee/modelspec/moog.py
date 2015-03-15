@@ -9,6 +9,7 @@ import subprocess
 import numpy
 from scipy import interpolate
 import apogee.spec.lsf as aplsf
+import apogee.spec.continuum as apcont
 import apogee.tools.path as appath
 import apogee.tools.download as download
 _WMIN_DEFAULT= 15000.000
@@ -230,7 +231,8 @@ def synth(*args,**kwargs):
     elif cont.lower() == 'aspcap':
         raise NotImplementedError('ASPCAP continuum normalization not implemented yet')
     else:
-        pass
+        cflux= apcont.fit(out,numpy.ones_like(out))
+        out/= cflux
     return out
 
 def moogsynth(*args,**kwargs):
