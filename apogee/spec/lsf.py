@@ -20,7 +20,7 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
        convolve with the APOGEE LSF and resample to APOGEE's apStar wavelength grid
     INPUT:
        wav - wavelength array (linear in wavelength in \AA)
-       spec - spectrum on wav wavelength grid
+       spec - spectrum on wav wavelength grid [nspec,nwave]
        lsf= (None) pre-calculated LSF array from apogee.spec.lsf.eval
        xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
        fiber= if lsf is None, the LSF is calculated for this fiber
@@ -46,16 +46,21 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
     if not vmacro is None:
         sigvm= vmacro/3./10.**5./numpy.log(10.)*hires/dowav
     # Interpolate the input spectrum, starting from a polynomial baseline
-    baseline= numpy.polynomial.Polynomial.fit(wav,spec,4)
-    ip= interpolate.InterpolatedUnivariateSpline(wav,spec/baseline(wav),
-                                                 k=3)
-    tmp= baseline(tmpwav)*ip(tmpwav)
+    if len(spec.shape) == 1: spec= numpy.reshape(spec,(1,len(spec)))
+    nspec= spec.shape[0]
+    tmp= numpy.empty((nspec,len(tmpwav)))
+    for ii in range(nspec):
+        baseline= numpy.polynomial.Polynomial.fit(wav,spec[ii],4)
+        ip= interpolate.InterpolatedUnivariateSpline(wav,
+                                                     spec[ii]/baseline(wav),
+                                                     k=3)
+        tmp[ii]= baseline(tmpwav)*ip(tmpwav)
     # Add macroturbulence
     if not vmacro is None:
-        tmp= ndimage.gaussian_filter1d(tmp,sigvm,mode='constant')
+        tmp= ndimage.gaussian_filter1d(tmp,sigvm,mode='constant',axis=1)
     # Use sparse representations to quickly calculate the convolution
     tmp= sparse.csr_matrix(tmp)
-    return (lsf*tmp.T).toarray()[::hires,0]
+    return lsf.dot(tmp.T).T.toarray()[:,::hires]
 
 def sparsify(lsf):
     """
