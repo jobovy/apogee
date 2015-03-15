@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import subprocess
 import numpy
+from scipy import interpolate
 import apogee.spec.lsf as aplsf
 import apogee.tools.path as appath
 import apogee.tools.download as download
@@ -151,18 +152,28 @@ def synth(*args,**kwargs):
           ...
           [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
     INPUT KEYWORDS:
-       lsf= (None) LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if None, an Error will be raised
-       xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval)
-       linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
-       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
-       lib= ('kurucz_filled') spectral library
-       teff= (4500) grid-point Teff
-       logg= (2.5) grid-point logg
-       metals= (0.) grid-point metallicity
-       cfe= (0.) grid-point carbon-enhancement
-       afe= (0.) grid-point alpha-enhancement
-       vmicro= (2.) grid-point microturbulence
-       dr= return the path corresponding to this data release
+       LSF:
+          lsf= (None) LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if None, an Error will be raised
+          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval)
+          vmacro= (6.) macroturbulence to apply
+       CONTINUUM:
+          cont= ('aspcap') continuum-normalization to apply:
+             'true': Use the true continuum
+             'aspcap': Use the continuum normalization method of ASPCAP DR12
+             'cannon': Normalize using continuum pixels derived from the Cannon
+       SYNTHESIS:
+          linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+          wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+          lib= ('kurucz_filled') spectral library
+       MODEL ATMOSPHERE PARAMETERS:
+          teff= (4500) grid-point Teff
+          logg= (2.5) grid-point logg
+          metals= (0.) grid-point metallicity
+          cfe= (0.) grid-point carbon-enhancement
+          afe= (0.) grid-point alpha-enhancement
+          vmicro= (2.) grid-point microturbulence
+       MISCELLANEOUS:
+          dr= return the path corresponding to this data release
     OUTPUT:
        (wavelengths,spectra (nspec,nwave)) for synth driver
        (wavelengths,continuum spectr (nwave)) for doflux driver     
@@ -175,6 +186,8 @@ def synth(*args,**kwargs):
     lsf= kwargs.pop('lsf')
     xlsf= kwargs.pop('xlsf')
     vmacro= kwargs.pop('vmacro',6.)
+    # Parse continuum-normalization keywords
+    cont= kwargs.pop('cont','aspcap')
     # Run MOOG synth for all abundances
     if len(args) == 0: #special case that there are *no* differences
         args= ([26,0.],)
@@ -203,6 +216,21 @@ def synth(*args,**kwargs):
     out= aplsf.convolve(mwav,out,
                         lsf=lsf,xlsf=xlsf,vmacro=vmacro)
     # Now continuum-normalize
+    if cont.lower() == 'true':
+        # Get the true continuum on the apStar wavelength grid
+        from apogee.spec.plot import apStarWavegrid
+        apWave= apStarWavegrid()
+        baseline= numpy.polynomial.Polynomial.fit(mwav,cflux,4)
+        ip= interpolate.InterpolatedUnivariateSpline(mwav,
+                                                     cflux/baseline(mwav),
+                                                     k=3)
+        cflux= baseline(apWave)*ip(apWave)
+        # Divide it out
+        out/= numpy.tile(cflux,(nsynth,1))
+    elif cont.lower() == 'aspcap':
+        raise NotImplementedError('ASPCAP continuum normalization not implemented yet')
+    else:
+        pass
     return out
 
 def moogsynth(*args,**kwargs):
