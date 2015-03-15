@@ -7,6 +7,7 @@ import shutil
 import tempfile
 import subprocess
 import numpy
+import apogee.spec.lsf as aplsf
 import apogee.tools.path as appath
 import apogee.tools.download as download
 _WMIN_DEFAULT= 15000.000
@@ -142,7 +143,74 @@ def synth(*args,**kwargs):
     NAME:
        synth
     PURPOSE:
-       Run a MOOG synthesis
+       Generate model APOGEE spectra using MOOG: this is a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
+    INPUT ARGUMENTS:
+       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
+          [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
+          [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
+          ...
+          [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
+    INPUT KEYWORDS:
+       lsf= (None) LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if None, an Error will be raised
+       xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval)
+       linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       lib= ('kurucz_filled') spectral library
+       teff= (4500) grid-point Teff
+       logg= (2.5) grid-point logg
+       metals= (0.) grid-point metallicity
+       cfe= (0.) grid-point carbon-enhancement
+       afe= (0.) grid-point alpha-enhancement
+       vmicro= (2.) grid-point microturbulence
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       (wavelengths,spectra (nspec,nwave)) for synth driver
+       (wavelengths,continuum spectr (nwave)) for doflux driver     
+    HISTORY:
+       2015-03-15 - Written - Bovy (IAS)
+    """
+    # Check that we have the LSF and store the relevant keywords
+    if kwargs.get('lsf',None) is None or kwargs.get('xlsf' is None):
+        raise KeyError('Need to give the LSF from apogee.spec.lsf.eval as the keyward argument lsf= and xlsf=')
+    lsf= kwargs.pop('lsf')
+    xlsf= kwargs.pop('xlsf')
+    vmacro= kwargs.pop('vmacro',6.)
+    # Run MOOG synth for all abundances
+    if len(args) == 0: #special case that there are *no* differences
+        args= ([26,0.],)
+    nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
+    nsynth= numpy.amax(nsynths) #Take the longest abundance list
+    nmoogwav= int((kwargs.get('wmax',_WMAX_DEFAULT)\
+                       -kwargs.get('wmin',_WMIN_DEFAULT))\
+                      /kwargs.get('dw',_DW_DEFAULT)+1)
+    out= numpy.empty((nsynth,nmoogwav))
+    # Check whether the number of syntheses is > 5 and run multiple 
+    # MOOG instances if necessary, bc MOOG only does 5 at a time
+    ninstances= int(numpy.ceil(nsynth/5.))
+    for ii in range(ninstances):
+        newargs= ()
+        for jj in range(len(args)):
+            tab= [args[jj][0]]
+            if len(args[jj][5*ii+1:5*(ii+1)+1]) > 0:
+                tab.extend(args[jj][5*ii+1:5*(ii+1)+1])
+                newargs= newargs+(tab,)
+        out[5*ii:5*(ii+1)]= moogsynth(*newargs,**kwargs)[1] 
+        # We'll grab the wavelength grid from the continuum below
+    # Now compute the continuum and multiply each c-norm spectrum with it
+    mwav, cflux= moogsynth(doflux=True,**kwargs)
+    out*= numpy.tile(cflux,(nsynth,1))
+    # Now convolve with the LSF
+    out= aplsf.convolve(mwav,out,
+                        lsf=lsf,xlsf=xlsf,vmacro=vmacro)
+    # Now continuum-normalize
+    return out
+
+def moogsynth(*args,**kwargs):
+    """
+    NAME:
+       moogsynth
+    PURPOSE:
+       Run a MOOG synthesis (direct interface to the MOOG code; use 'synth' for a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output)
     INPUT ARGUMENTS:
        lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
           [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
