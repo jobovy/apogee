@@ -219,6 +219,8 @@ def synth(*args,**kwargs):
         args= ([26,0.],)
     nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
     nsynth= numpy.amax(nsynths) #Take the longest abundance list
+    if nsynth > 5:
+        raise ValueError("MOOG only allows five syntheses to be run at the same time; please reduce the number of abundance values in the apogee.modelspec.moog.moogsynth input")
     nabu= len(args)
     with open(os.path.join(tmpDir,'synth.par'),'w') as parfile:
         if doflux:
