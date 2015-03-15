@@ -82,7 +82,7 @@ def sparsify(lsf):
             diagonals.append(lsf[offset:,ii])
     return sparse.diags(diagonals,offsets)
 
-def eval(x,fiber='combo'):
+def eval(x,fiber='combo',sparse=False):
     """
     NAME:
        eval
@@ -91,6 +91,7 @@ def eval(x,fiber='combo'):
     INPUT:
        x - Array of X values for which to compute the LSF, in pixel offset relative to pixel centers; the LSF is calculated at the x offsets for each pixel center; x need to be 1/integer equally-spaced pixel offsets
        fiber= ('combo') fiber number or 'combo' for an average LSF (using zero-based indexing)
+       sparse= (False) if True, return a sparse representation that can be passed to apogee.spec.lsf.convolve for easy convolution
     OUTPUT:
        LSF(x|pixel center);
        pixel centers are apStarWavegrid if dx=1, and denser 1/integer versions if dx=1/integer
@@ -130,6 +131,7 @@ def eval(x,fiber='combo'):
             out[gd]+= raw(xs[gd],pix[gd],lsfpars[:,300-fib])
     out[out<0.]= 0.
     out/= numpy.tile(numpy.sum(out,axis=1),(len(x),1)).T
+    if sparse: out= sparsify(out)
     return out
 
 def raw(x,xcenter,params):
