@@ -4,7 +4,7 @@
 from functools import wraps
 import math
 import numpy
-from scipy import special, interpolate
+from scipy import special, interpolate, sparse
 import apogee.tools.read as apread
 from apogee.spec.plot import apStarWavegrid
 _SQRTTWO= numpy.sqrt(2.)
@@ -12,6 +12,68 @@ _SQRTTWO= numpy.sqrt(2.)
 _WAVEPIX_A= apread.apWave('a',ext=2)
 _WAVEPIX_B= apread.apWave('b',ext=2)
 _WAVEPIX_C= apread.apWave('c',ext=2)
+def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo'):
+    """
+    NAME:
+       convolve
+    PURPOSE:
+       convolve with the APOGEE LSF and resample to APOGEE's apStar wavelength grid
+    INPUT:
+       wav - wavelength array (linear in wavelength in \AA)
+       spec - spectrum on wav wavelength grid
+       lsf= (None) pre-calculated LSF array from apogee.spec.lsf.eval
+       xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
+       fiber= if lsf is None, the LSF is calculated for this fiber
+    OUTPUT:
+       spectrum on apStar wavelength grid
+    HISTORY:
+       2015-03-14 - Written - Bovy (IAS)
+    """
+    # Parse LSF input
+    if lsf is None:
+        xlsf= numpy.linspace(-7.,7.,43)
+        lsf= eval(xlsf,fiber=fiber)
+    if not isinstance(lsf,sparse.dia_matrix):
+        lsf= sparsify(lsf)
+    dx= xlsf[1]-xlsf[0]
+    hires= int(1./dx)
+    l10wav= numpy.log10(apStarWavegrid())
+    dowav= l10wav[1]-l10wav[0]
+    tmpwav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
+    tmp= numpy.empty(len(l10wav)*hires)   
+    # Interpolate the input spectrum, starting from a polynomial baseline
+    baseline= numpy.polynomial.Polynomial.fit(wav,spec,4)
+    ip= interpolate.InterpolatedUnivariateSpline(wav,spec/baseline(wav),
+                                                 k=3)
+    tmp= sparse.csr_matrix(baseline(tmpwav)*ip(tmpwav))
+    # Use sparse representations to quickly calculate the convolution
+    return (lsf*tmp.T).toarray()[::hires,0]
+
+def sparsify(lsf):
+    """
+    NAME:
+       sparsify
+    PURPOSE:
+       convert an LSF matrix calculated with eval [ncen,npixoff] to a sparse [ncen,ncen] matrix with the LSF on the diagonals (for quick convolution with the LSF)
+    INPUT:
+       lsf - lsf matrix [ncen,npixoff] calculated by eval
+    OUTPUT:
+       sparse matrix with the lsf on the diagonals
+    HISTORY:
+       2015-03-14 - Written - Bovy (IAS)
+    """
+    nx= lsf.shape[1]
+    diagonals= []
+    offsets= []
+    for ii in range(nx):
+        offset= nx//2-ii
+        offsets.append(offset)
+        if offset < 0:
+            diagonals.append(lsf[:offset,ii])
+        else:
+            diagonals.append(lsf[offset:,ii])
+    return sparse.diags(diagonals,offsets)
+
 def eval(x,fiber='combo'):
     """
     NAME:
@@ -19,10 +81,11 @@ def eval(x,fiber='combo'):
     PURPOSE:
        evaluate the LSF for a given fiber
     INPUT:
-       x - Array of X values for which to compute the LSF (in pixel offset relative to pixel centers; the LSF is calculated at the x offsets for each pixel center)
+       x - Array of X values for which to compute the LSF, in pixel offset relative to pixel centers; the LSF is calculated at the x offsets for each pixel center; x need to be 1/integer equally-spaced pixel offsets
        fiber= ('combo') fiber number or 'combo' for an average LSF (using zero-based indexing)
     OUTPUT:
-       LSF(x|pixel center)
+       LSF(x|pixel center);
+       pixel centers are apStarWavegrid if dx=1, and denser 1/integer versions if dx=1/integer
     HISTORY:
        2015-03-12 - Written based on Jon H's code (based on David N's code) - Bovy (IAS)
     """
@@ -33,14 +96,23 @@ def eval(x,fiber='combo'):
         fiber= [fiber]
     elif not isinstance(fiber,list) and isinstance(fiber[0],int):
         raise ValueError('fiber input to apogee.spec.lsf.eval not understood ...')
+    # Are the x unit pixels or a fraction 1/hires thereof?
+    hires= int(1./(x[1]-x[0]))
+    # Setup output
     wav= apStarWavegrid()
-    out= numpy.zeros((len(wav),len(x)))
+    l10wav= numpy.log10(wav)
+    dowav= l10wav[1]-l10wav[0]
+    # Hi-res wavelength for output
+    hireswav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
+    out= numpy.zeros((len(hireswav),len(x)))
     for chip in ['a','b','c']:
         # Get pixel array for this chip, use fiber[0] for consistency if >1 fib
-        pix= wave2pix(wav,chip,fiber[0])
-        dx= numpy.roll(pix,-1,)-pix
-        dx[-1]= dx[-2]
-        xs= numpy.tile(x,(len(wav),1))\
+        pix= wave2pix(hireswav,chip,fiber[0])
+        dx= numpy.roll(pix,-hires,)-pix
+        dx[-1]= dx[-1-hires]
+        dx[-2]= dx[-2-hires]
+        dx[-3]= dx[-3-hires]
+        xs= numpy.tile(x,(len(hireswav),1))\
             *numpy.tile(dx,(len(x),1)).T # nwav,nx       
         gd= True-numpy.isnan(pix)
         # Read LSF file for this chip
