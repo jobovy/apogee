@@ -4,21 +4,31 @@
 import numpy
 from apogee.spec import cannon
 from apogee.tools import toAspcapGrid, toApStarGrid
-def fit(spec,specerr,cont_pixels=None,deg=2):
+def fit(spec,specerr,type='aspcap',
+        deg=None,
+        niter=10,usigma=3.,lsigma=0.1,
+        cont_pixels=None):
     """
     NAME:
        fit
     PURPOSE:
-       fit the continuum with a Chebyshev polynomial based on a set of continuum pixels
+       fit the continuum (a) with a sigma-clipping rejection method (~ASPCAP) or (b) with a Chebyshev polynomial based on a set of continuum pixels
     INPUT:
        spec - spectra to fit (nspec,nlambda)
        specerr - errors on the spectra (nspec,nlambda); assume no covariances
-       cont_pixels= (None; loads default) boolean index in the ASPCAP wavelength grid with True for continuum pixels
-       deg= (2) order of the polynomial to fit
+       type= ('aspcap') type of continuum fitting to do: 'ASPCAP' for the sigma-clipping rejection that ASPCAP uses and 'Cannon' for fitting a Chebyshev polynomial to continuum pixels
+       ASPCAP keywords:
+          deg= (4) degree of the polynomial
+          niter= (10) number of sigma-clipping iterations to perform
+          usigma, lsigma= (3., 0.1) upper and lower sigmas for sigma clipping
+       Cannon keywords:
+          deg= (2) degree of the polynomial
+          cont_pixels= (None; loads default) boolean index in the ASPCAP wavelength grid with True for continuum pixels
     OUTPUT:
        continuum (nspec,nlambda)
     HISTORY:
-       2015-03-01 - Written - Bovy (IAS)
+       2015-03-01 - Cannon-style fit written - Bovy (IAS)
+       2015-03-01 - ASPCAP-style fit written - Bovy (IAS)
     """
     # Parse input
     if spec.shape[1] == 8575:
@@ -27,41 +37,62 @@ def fit(spec,specerr,cont_pixels=None,deg=2):
     else:
         tspec= spec
         tspecerr= specerr
-    if cont_pixels is None:
-        cont_pixels= pixels_cannon()
-    # Now fit each detector separately
+    if deg is None and type.lower() == 'aspcap': deg= 4
+    elif deg is None: deg= 2
+    # Fit each detector separately
     cont= numpy.empty_like(tspec)
     # Rescale wavelengths
     bluewav= numpy.arange(2920)/2919.*2.-1.
     greenwav= numpy.arange(2400)/2399.*2.-1.
     redwav= numpy.arange(1894)/1893.*2.-1.
     # Split the continuum pixels
-    blue_pixels= cont_pixels[:2920]
-    green_pixels= cont_pixels[2920:5320]
-    red_pixels= cont_pixels[5320:]
+    if type.lower() == 'cannon':
+        if cont_pixels is None:
+            cont_pixels= pixels_cannon()
+        blue_pixels= cont_pixels[:2920]
+        green_pixels= cont_pixels[2920:5320]
+        red_pixels= cont_pixels[5320:]
     # Loop through the data
     for ii in range(spec.shape[0]):
         # Blue
-        chpoly= numpy.polynomial.Chebyshev.fit(bluewav[blue_pixels],
-                                               tspec[ii,:2920][blue_pixels],
-                                               2,
-                                               w=1./tspecerr[ii,:2920][blue_pixels])
-        cont[ii,:2920]= chpoly(bluewav)
+        if type.lower() == 'aspcap':
+            pass
+        else:
+            cont[ii,:2920]= _fit_cannonpixels(bluewav,
+                                              tspec[ii,:2920],
+                                              tspecerr[ii,:2920],
+                                              deg,
+                                              blue_pixels)
         # Green
-        chpoly= numpy.polynomial.Chebyshev.fit(greenwav[green_pixels],
-                                               tspec[ii,2920:5320][green_pixels],
-                                               2,
-                                               w=1./tspecerr[ii,2920:5320][green_pixels])
-        cont[ii,2920:5320]= chpoly(greenwav)
+        if type.lower() == 'aspcap':
+            pass
+        else:
+            cont[ii,2920:5320]= _fit_cannonpixels(greenwav,
+                                                  tspec[ii,2920:5320],
+                                                  tspecerr[ii,2920:5320],
+                                                  deg,
+                                                  green_pixels)
         # Red
-        chpoly= numpy.polynomial.Chebyshev.fit(redwav[red_pixels],
-                                               tspec[ii,5320:][red_pixels],
-                                               2,
-                                               w=1./tspecerr[ii,5320:][red_pixels])
-        cont[ii,5320:]= chpoly(redwav)
+        if type.lower() == 'aspcap':
+            pass
+        else:
+            cont[ii,5320:]= _fit_cannonpixels(redwav,
+                                              tspec[ii,5320:],
+                                              tspecerr[ii,5320:],
+                                              deg,
+                                              red_pixels)
     if spec.shape[1] == 8575:
         cont= toApStarGrid(cont)
     return cont
+
+def _fit_cannonpixels(wav,spec,specerr,deg,cont_pixels):
+    """Fit the continuum to a set of continuum pixels"""
+    chpoly= numpy.polynomial.Chebyshev.fit(wav[cont_pixels],
+                                           spec[cont_pixels],
+                                           deg,
+                                           w=1./specerr[cont_pixels])
+    return chpoly(wav)
+
 
 def pixels_cannon(*args,**kwargs):
     """

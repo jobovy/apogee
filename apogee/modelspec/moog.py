@@ -228,10 +228,8 @@ def synth(*args,**kwargs):
         cflux= baseline(apWave)*ip(apWave)
         # Divide it out
         out/= numpy.tile(cflux,(nsynth,1))
-    elif cont.lower() == 'aspcap':
-        raise NotImplementedError('ASPCAP continuum normalization not implemented yet')
     else:
-        cflux= apcont.fit(out,numpy.ones_like(out))
+        cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
         out/= cflux
     return out
 
