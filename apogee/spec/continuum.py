@@ -6,7 +6,7 @@ from apogee.spec import cannon
 from apogee.tools import toAspcapGrid, toApStarGrid
 def fit(spec,specerr,type='aspcap',
         deg=None,
-        niter=10,usigma=6.,lsigma=0.2,
+        niter=10,usigma=3.,lsigma=0.1,
         cont_pixels=None):
     """
     NAME:
@@ -101,16 +101,21 @@ def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
     """Fit the continuum with an iterative upper/lower rejection"""
     # Initial fit
     chpoly= numpy.polynomial.Chebyshev.fit(wav,spec,deg,w=1./specerr)
+    tcont= chpoly(wav)
+    tres= spec-tcont
+    sig= numpy.std(tres)
+    mask= (tres < usigma*sig)*(tres > -lsigma*sig)
+    spec[True-mask]= chpoly(wav[True-mask])
     for ii in range(niter):
+        chpoly= numpy.polynomial.Chebyshev.fit(wav,
+                                               spec,
+                                               deg,
+                                               w=1./specerr)
         tcont= chpoly(wav)
         tres= spec-tcont
-        # Use robust sigma
-        sig= 1.4826*numpy.median(numpy.fabs(tres-numpy.median(tres)))
+        sig= numpy.std(tres)
         mask= (tres < usigma*sig)*(tres > -lsigma*sig)
-        chpoly= numpy.polynomial.Chebyshev.fit(wav[mask],
-                                               spec[mask],
-                                               deg,
-                                               w=1./specerr[mask])
+        spec[True-mask]= chpoly(wav[True-mask])
     return chpoly(wav)
 
 def _fit_cannonpixels(wav,spec,specerr,deg,cont_pixels):
