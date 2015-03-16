@@ -6,7 +6,7 @@ from apogee.spec import cannon
 from apogee.tools import toAspcapGrid, toApStarGrid
 def fit(spec,specerr,type='aspcap',
         deg=None,
-        niter=10,usigma=3.,lsigma=0.1,
+        niter=10,usigma=6.,lsigma=0.2,
         cont_pixels=None):
     """
     NAME:
@@ -56,7 +56,11 @@ def fit(spec,specerr,type='aspcap',
     for ii in range(spec.shape[0]):
         # Blue
         if type.lower() == 'aspcap':
-            pass
+            cont[ii,:2920]= _fit_aspcap(bluewav,
+                                        tspec[ii,:2920],
+                                        tspecerr[ii,:2920],
+                                        deg,
+                                        niter,usigma,lsigma)
         else:
             cont[ii,:2920]= _fit_cannonpixels(bluewav,
                                               tspec[ii,:2920],
@@ -65,7 +69,11 @@ def fit(spec,specerr,type='aspcap',
                                               blue_pixels)
         # Green
         if type.lower() == 'aspcap':
-            pass
+            cont[ii,2920:5320]= _fit_aspcap(greenwav,
+                                            tspec[ii,2920:5320],
+                                            tspecerr[ii,2920:5320],
+                                            deg,
+                                            niter,usigma,lsigma)
         else:
             cont[ii,2920:5320]= _fit_cannonpixels(greenwav,
                                                   tspec[ii,2920:5320],
@@ -74,7 +82,11 @@ def fit(spec,specerr,type='aspcap',
                                                   green_pixels)
         # Red
         if type.lower() == 'aspcap':
-            pass
+            cont[ii,5320:]= _fit_aspcap(redwav,
+                                        tspec[ii,5320:],
+                                        tspecerr[ii,5320:],
+                                        deg,
+                                        niter,usigma,lsigma)
         else:
             cont[ii,5320:]= _fit_cannonpixels(redwav,
                                               tspec[ii,5320:],
@@ -84,6 +96,22 @@ def fit(spec,specerr,type='aspcap',
     if spec.shape[1] == 8575:
         cont= toApStarGrid(cont)
     return cont
+
+def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
+    """Fit the continuum with an iterative upper/lower rejection"""
+    # Initial fit
+    chpoly= numpy.polynomial.Chebyshev.fit(wav,spec,deg,w=1./specerr)
+    for ii in range(niter):
+        tcont= chpoly(wav)
+        tres= spec-tcont
+        # Use robust sigma
+        sig= 1.4826*numpy.median(numpy.fabs(tres-numpy.median(tres)))
+        mask= (tres < usigma*sig)*(tres > -lsigma*sig)
+        chpoly= numpy.polynomial.Chebyshev.fit(wav[mask],
+                                               spec[mask],
+                                               deg,
+                                               w=1./specerr[mask])
+    return chpoly(wav)
 
 def _fit_cannonpixels(wav,spec,specerr,deg,cont_pixels):
     """Fit the continuum to a set of continuum pixels"""
