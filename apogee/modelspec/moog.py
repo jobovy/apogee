@@ -159,6 +159,7 @@ def synth(*args,**kwargs):
           vmacro= (6.) macroturbulence to apply
        CONTINUUM:
           cont= ('aspcap') continuum-normalization to apply:
+             None: no continuum normalization
              'true': Use the true continuum
              'aspcap': Use the continuum normalization method of ASPCAP DR12
              'cannon': Normalize using continuum pixels derived from the Cannon
@@ -228,7 +229,7 @@ def synth(*args,**kwargs):
         cflux= baseline(apWave)*ip(apWave)
         # Divide it out
         out/= numpy.tile(cflux,(nsynth,1))
-    else:
+    elif not cont is None:
         cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
         out/= cflux
     return out
