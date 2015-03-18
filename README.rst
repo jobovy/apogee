@@ -459,7 +459,7 @@ APOGEE/ASPCAP approach. When generating model spectra with other
 software tools (like MOOG below) one needs to convolve the model
 spectra with the APOGEE LSF and apply continuum normalization. This
 section briefly describes the tools available in this package for
-doing these things.
+doing this.
 
 Tools for handling the APOGEE LSF are in the ``apogee.spec.lsf``
 module. The most important functions here are ``lsf.eval`` and
@@ -472,12 +472,12 @@ apStar wavelength grid subdivided by the same amount (so if
 pixel,pixel+1/3,pixel+2/3, pixel+1, etc.). This allows the convolution
 to be performed efficiently.
 
-``lsf.convolve`` convolves with both the APOGEE LSF and a
+``lsf.convolve`` convolves with both the APOGEE LSF and the
 macroturbulence, modeled as a Gaussian smoothing with a given
 FWHM. The convolution is implemented efficiently as a sparse-matrix
 multiplication. The LSF obtained from ``lsf.eval`` can be returned in
-this sparse format or you can yourself compute the sparse
-representation by running ``lsf.sparsify``.
+this sparse format by specifying ``sparse=True`` or you can yourself
+compute the sparse representation by running ``lsf.sparsify``.
 
 The average DR12 LSFs for 6 fibers (the standard LSF for ASPCAP
 analysis) or for all fibers is pre-computed and stored online at `this
@@ -546,6 +546,8 @@ do not over the full wavelength range).
 
 Using MOOG
 +++++++++++
+
+
 
 Fitting spectra
 ^^^^^^^^^^^^^^^^^
