@@ -154,8 +154,8 @@ def synth(*args,**kwargs):
           [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
     INPUT KEYWORDS:
        LSF:
-          lsf= (None) LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if None, an Error will be raised
-          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval)
+          lsf= ('all') LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if 'all' or 'combo' a pre-computed version will be downloaded from the web
+          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
           vmacro= (6.) macroturbulence to apply
        CONTINUUM:
           cont= ('aspcap') continuum-normalization to apply:
@@ -183,10 +183,12 @@ def synth(*args,**kwargs):
        2015-03-15 - Written - Bovy (IAS)
     """
     # Check that we have the LSF and store the relevant keywords
-    if kwargs.get('lsf',None) is None or kwargs.get('xlsf' is None):
-        raise KeyError('Need to give the LSF from apogee.spec.lsf.eval as the keyward argument lsf= and xlsf=')
-    lsf= kwargs.pop('lsf')
-    xlsf= kwargs.pop('xlsf')
+    lsf= kwargs.pop('lsf','all')
+    if isinstance(lsf,str):
+        xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
+    else:
+        xlsf= kwargs.pop('xlsf',None)
+        if xlsf is None: raise ValueError('xlsf input needs to be given if the LSF is given as an array')
     vmacro= kwargs.pop('vmacro',6.)
     # Parse continuum-normalization keywords
     cont= kwargs.pop('cont','aspcap')
