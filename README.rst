@@ -530,7 +530,19 @@ a Cannon-style continuum-normalization (see `Ness et al. 2015
 pre-determined set of continuum pixels, which can be specified through
 ``cont_pixels=``. A default set of pixels is included in the code;
 there is also a function ``continuum.pixels_cannon`` that can
-determine the continuum pixels.
+determine the continuum pixels. For the same star as analyzed with the
+ASPCAP continuum normalization above we find::
+
+       cont_cannon= continuum.fit(aspec,aspecerr,type='cannon')
+       splot.waveregions(aspec[0]/cont_cannon[0])
+       splot.waveregions(cspec,overplot=True)
+
+which gives
+
+.. image:: _readme_files/_continuum_cannon_example.png
+
+In the wavelength region shown, the two methods agree nicely (but they
+do not over the full wavelength range).
 
 Using MOOG
 +++++++++++
