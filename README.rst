@@ -450,6 +450,47 @@ Asking for tens of spectra simultaneously is more efficient, because
 you only need to run the FERRE setup once (but it becomes inefficient
 for many hundreds...).
 
+The APOGEE LSF and continuum normalization
++++++++++++++++++++++++++++++++++++++++++++
+
+The grids that are interpolated above are already convolved with the
+APOGEE LSF and are continuum normalized using the standard
+APOGEE/ASPCAP approach. When generating model spectra with other
+software tools (like MOOG below) one needs to convolve the model
+spectra with the APOGEE LSF and apply continuum normalization. This
+section briefly describes the tools available in this package for
+doing these things.
+
+Tools for handling the APOGEE LSF are in the ``apogee.spec.lsf``
+module. The most important functions here are ``lsf.eval`` and
+``lsf.convolve``. ``lsf.eval`` evaluates the LSF for a given fiber (or
+an average of several fibers) on a grid of pixel offsets (in units of
+the apStar logarithmic wavlength grid). These pixel offsets need to
+have a spacing ``1/integer`` and the LSF will be evaluated on the
+apStar wavelength grid subdivided by the same amount (so if
+``integer=3``, the ouput will be on the apStar wavelength grid in
+pixel,pixel+1/3,pixel+2/3, pixel+1, etc.). This allows the convolution
+to be performed efficiently.
+
+``lsf.convolve`` convolves with both the APOGEE LSF and a
+macroturbulence, modeled as a Gaussian smoothing with a given
+FWHM. The convolution is implemented efficiently as a sparse-matrix
+multiplication. The LSF obtained from ``lsf.eval`` can be returned in
+this sparse format or you can yourself compute the sparse
+representation by running ``lsf.sparsify``.
+
+The average DR12 LSFs for 6 fibers (the standard LSF for ASPCAP
+analysis) or for all fibers is pre-computed and stored online at `this
+URL <http://dx.doi.org/10.5281/zenodo.16147>`__. They can be
+downloaded and loaded using ``lsf._load_precomp``. Various of the
+spectral analysis functions described below automatically download and
+load these LSFs.
+
+``apogee.spec.lsf`` also contains functions to deal with the raw
+LSF. This includes the ``wavelength->pixel`` and ``pixel->wavelength``
+solution, unpacking the parameters of the LSF, and evaluating the raw
+LSF using the LSF parameters.
+
 Using MOOG
 +++++++++++
 
