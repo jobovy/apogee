@@ -10,6 +10,8 @@ import numpy
 from scipy import interpolate
 import apogee.spec.lsf as aplsf
 import apogee.spec.continuum as apcont
+import apogee.spec.window as apwindow
+from apogee.spec.plot import apStarWavegrid
 import apogee.tools.path as appath
 import apogee.tools.download as download
 _WMIN_DEFAULT= 15000.000
@@ -222,7 +224,143 @@ def synth(*args,**kwargs):
     # Now continuum-normalize
     if cont.lower() == 'true':
         # Get the true continuum on the apStar wavelength grid
-        from apogee.spec.plot import apStarWavegrid
+        apWave= apStarWavegrid()
+        baseline= numpy.polynomial.Polynomial.fit(mwav,cflux,4)
+        ip= interpolate.InterpolatedUnivariateSpline(mwav,
+                                                     cflux/baseline(mwav),
+                                                     k=3)
+        cflux= baseline(apWave)*ip(apWave)
+        # Divide it out
+        out/= numpy.tile(cflux,(nsynth,1))
+    elif not cont is None:
+        cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
+        out/= cflux
+    return out
+
+def windows(*args,**kwargs):
+    """
+    NAME:
+       windows
+    PURPOSE:
+       Generate model APOGEE spectra using MOOG in selected wavelength windows (but the whole APOGEE spectral range is returned): this is a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
+    INPUT ARGUMENTS:
+       Windows specification: Provide one of
+          (1) Element string: the APOGEE windows for this element will be loaded
+          (2) startindxs, endindxs= start and end indexes of the windows on the apStar wavelength grid
+          (3) startlams, endlams= start and end wavelengths in \AA
+       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
+          [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
+          [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
+          ...
+          [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
+    INPUT KEYWORDS:
+       BASELINE: you can specify the baseline spectrum to not always re-compute it
+          baseline= baseline c-normalized spectrum on MOOG wavelength grid (obtained from moogsynth)
+          mwav= MOOG wavelength grid (obtained from moogsynth)
+          cflux= continuum flux from MOOG
+          Typically, you can obtain these three keywords by doing (kwargs are the keywords you provide to this function as well)
+          >>> baseline= moogsynth(**kwargs)[1]
+          >>> mwav, cflux= moogsynth(doflux=True,**kwargs)
+       LSF:
+          lsf= ('all') LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if 'all' or 'combo' a pre-computed version will be downloaded from the web
+          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+          vmacro= (6.) macroturbulence to apply
+       CONTINUUM:
+          cont= ('aspcap') continuum-normalization to apply:
+             None: no continuum normalization
+             'true': Use the true continuum
+             'aspcap': Use the continuum normalization method of ASPCAP DR12
+             'cannon': Normalize using continuum pixels derived from the Cannon
+       SYNTHESIS:
+          linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+          wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
+          lib= ('kurucz_filled') spectral library
+       MODEL ATMOSPHERE PARAMETERS:
+          teff= (4500) grid-point Teff
+          logg= (2.5) grid-point logg
+          metals= (0.) grid-point metallicity
+          cfe= (0.) grid-point carbon-enhancement
+          afe= (0.) grid-point alpha-enhancement
+          vmicro= (2.) grid-point microturbulence
+       MISCELLANEOUS:
+          dr= return the path corresponding to this data release
+    OUTPUT:
+       (wavelengths,spectra (nspec,nwave)) for synth driver
+       (wavelengths,continuum spectr (nwave)) for doflux driver     
+    HISTORY:
+       2015-03-18 - Written - Bovy (IAS)
+    """
+    # Check that we have the LSF and store the relevant keywords
+    lsf= kwargs.pop('lsf','all')
+    if isinstance(lsf,str):
+        xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
+    else:
+        xlsf= kwargs.pop('xlsf',None)
+        if xlsf is None: raise ValueError('xlsf input needs to be given if the LSF is given as an array')
+    vmacro= kwargs.pop('vmacro',6.)
+    # Parse continuum-normalization keywords
+    cont= kwargs.pop('cont','aspcap')
+    # Parse the wavelength regions
+    apWave= apStarWavegrid()
+    if isinstance(args[0],str): #element string given
+        si,ei= apwindow.waveregions(args[0],pad=3,asIndex=True)
+        args= args[1:]
+    else:
+        if isinstance(args[0][0],int): # assume index
+            si,ei= args[0], args[1]
+        else: # assume wavelengths in \AA
+            sl,el= args[0], args[1]
+            # Convert to index
+            si, ei= [], []
+            for s,e in zip(sl,el):
+                # Find closest index into apWave
+                si.append(numpy.argmin(numpy.fabs(s-apWave)))
+                ei.append(numpy.argmin(numpy.fabs(e-apWave)))
+        args= args[2:]
+    # Run MOOG synth for the whole wavelength range as a baseline, also contin
+    baseline= kwargs.pop('baseline',None)
+    if baseline is None:
+        baseline= moogsynth(**kwargs)[1] 
+    elif isinstance(baseline,tuple): #probably accidentally gave wav as well
+        baseline= baseline[1]
+    mwav= kwargs.pop('mwav',None)
+    cflux= kwargs.pop('cflux',None)
+    if mwav is None or cflux is None:
+        mwav, cflux= moogsynth(doflux=True,**kwargs)
+    # Convert the apStarWavegrid windows to moogWavegrid regions
+    sm,em= [], []
+    for start,end in zip(si,ei):
+        sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
+        em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
+    # Run MOOG synth for all abundances and all windows
+    if len(args) == 0: #special case that there are *no* differences
+        args= ([26,0.],)
+    nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
+    nsynth= numpy.amax(nsynths) #Take the longest abundance list
+    out= numpy.tile(baseline,(nsynth,1))
+    # Run all windows
+    for start, end in zip(sm,em):
+        kwargs['wmin']= mwav[start]
+        kwargs['wmax']= mwav[end]
+        # Check whether the number of syntheses is > 5 and run multiple 
+        # MOOG instances if necessary, bc MOOG only does 5 at a time
+        ninstances= int(numpy.ceil(nsynth/5.))
+        for ii in range(ninstances):
+            newargs= ()
+            for jj in range(len(args)):
+                tab= [args[jj][0]]
+                if len(args[jj][5*ii+1:5*(ii+1)+1]) > 0:
+                    tab.extend(args[jj][5*ii+1:5*(ii+1)+1])
+                    newargs= newargs+(tab,)
+            out[5*ii:5*(ii+1),start:end+1]= moogsynth(*newargs,**kwargs)[1] 
+    # Now multiply each continuum-normalized spectrum with the continuum
+    out*= numpy.tile(cflux,(nsynth,1))
+    # Now convolve with the LSF
+    out= aplsf.convolve(mwav,out,
+                        lsf=lsf,xlsf=xlsf,vmacro=vmacro)
+    # Now continuum-normalize
+    if cont.lower() == 'true':
+        # Get the true continuum on the apStar wavelength grid
         apWave= apStarWavegrid()
         baseline= numpy.polynomial.Polynomial.fit(mwav,cflux,4)
         ip= interpolate.InterpolatedUnivariateSpline(mwav,
