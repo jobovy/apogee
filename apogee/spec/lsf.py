@@ -382,8 +382,8 @@ def _load_precomp(dr=None,fiber='combo'):
     filePath= os.path.join(fileDir,'apogee-lsf-dr%s-%s.fits' % (dr,fiber))
     # Download the file if necessary
     if not os.path.exists(filePath):
-        raise NotImplementedError('Downloading currently not supported')
-        dlink= 'XXX'
+        dlink= \
+            filePath.replace(fileDir,'https://zenodo.org/record/16147/files')
         _download_file(dlink,filePath,dr)
     x= numpy.linspace(-7.,7.,43)
     elsf= fitsio.read(filePath)
