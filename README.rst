@@ -491,6 +491,47 @@ LSF. This includes the ``wavelength->pixel`` and ``pixel->wavelength``
 solution, unpacking the parameters of the LSF, and evaluating the raw
 LSF using the LSF parameters.
 
+Tools for working with the continuum normalization are included in
+``apogee.spec.continuum``. The main routine that is useful is
+``continuum.fit`` which fits the continuum to a set of spectra and
+their uncertainties using one of two methods (specified using the
+``type=`` keyword) and returns the continuum for each spectrum. 
+
+The first method is ``type='aspcap'``, which is also the default. This
+is an implementation of the default APOGEE/ASPCAP
+continuum-normalization (see Garcia Perez et al. 2015), which
+iteratively searches for the upper envelope of the spectrum. An
+example of this procedure is the following::
+
+	aspec= apread.apStar(4159,'2M07000348+0319407',ext=1,header=False)[1]
+	aspecerr= apread.apStar(4159,'2M07000348+0319407',ext=2,header=False)[1]
+	# Input needs to be (nspec,nwave)
+	aspec= numpy.reshape(aspec,(1,len(aspec)))
+	aspecerr= numpy.reshape(aspecerr,(1,len(aspecerr)))
+	# Fit the continuum
+	from apogee.spec import continuum
+	cont= continuum.fit(aspec,aspecerr,type='aspcap')
+
+We can then compare this to the official continuum-normalized spectrum
+in ``aspcapStar``::
+
+	cspec= apread.aspcapStar(4159,'2M07000348+0319407',ext=1,header=False)
+	import apogee.spec.plot as splot
+	splot.waveregions(aspec[0]/cont[0])
+	splot.waveregions(cspec,overplot=True)
+	
+.. image:: _readme_files/_continuum_aspcap_example.png
+
+which demonstrates very good agreement.
+
+The second method is ``type='cannon'``, which is an implementation of
+a Cannon-style continuum-normalization (see `Ness et al. 2015
+<http://arxiv.org/abs/1501.07604>`__; see below). This method uses a
+pre-determined set of continuum pixels, which can be specified through
+``cont_pixels=``. A default set of pixels is included in the code;
+there is also a function ``continuum.pixels_cannon`` that can
+determine the continuum pixels.
+
 Using MOOG
 +++++++++++
 
