@@ -1,11 +1,15 @@
 ###############################################################################
 # apogee.spec.lsf: Utilities to work with APOGEE LSFs
 ###############################################################################
+import os, os.path
 from functools import wraps
 import math
 import numpy
 from scipy import special, interpolate, sparse, ndimage
+import fitsio
 import apogee.tools.read as apread
+import apogee.tools.path as appath
+from apogee.tools.download import _download_file
 from apogee.spec.plot import apStarWavegrid
 _SQRTTWO= numpy.sqrt(2.)
 # Load wavelength solutions
@@ -370,3 +374,17 @@ def pix2wave(pix,chip,fiber=300):
     out[pix < 0]= numpy.nan
     out[pix > 2047]= numpy.nan
     return out
+
+def _load_precomp(dr=None,fiber='combo'):
+    """Load a precomputed LSF"""
+    if dr is None: dr= appath._default_dr()
+    fileDir= os.path.dirname(appath.apLSFPath('a',dr=dr))
+    filePath= os.path.join(fileDir,'apogee-lsf-dr%s-%s.fits' % (dr,fiber))
+    # Download the file if necessary
+    if not os.path.exists(filePath):
+        raise NotImplementedError('Downloading currently not supported')
+        dlink= 'XXX'
+        _download_file(dlink,filePath,dr)
+    x= numpy.linspace(-7.,7.,43)
+    elsf= fitsio.read(filePath)
+    return (x,sparsify(elsf))
