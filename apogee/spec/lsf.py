@@ -28,7 +28,7 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
        lsf= (None) pre-calculated LSF array from apogee.spec.lsf.eval
        xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
        fiber= if lsf is None, the LSF is calculated for this fiber
-       vmacro= (6.) Gaussian macroturbulence smoothing to apply as well
+       vmacro= (6.) Gaussian macroturbulence smoothing to apply as well (FWHM)
     OUTPUT:
        spectrum on apStar wavelength grid
     HISTORY:
@@ -48,7 +48,8 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
     tmp= numpy.empty(len(l10wav)*hires)   
     # Setup vmacro
     if not vmacro is None:
-        sigvm= vmacro/3./10.**5./numpy.log(10.)*hires/dowav
+        sigvm= vmacro/3./10.**5./numpy.log(10.)*hires/dowav\
+            /2./numpy.sqrt(2.*numpy.log(2.))
     # Interpolate the input spectrum, starting from a polynomial baseline
     if len(spec.shape) == 1: spec= numpy.reshape(spec,(1,len(spec)))
     nspec= spec.shape[0]
