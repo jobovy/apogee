@@ -7,6 +7,7 @@ from galpy.util import bovy_plot
 import apogee.tools.path as appath
 import apogee.tools.download as apdownload
 from apogee.util import int_newton_cotes
+_OPSCALE= 'RHOX' # could also be 'ROSSTAU' for Rossland optical depth
 class Atlas9Atmosphere(object):
     """Atlas9Atmosphere: tools for dealing with ATLAS9 model atmospheres"""
     def __init__(self,teff=4500.,logg=2.5,metals=0.,am=0.,cm=0.,
@@ -30,13 +31,21 @@ class Atlas9Atmosphere(object):
         HISTORY:
            2015-03-19 - Started - Bovy (IAS)
         """
+        # Save the input parameters
+        self._teff= teff
+        self._logg= logg
+        self._metals= metals
+        self._am= am
+        self._cm= cm
         self._dr= dr
         # First establish whether this is a grid point in model atm space
-        self._isGrid= isGridPoint(teff,logg,metals,am,cm)
+        self._isGrid= isGridPoint(self._teff,self._logg,self._metals,self._am,
+                                  self._cm)
         # If it's a grid point, load the file
         if self._isGrid:
-            self._loadGridPoint(teff,logg,metals,am,cm)
+            self._loadGridPoint()
         else:
+            self._loadByInterpolation()
             raise NotImplementedError('Not using off-grid ATLAS9 models currently not implemented')
         # Calculate the Rossland optical depth
         self._rosslandtau()
@@ -101,16 +110,19 @@ class Atlas9Atmosphere(object):
                                    ylabel=ylabel,
                                    **kwargs)
 
-    def _loadGridPoint(self,teff,logg,metals,am,cm):
+    def _loadGridPoint(self):
         """Load the model corresponding to this grid point"""
         filePath= appath.modelAtmospherePath(lib='kurucz_filled',
-                                             teff=teff,logg=logg,metals=metals,
-                                             cfe=cm,afe=am,dr=self._dr)
+                                             teff=self._teff,logg=self._logg,
+                                             metals=self._metals,
+                                             cfe=self._cm,afe=self._am,
+                                             dr=self._dr)
         # Download if necessary
         if not os.path.exists(filePath):
             apdownload.modelAtmosphere(lib='kurucz_filled',
-                                       teff=teff,logg=logg,metals=metals,
-                                       cfe=cm,afe=am,dr=self._dr)
+                                       teff=self._teff,logg=self._logg,
+                                       metals=self._metals,
+                                       cfe=self._cm,afe=self._am,dr=self._dr)
         atContent= readAtlas9(filePath)
         # Unpack
         self._first4lines= atContent[0]
@@ -121,6 +133,19 @@ class Atlas9Atmosphere(object):
         self._nlayers= self._deck.shape[0]
         return None
     
+    def _loadByInterpolation(self):
+        """Load a model by interpolating on the grid"""
+        atContent= interpolateAtlas9(self._teff,self._logg,self._metals,
+                                     self._am,self._cm,dr=self._dr)
+        # Unpack
+        self._first4lines= atContent[0]
+        self._abscale= atContent[1]
+        self._abchanges= atContent[2]
+        self._deck= atContent[3]
+        self._pradk= atContent[4]
+        self._nlayers= self._deck.shape[0]
+        return None
+
     def _rosslandtau(self):
         """Calculate the Rossland mean optical depth"""
         rtau= numpy.zeros(self._nlayers)
@@ -129,22 +154,34 @@ class Atlas9Atmosphere(object):
         rtau+= self._deck[0,0]*self._deck[0,4]
         self.rosslandtau= rtau
 
-def isGridPoint(teff,logg,metals,am,cm):
+def isGridPoint(teff,logg,metals,am,cm,return_indiv=False):
     """
     NAME:
        isGridPoint
     PURPOSE:
        Determine whether this combination of parameters is at a grid point
     INPUT:
-       teff, logg, metals, am, cm (see __init__ of Atlas9Atmosphere, but I think they speak for themselves))
+       teff - effective temperature
+       logg - surface gravity (log10 cm/s^2)
+       metals - overall metallicity scale
+       am - overall alpha enhancement
+       cm - carbon enhancement
+       return_indiv= (False) if True, return True/False for teff,logg, ... separately (useful for figuring out whether any of the parameters lies at a grid point)
     OUTPUT:
        True or False
     HISTORY:
        2015-03-19 - Written - Bovy (IAS)
     """
+    if return_indiv:
+        teffIsGrid= True
+        loggIsGrid= True
+        metalsIsGrid= True
+        amIsGrid= True
+        cmIsGrid= True
     # Teff first
     if not (teff % 1 == 0. and int(teff) in appath._modelAtmKurucz_teffgrid):
-        return False
+        if return_indiv: teffIsGrid= False
+        else: return False
     # Determine logg grid and check logg
     if teff >= 3500. and teff <= 6000.:
         logggrid= appath._modelAtmKurucz_logggrid_G
@@ -157,10 +194,12 @@ def isGridPoint(teff,logg,metals,am,cm):
     else:
         logggrid= appath._modelAtmKurucz_logggrid_O
     if not (logg % 0.5 == 0. and logg in logggrid):
-        return False
+        if return_indiv: loggIsGrid= False
+        else: return False
     # Metallicity
     if not metals in appath._modelAtmKurucz_fehgrid:
-        return False
+        if return_indiv: metalsIsGrid= False
+        else: return False
     # Determine [C/M] grid and check [C/M]
     if metals <= -3.5:
         cmgrid= appath._modelAtmKurucz_cfegrid_lowm
@@ -169,7 +208,8 @@ def isGridPoint(teff,logg,metals,am,cm):
     else:
         cmgrid= appath._modelAtmKurucz_cfegrid_midm
     if not cm in cmgrid:
-        return False
+        if return_indiv: cmIsGrid= False
+        else: return False
     # Determine [a/M] grid and check [a/M]
     if metals <= -3.5:
         amgrid= appath._modelAtmKurucz_afegrid_lowm
@@ -178,17 +218,133 @@ def isGridPoint(teff,logg,metals,am,cm):
     else:
         amgrid= appath._modelAtmKurucz_afegrid_midm
     if not am in amgrid:
-        return False
+        if return_indiv: amIsGrid= False
+        else: return False
     # Check a few missing models
-    if metals == 1 and cm == 1 and am == -1.5: return False
-    if metals == 1 and cm == 1 and am == -1.: return False
-    if metals == 1.5 and cm == 0.5 and am == -1.5: return False
-    if metals == 1.5 and cm == 1. and am == -1.5: return False
-    if metals == 1.5 and cm == 1. and am == -1.: return False
-    if metals == 1.5 and cm == 1. and am == -0.5: return False
-    if metals == 1.5 and cm == 1. and am == 0.: return False
+    missing= False
+    if metals == 1 and cm == 1 and am == -1.5: missing= True
+    if metals == 1 and cm == 1 and am == -1.: missing= True
+    if metals == 1.5 and cm == 0.5 and am == -1.5: missing= True
+    if metals == 1.5 and cm == 1. and am == -1.5: missing= True
+    if metals == 1.5 and cm == 1. and am == -1.: missing= True
+    if metals == 1.5 and cm == 1. and am == -0.5: missing= True
+    if metals == 1.5 and cm == 1. and am == 0.: missing= True
+    if return_indiv and missing:
+        metalsIsGrid= False
+        amIsGrid= False
+        amIsGrid= False
+    elif missing: return False
     # If we're here, it must be a grid point!
-    return True
+    if return_indiv:
+        return (teffIsGrid,loggIsGrid,metalsIsGrid,amIsGrid,cmIsGrid)
+    else:
+        return True
+
+def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
+    """
+    NAME:
+       interpolateAtlas9
+    PURPOSE:
+       interpolate on the ATLAS9 grid
+    INPUT:
+       teff - effective temperature
+       logg - surface gravity (log10 cm/s^2)
+       metals - overall metallicity scale
+       am - overall alpha enhancement
+       cm - carbon enhancement
+       dr= (None) load model atmospheres from this data release
+    OUTPUT:
+       stuff
+    HISTORY:
+       2015-03-20 - Written - Bovy (IAS)
+    """
+    # Using simple linear interpolation between the nearest grid points for now
+    # Find the hypercube in the grid that this point lies in
+    # Teff
+    tdiff= teff-appath._modelAtmKurucz_teffgrid
+    tefflow= (appath._modelAtmKurucz_teffgrid[tdiff > 0])[-1]
+    teffhigh= (appath._modelAtmKurucz_teffgrid[tdiff < 0])[0]
+    # Logg
+    if teff >= 3500. and teff <= 6000.:
+        logggrid= appath._modelAtmKurucz_logggrid_G
+    elif teff > 6000. and teff <= 8000.:
+        logggrid= appath._modelAtmKurucz_logggrid_F
+    elif teff > 8000 and teff <= 12000.:
+        logggrid= appath._modelAtmKurucz_logggrid_A
+    elif teff > 12000 and teff <= 20000:
+        logggrid= appath._modelAtmKurucz_logggrid_B
+    else:
+        logggrid= appath._modelAtmKurucz_logggrid_O
+    ldiff= logg-logggrid
+    logglow= (logggrid[ldiff > 0])[-1]
+    logghigh= (logggrid[ldiff < 0])[0]
+    # Metallicity
+    mdiff= metals-appath._modelAtmKurucz_fehgrid
+    metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[0]
+    metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[1]
+    # [C/M]
+    if metals <= -3.5:
+        cmgrid= appath._modelAtmKurucz_cfegrid_lowm
+    elif metals >= 1:
+        cmgrid= appath._modelAtmKurucz_cfegrid_him
+    else:
+        cmgrid= appath._modelAtmKurucz_cfegrid_midm
+    cdiff= cm-cmgrid
+    cmlow= (cmgrid[cdiff > 0])[-1]
+    cmhigh= (cmgrid[cdiff < 0])[0]
+    # [a/M]
+    if metals <= -3.5:
+        amgrid= appath._modelAtmKurucz_afegrid_lowm
+    elif metals >= 1:
+        amgrid= appath._modelAtmKurucz_afegrid_him
+    else:
+        amgrid= appath._modelAtmKurucz_afegrid_midm
+    adiff= am-amgrid
+    amlow= (amgrid[adiff > 0])[-1]
+    amhigh= (amgrid[adiff < 0])[0]
+    # Determine whether any of the parameters is on a grid point
+    paramIsGrid= isGridPoint(teff,logg,metals,am,cm,return_indiv=True)
+    print tefflow, teffhigh
+    print logglow, logghigh
+    print metalslow, metalshigh
+    print amlow, amhigh
+    print cmlow, cmhigh  
+    print paramIsGrid
+    # Determine whether to interpolate over this parameter or not (if it's grid)
+    if paramIsGrid[0]: tes= [teff]
+    else: tes= [tefflow,teffhigh]
+    if paramIsGrid[1]: lgs= [logg]
+    else: lgs= [logglow,logghigh]
+    if paramIsGrid[2]: mes= [metals]
+    else: mes= [metalslow,metalshigh]
+    if paramIsGrid[3]: ams= [am]
+    else: ams= [amlow,amhigh]
+    if paramIsGrid[4]: cms= [cm]
+    else: cms= [cmlow,cmhigh]    
+    # Load all of the models surrounding this point, also store the min and
+    # max of the opacity scale that we use to interpolate the models on
+    models= []
+    opmin, opmax= [], []
+    for te in tes:
+        for lg in lgs:
+            for me in mes:
+                for a in ams:
+                    for c in cms:
+                        tatm= Atlas9Atmosphere(te,lg,me,a,c,dr=dr)
+                        models.append(tatm)
+                        if _OPSCALE.lower() == 'rhox':
+                            opmin.append(numpy.amin(tatm._deck[:,0]))
+                            opmax.append(numpy.amax(tatm._deck[:,0]))
+                        elif _OPSCALE.lower() == 'rosstau':
+                            opmin.append(numpy.amin(tatm.rosslandtau))
+                            opmax.append(numpy.amax(tatm.rosslandtau))
+    # Interpolate each model atmosphere onto a common opacity scale
+    opmin= numpy.amax(opmin)
+    opmax= numpy.amin(opmax)
+    for tatm in models:
+        tatm.interpOpacityScale(opmin,opmax)
+    # Now interpolate each layer
+    return None
 
 def readAtlas9(filePath):
     """
