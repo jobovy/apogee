@@ -304,7 +304,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
-    _download_file(downloadPath,filePath,dr,verbose=True,spider=spider)
+    _download_file(downloadPath,filePath,dr,spider=spider)
     return None
 
 def linelist(linelist,dr=None,spider=False):
@@ -322,7 +322,7 @@ def linelist(linelist,dr=None,spider=False):
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'X'
+    if dr is None: dr= 'bosswork'
     # First make sure the file doesn't exist
     filePath= path.linelistPath(linelist,dr=dr)
     if os.path.exists(filePath): return None
