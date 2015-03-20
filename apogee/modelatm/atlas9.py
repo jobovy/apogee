@@ -3,8 +3,10 @@
 ###############################################################################
 import os, os.path
 import numpy
+from galpy.util import bovy_plot
 import apogee.tools.path as appath
 import apogee.tools.download as apdownload
+from apogee.util import int_newton_cotes
 class Atlas9Atmosphere(object):
     """Atlas9Atmosphere: tools for dealing with ATLAS9 model atmospheres"""
     def __init__(self,teff=4500.,logg=2.5,metals=0.,am=0.,cm=0.,
@@ -34,7 +36,68 @@ class Atlas9Atmosphere(object):
         # If it's a grid point, load the file
         if self._isGrid:
             self._loadGridPoint(teff,logg,metals,am,cm)
+        else:
+            raise NotImplmentedError('Not using off-grid ATLAS9 models currently not implemented')
+        # Calculate the Rossland optical depth
+        self._rosslandtau()
         return None
+
+    def plot(self,y,log=None,**kwargs):
+        """
+        NAME:
+           plot
+        PURPOSE:
+           plot the structure of the model atmosphere
+        INPUT:
+           y= Atmospheric parameter to plot vs. Rossland optical depth
+           galpy.util.bovy_plot plotting kwargs
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2015-03-20 - Written - Bovy (IAS)
+        """
+        # Load atmospheric quantity
+        if y.upper() == 'RHOX':
+            indx= 0
+            ylabel= r'$\rho\,x$'
+        elif y.upper() == 'T':
+            indx= 1
+            ylabel= r'$T\,(\mathrm{K})$'
+        elif y.upper() == 'P':
+            indx= 2
+            ylabel= r'$P\,(\mathrm{dyne\,cm}^{-2})$'
+            log= True
+        elif y.upper() == 'XNE':
+            indx= 3
+            ylabel= r'$\mathrm{XNE}$'
+        elif y.upper() == 'ABROSS':
+            indx= 4
+            ylabel= r'$\kappa_{\mathrm{Rossland}}$'
+            log= True
+        elif y.upper() == 'ACCRAD':
+            indx= 5 
+            ylabel= r'$\mathrm{ACCRAD}$'
+        elif y.upper() == 'VTURB':
+            indx= 6
+            ylabel= r'$v_{\mathrm{turb}}\,(\mathrm{cm\,s}^{-1})$'
+        elif y.upper() == 'FLXCNV':
+            indx= 7
+            ylabel= r'$\mathrm{FLXCONV}$'
+        elif y.upper() == 'VCONV':
+            indx= 8
+            ylabel= r'$\mathrm{VCONV}$'
+        elif y.upper() == 'VELSND':
+            indx= 9
+            ylabel= r'$\mathrm{VELSND}$'
+        y= self._deck[:,indx]
+        if log:
+            y= numpy.log10(y)
+            ylabel= r'$\log_{10}$'+ylabel
+        x= numpy.log10(self.rosslandtau)
+        return bovy_plot.bovy_plot(x,y,
+                                   xlabel=r'$\log_{10}\tau_{\mathrm{Rossland}}$',
+                                   ylabel=ylabel,
+                                   **kwargs)
 
     def _loadGridPoint(self,teff,logg,metals,am,cm):
         """Load the model corresponding to this grid point"""
@@ -53,7 +116,16 @@ class Atlas9Atmosphere(object):
         self._abchanges= atContent[2]
         self._deck= atContent[3]
         self._pradk= atContent[4]
+        self._nlayers= self._deck.shape[0]
         return None
+    
+    def _rosslandtau(self):
+        """Calculate the Rossland mean optical depth"""
+        rtau= numpy.zeros(self._nlayers)
+        for ii in range(1,self._nlayers):
+            rtau[ii]= int_newton_cotes(self._deck[:ii+1,0],self._deck[:ii+1,4])
+        rtau+= self._deck[0,0]*self._deck[0,4]
+        self.rosslandtau= rtau
 
 def isGridPoint(teff,logg,metals,am,cm):
     """
