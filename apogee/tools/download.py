@@ -294,7 +294,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'X'
+    if dr is None: dr= 'bosswork'
     # First make sure the file doesn't exist
     filePath= path.modelAtmospherePath(lib=lib,teff=teff,logg=logg,
                                        metals=metals,cfe=cfe,afe=afe,

@@ -37,7 +37,7 @@ class Atlas9Atmosphere(object):
         if self._isGrid:
             self._loadGridPoint(teff,logg,metals,am,cm)
         else:
-            raise NotImplmentedError('Not using off-grid ATLAS9 models currently not implemented')
+            raise NotImplementedError('Not using off-grid ATLAS9 models currently not implemented')
         # Calculate the Rossland optical depth
         self._rosslandtau()
         return None
