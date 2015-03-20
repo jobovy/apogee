@@ -60,6 +60,7 @@ class Atlas9Atmosphere(object):
         if y.upper() == 'RHOX':
             indx= 0
             ylabel= r'$\rho\,x$'
+            log= True
         elif y.upper() == 'T':
             indx= 1
             ylabel= r'$T\,(\mathrm{K})$'
@@ -70,6 +71,7 @@ class Atlas9Atmosphere(object):
         elif y.upper() == 'XNE':
             indx= 3
             ylabel= r'$\mathrm{XNE}$'
+            log= True
         elif y.upper() == 'ABROSS':
             indx= 4
             ylabel= r'$\kappa_{\mathrm{Rossland}}$'
