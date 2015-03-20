@@ -3,6 +3,7 @@
 ###############################################################################
 import os, os.path
 import numpy
+from scipy import interpolate
 from galpy.util import bovy_plot
 import apogee.tools.path as appath
 import apogee.tools.download as apdownload
@@ -88,6 +89,7 @@ class Atlas9Atmosphere(object):
         elif y.upper() == 'ACCRAD':
             indx= 5 
             ylabel= r'$\mathrm{ACCRAD}$'
+            log= True
         elif y.upper() == 'VTURB':
             indx= 6
             ylabel= r'$v_{\mathrm{turb}}\,(\mathrm{cm\,s}^{-1})$'
@@ -109,6 +111,41 @@ class Atlas9Atmosphere(object):
                                    xlabel=r'$\log_{10}\tau_{\mathrm{Rossland}}$',
                                    ylabel=ylabel,
                                    **kwargs)
+
+    def interpOpacityScale(self,opmin,opmax):
+        """
+        NAME:
+           interpOpacityScale
+        PURPOSE:
+           interpolate the model atmpsphere onto a new opacity grid
+        INPUT:
+           opmin - mininum of the new opacity grid
+           opmax - maximum of the new opacity grid
+        OUTPUT:
+           (none; just updates the instance)
+        HISTORY:
+           2015-03-20 - Written - Bovy (IAS)
+        """
+        # We integrate in log10 of the opacity scale
+        newl10op= numpy.linspace(numpy.log10(opmin),
+                                 numpy.log10(opmax),
+                                 self._nlayers)
+        interpLog= [True,False,True,True,True,
+                    True,False,False,False,False]
+        if _OPSCALE.lower() == 'rhox':
+            ipx= numpy.log10(self._deck[:,0])
+        elif _OPSCALE.lower() == 'rosstau':
+            ipx= numpy.log10(self.rosslandtau)
+        for ii in range(7): # we don't interpolate FLXCNV,VCONV,VELSND
+            ipy= self._deck[:,ii]
+            if interpLog[ii]: ipy= numpy.log10(ipy)
+            ip= interpolate.InterpolatedUnivariateSpline(ipx,ipy,k=3)
+            ipout= ip(newl10op)
+            if interpLog[ii]: ipout= 10.**ipout
+            self._deck[:,ii]= ipout
+        # Re-calculate the Rossland optical depth
+        self._rosslandtau()
+        return None
 
     def _loadGridPoint(self):
         """Load the model corresponding to this grid point"""
