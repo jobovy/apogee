@@ -25,21 +25,34 @@ def convert_modelAtmosphere(**kwargs):
     PURPOSE:
        Convert a model atmosphere to MOOG format
     INPUT:
-       lib= ('kurucz_filled') spectral library
-       teff= (4500) grid-point Teff
-       logg= (2.5) grid-point logg
-       metals= (0.) grid-point metallicity
-       cfe= (0.) grid-point carbon-enhancement
-       afe= (0.) grid-point alpha-enhancement
-       vmicro= (2.) grid-point microturbulence
-       dr= return the path corresponding to this data release
+       Either:
+          (a) modelatm= (None) can be set to the filename of a model atmosphere
+          (b) specify the stellar parameters for a grid point in model atm by
+              - lib= ('kurucz_filled') spectral library
+              - teff= (4500) grid-point Teff
+              - logg= (2.5) grid-point logg
+              - metals= (0.) grid-point metallicity
+              - cfe= (0.) grid-point carbon-enhancement
+              - afe= (0.) grid-point alpha-enhancement
+              - dr= return the path corresponding to this data release
+       vmicro= (2.) microturbulence (km/s) (only used if the MOOG-formatted atmosphere file doesn't already exist)
     OUTPUT:
        (none; just converts and caches the model atmosphere
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
+       2015-03-21 - Adjusted to also work for off-grid atmosphers - Bovy (IAS)
     """
     # Get the filename of the model atmosphere
-    modelfilename= appath.modelAtmospherePath(**kwargs)
+    modelatm= kwargs.pop('modelatm',None)
+    if not modelatm is None:
+        if isinstance(modelatm,str) and os.path.exists(modelatm):
+            modelfilename= modelatm
+        elif isinstance(modelatm,str):
+            raise ValueError('modelatm= input is a non-existing filename')
+        else: # model atmosphere instance
+            raise ValueError('modelatm= in moogsynth should be set to the name of a file')
+    else:
+        modelfilename= appath.modelAtmospherePath(**kwargs)
     modeldirname= os.path.dirname(modelfilename)
     modelbasename= os.path.basename(modelfilename)
     outname= modelbasename.replace('.mod','.org')
@@ -179,8 +192,7 @@ def synth(*args,**kwargs):
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
-       (wavelengths,spectra (nspec,nwave)) for synth driver
-       (wavelengths,continuum spectr (nwave)) for doflux driver     
+       spectra (nspec,nwave)
     HISTORY:
        2015-03-15 - Written - Bovy (IAS)
     """
@@ -386,18 +398,23 @@ def moogsynth(*args,**kwargs):
           [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
           ...
           [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
-    INPUT KEYWORDS:
-       linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+    SYNTHEIS KEYWORDS:
        wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        doflux= (False) if True, calculate the continuum flux instead
-       lib= ('kurucz_filled') spectral library
-       teff= (4500) grid-point Teff
-       logg= (2.5) grid-point logg
-       metals= (0.) grid-point metallicity
-       cfe= (0.) grid-point carbon-enhancement
-       afe= (0.) grid-point alpha-enhancement
-       vmicro= (2.) grid-point microturbulence
-       dr= return the path corresponding to this data release
+    LINELIST KEYWORDS:
+       linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere; otherwise can be set to the path of a linelist file or to the name of an APOGEE linelist
+    ATMOSPHERE KEYWORDS:
+       Either:
+          (a) modelatm= (None) can be set to the filename of a model atmosphere
+          (b) specify the stellar parameters for a grid point in model atm by
+              - lib= ('kurucz_filled') spectral library
+              - teff= (4500) grid-point Teff
+              - logg= (2.5) grid-point logg
+              - metals= (0.) grid-point metallicity
+              - cfe= (0.) grid-point carbon-enhancement
+              - afe= (0.) grid-point alpha-enhancement
+              - dr= return the path corresponding to this data release
+       vmicro= (2.) microturbulence (km/s) (only used if the MOOG-formatted atmosphere file doesn't already exist)
     OUTPUT:
        (wavelengths,spectra (nspec,nwave)) for synth driver
        (wavelengths,continuum spectr (nwave)) for doflux driver     
@@ -412,7 +429,20 @@ def moogsynth(*args,**kwargs):
     width= kwargs.pop('width',_WIDTH_DEFAULT)
     linelist= kwargs.pop('linelist',None)
     # Get the filename of the model atmosphere
-    modelfilename= appath.modelAtmospherePath(**kwargs)
+    modelatm= kwargs.pop('modelatm',None)
+    if not modelatm is None:
+        if isinstance(modelatm,str) and os.path.exists(modelatm):
+            modelfilename= modelatm
+        elif isinstance(modelatm,str):
+            raise ValueError('modelatm= input is a non-existing filename')
+        else: # model atmosphere instance
+            raise ValueError('modelatm= in moogsynth should be set to the name of a file')
+        # Check whether a MOOG version exists
+        if not os.path.exists(modelatm.replace('.mod','.org')):
+            # Convert to MOOG format
+            convert_modelAtmosphere(modelatm=modelatm,**kwargs)
+    else:
+        modelfilename= appath.modelAtmospherePath(**kwargs)
     modeldirname= os.path.dirname(modelfilename)
     modelbasename= os.path.basename(modelfilename)
     # Get the name of the linelist
@@ -421,6 +451,8 @@ def moogsynth(*args,**kwargs):
         if not os.path.exists(os.path.join(modeldirname,linelistfilename)):
             raise IOError('No linelist given and no weed-out version found for this atmosphere; either specify a linelist or run weedout first')
         linelistfilename= os.path.join(modeldirname,linelistfilename)
+    elif os.path.exists(linelist):
+        linelistfilename= linelist
     else:
         linelistfilename= appath.linelistPath(linelist,
                                               dr=kwargs.get('dr',None))
