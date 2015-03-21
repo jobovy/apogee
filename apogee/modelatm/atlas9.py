@@ -502,6 +502,7 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
     totz= 0.
     for key in abchanges:
         if key > 2: totz+= 10.**abchanges[key]
+    totz*= abscale
     abchanges[1]= models[0]._abchanges[1]\
         /(models[0]._abchanges[1]+models[0]._abchanges[2])*(1.-totz)
     abchanges[2]= models[0]._abchanges[2]\
