@@ -148,6 +148,56 @@ class Atlas9Atmosphere(object):
         self._rosslandtau()
         return None
 
+    def writeto(self,filename):
+        """
+        NAME:
+           writeto
+        PURPOSE:
+           write the model atmosphere to a file in the KURUCZ format
+        INPUT:
+           filename - name of the file to which the atmosphere will be written
+        OUTPUT:
+           (none; just writes the file)
+        HISTORY:
+           2015-03-20 - Written - Bovy (IAS)
+        """
+        with open(filename,'r') as outfile:
+            # Write the first four lines
+            for ii in range(4):
+                outfile.write(self._firstfourlines[ii].strip())
+            # Write the abundance scale and start on the abundance changes
+            newline= 'ABUNDANCE SCALE   %.5f ABUNDANCE CHANGE %i %.5f %i %.5f'\
+                % (self._abscale,1,self._abscale[1],2,self._abscale[2])
+            outfile.write(newline)
+            nablines= int(numpy.ceil((len(self._abchanges)-2)/6.))
+            abkeys= sorted(self._abchanges.keys())
+            for ii in range(nablines-1):
+                newline= 'ABUNDANCE CHANGE %i %.5f %i %.5f %i %.5f %i %.5f %i %.5f %i %.5f' \
+                    % (abkeys[6*ii+2],self._abchanges[abkeys[6*ii+2]],
+                       abkeys[6*ii+3],self._abchanges[abkeys[6*ii+3]],
+                       abkeys[6*ii+4],self._abchanges[abkeys[6*ii+4]],
+                       abkeys[6*ii+5],self._abchanges[abkeys[6*ii+5]],
+                       abkeys[6*ii+6],self._abchanges[abkeys[6*ii+6]],
+                       abkeys[6*ii+7],self._abchanges[abkeys[6*ii+7]])
+                outfile.write(newline)
+            nablastline= (len(self._abchanges)-2) % 6
+            newline= 'ABUNDANCE CHANGE'
+            for ii in range(nablastline):
+                newline+= ' %i %.5f' % (abkeys[(nablines-1)*6+2+ii],
+                                        self._abchanges[abkeys[(nablines-1)*6+2+ii]])
+            outfile.write(newline)
+            # Write the deck
+            outfile.write('READ DECK6 72 RHOX,T,P,XNE,ABROSS,ACCRAD,VTURB, FLXCNV,VCONV,VELSND')
+            for ii in range(self._nlayers):
+                # NEEDS ATTENTION
+                newline= '%.8e %.1f %.4e %.4e %.4e %.3e %.3e %.3e %.3e %.3e' %\
+                    tuple(self._deck[ii,:])
+                outfile.write(newline.replace('e','E'))
+            # Print PRADK
+            outfile.write('PRADK %.4e' % self._pradk)
+            outfile.write('BEGIN                    ITERATION  15 COMPLETED')
+            return None
+
     def _loadGridPoint(self):
         """Load the model corresponding to this grid point"""
         filePath= appath.modelAtmospherePath(lib='kurucz_filled',
