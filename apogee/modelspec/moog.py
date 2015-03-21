@@ -385,12 +385,12 @@ def moogsynth(*args,**kwargs):
             raise ValueError('modelatm= input is a non-existing filename')
         else: # model atmosphere instance
             raise ValueError('modelatm= in moogsynth should be set to the name of a file')
-        # Check whether a MOOG version exists
-        if not os.path.exists(modelatm.replace('.mod','.org')):
-            # Convert to MOOG format
-            convert_modelAtmosphere(modelatm=modelatm,**kwargs)
     else:
         modelfilename= appath.modelAtmospherePath(**kwargs)
+    # Check whether a MOOG version exists
+    if not os.path.exists(modelfilename.replace('.mod','.org')):
+        # Convert to MOOG format
+        convert_modelAtmosphere(modelatm=modelfilename,**kwargs)
     modeldirname= os.path.dirname(modelfilename)
     modelbasename= os.path.basename(modelfilename)
     # Get the name of the linelist
