@@ -185,12 +185,16 @@ class Atlas9Atmosphere(object):
         self._nlayers= self._deck.shape[0]
         return None
 
-    def _rosslandtau(self):
+    def _rosslandtau(self,force=False):
         """Calculate the Rossland mean optical depth"""
-        rtau= numpy.zeros(self._nlayers)
-        for ii in range(1,self._nlayers):
-            rtau[ii]= int_newton_cotes(self._deck[:ii+1,0],self._deck[:ii+1,4])
-        rtau+= self._deck[0,0]*self._deck[0,4]
+        if force:
+            rtau= numpy.zeros(self._nlayers)
+            for ii in range(1,self._nlayers):
+                rtau[ii]= int_newton_cotes(self._deck[:ii+1,0],
+                                           self._deck[:ii+1,4])
+            rtau+= self._deck[0,0]*self._deck[0,4]
+        else:
+            rtau= 10.**(numpy.linspace(-6.875,2.,self._nlayers))
         self.rosslandtau= rtau
 
 def isGridPoint(teff,logg,metals,am,cm,return_indiv=False):
@@ -396,11 +400,13 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
                         elif interp_x.lower() == 'rosstau':
                             opmin.append(numpy.amin(tatm.rosslandtau))
                             opmax.append(numpy.amax(tatm.rosslandtau))
-    # Interpolate each model atmosphere onto a common opacity scale
-    opmin= numpy.amax(opmin)
-    opmax= numpy.amin(opmax)
-    for tatm in models:
-        tatm.interpOpacityScale(opmin,opmax)
+    # Interpolate each model atmosphere onto a common opacity scale, 
+    # if not rosstau (because all models have the same rossland tau scale)
+    if not interp_x.lower() == 'rosstau':
+        opmin= numpy.amax(opmin)
+        opmax= numpy.amin(opmax)
+        for tatm in models:
+            tatm.interpOpacityScale(opmin,opmax)
     # Now interpolate each layer
     coord= []
     if not paramIsGrid[0]: coord.append([(teff-tefflow)/(teffhigh-tefflow)])
