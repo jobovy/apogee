@@ -8,7 +8,7 @@ from galpy.util import bovy_plot
 import apogee.tools.path as appath
 import apogee.tools.download as apdownload
 from apogee.util import int_newton_cotes
-_OPSCALE= 'RHOX' # could also be 'ROSSTAU' for Rossland optical depth
+_OPSCALE= 'ROSSTAU' # could be 'ROSSTAU' for Rossland optical depth or 'RHOX'
 class Atlas9Atmosphere(object):
     """Atlas9Atmosphere: tools for dealing with ATLAS9 model atmospheres"""
     def __init__(self,teff=4500.,logg=2.5,metals=0.,am=0.,cm=0.,
