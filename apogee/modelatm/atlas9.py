@@ -12,7 +12,7 @@ _OPSCALE= 'ROSSTAU' # could be 'ROSSTAU' for Rossland optical depth or 'RHOX'
 class Atlas9Atmosphere(object):
     """Atlas9Atmosphere: tools for dealing with ATLAS9 model atmospheres"""
     def __init__(self,teff=4500.,logg=2.5,metals=0.,am=0.,cm=0.,
-                 dr=None):
+                 dr=None,interp_x=_OPSCALE):
         """
         NAME:
            __init__
@@ -25,6 +25,7 @@ class Atlas9Atmosphere(object):
            am= (0.) overall alpha enhancement
            cm= (0.) carbon enhancement
            dr= (None) load model atmospheres from this data release
+           interp_x= (might be changed) quantity to use for putting models onto a common opacity scale when interpolating ('ROSSTAU' or 'RHOX')
         OUTPUT:
            instance
         BUGS:
@@ -46,7 +47,7 @@ class Atlas9Atmosphere(object):
         if self._isGrid:
             self._loadGridPoint()
         else:
-            self._loadByInterpolation()
+            self._loadByInterpolation(interp_x=interp_x)
         # Calculate the Rossland optical depth
         self._rosslandtau()
         return None
@@ -169,10 +170,11 @@ class Atlas9Atmosphere(object):
         self._nlayers= self._deck.shape[0]
         return None
     
-    def _loadByInterpolation(self):
+    def _loadByInterpolation(self,interp_x=_OPSCALE):
         """Load a model by interpolating on the grid"""
         atContent= interpolateAtlas9(self._teff,self._logg,self._metals,
-                                     self._am,self._cm,dr=self._dr)
+                                     self._am,self._cm,dr=self._dr,
+                                     interp_x=interp_x)
         # Unpack
         self._first4lines= atContent[0]
         self._abscale= atContent[1]
@@ -276,7 +278,7 @@ def isGridPoint(teff,logg,metals,am,cm,return_indiv=False):
     else:
         return True
 
-def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
+def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
     """
     NAME:
        interpolateAtlas9
@@ -289,6 +291,7 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
        am - overall alpha enhancement
        cm - carbon enhancement
        dr= (None) load model atmospheres from this data release
+       interp_x= (might be changed) quantity to use for putting models onto a common opacity scale when interpolating ('ROSSTAU' or 'RHOX')
     OUTPUT:
        stuff
     HISTORY:
@@ -386,10 +389,10 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
                     for c in cms:
                         tatm= Atlas9Atmosphere(te,lg,me,a,c,dr=dr)
                         models.append(tatm)
-                        if _OPSCALE.lower() == 'rhox':
+                        if interp_x.lower() == 'rhox':
                             opmin.append(numpy.amin(tatm._deck[:,0]))
                             opmax.append(numpy.amax(tatm._deck[:,0]))
-                        elif _OPSCALE.lower() == 'rosstau':
+                        elif interp_x.lower() == 'rosstau':
                             opmin.append(numpy.amin(tatm.rosslandtau))
                             opmax.append(numpy.amax(tatm.rosslandtau))
     # Interpolate each model atmosphere onto a common opacity scale
