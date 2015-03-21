@@ -2,6 +2,7 @@
 # apogee.modelatm.atlas9: tools for dealing with ATLAS9 model atmospheres
 ###############################################################################
 import os, os.path
+import copy
 import numpy
 from scipy import interpolate, ndimage
 from galpy.util import bovy_plot
@@ -430,10 +431,27 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         cntr+= 1
     pradk=\
         ndimage.interpolation.map_coordinates(tlayer,coord,order=1)
-    # Need to fix abchanges
-    return (models[0]._first4lines,models[0]._abscale,models[0]._abchanges,
+    # Fix the abundances; overall scale of metallicity
+    abscale= 10.**metals
+    # Changes due to [C/M] and [a/M]
+    abchanges= copy.deepcopy(models[0]._abchanges)
+    abchanges[6]+= cm-cms[0]
+    abchanges[8]+= am-ams[0]
+    abchanges[12]+= am-ams[0]
+    abchanges[14]+= am-ams[0]
+    abchanges[16]+= am-ams[0]
+    abchanges[20]+= am-ams[0]
+    abchanges[22]+= am-ams[0]
+    # Need to change 1 and 2 as well
+    totz= 0.
+    for key in abchanges:
+        if key > 2: totz+= 10.**abchanges[key]
+    abchanges[1]= models[0]._abchanges[1]\
+        /(models[0]._abchanges[1]+models[0]._abchanges[2])*(1.-totz)
+    abchanges[2]= models[0]._abchanges[2]\
+        /(models[0]._abchanges[1]+models[0]._abchanges[2])*(1.-totz)
+    return (models[0]._first4lines,abscale,abchanges,
             newdeck,pradk)
-
 
 def readAtlas9(filePath):
     """
