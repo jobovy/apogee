@@ -50,8 +50,9 @@ This package requires `NumPy <http://numpy.scipy.org/>`__, `Scipy
 <http://matplotlib.sourceforge.net/>`__, `fitsio
 <http://github.com/esheldon/fitsio>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
-<http://github.com/jobovy/galpy>`__, and `isodist
-<http://github.com/jobovy/isodist>`__.
+<http://github.com/jobovy/galpy>`__,  `isodist
+<http://github.com/jobovy/isodist>`__, and `periodictable
+<https://pypi.python.org/pypi/periodictable>`__.
 
 DATA FILES AND ENVIRONMENT VARIABLES
 =====================================
