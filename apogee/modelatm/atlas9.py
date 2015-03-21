@@ -3,7 +3,7 @@
 ###############################################################################
 import os, os.path
 import numpy
-from scipy import interpolate
+from scipy import interpolate, ndimage
 from galpy.util import bovy_plot
 import apogee.tools.path as appath
 import apogee.tools.download as apdownload
@@ -47,7 +47,6 @@ class Atlas9Atmosphere(object):
             self._loadGridPoint()
         else:
             self._loadByInterpolation()
-            raise NotImplementedError('Not using off-grid ATLAS9 models currently not implemented')
         # Calculate the Rossland optical depth
         self._rosslandtau()
         return None
@@ -341,23 +340,41 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
     amhigh= (amgrid[adiff < 0])[0]
     # Determine whether any of the parameters is on a grid point
     paramIsGrid= isGridPoint(teff,logg,metals,am,cm,return_indiv=True)
+    """
     print tefflow, teffhigh
     print logglow, logghigh
     print metalslow, metalshigh
     print amlow, amhigh
     print cmlow, cmhigh  
     print paramIsGrid
+    """
     # Determine whether to interpolate over this parameter or not (if it's grid)
-    if paramIsGrid[0]: tes= [teff]
-    else: tes= [tefflow,teffhigh]
-    if paramIsGrid[1]: lgs= [logg]
-    else: lgs= [logglow,logghigh]
-    if paramIsGrid[2]: mes= [metals]
-    else: mes= [metalslow,metalshigh]
-    if paramIsGrid[3]: ams= [am]
-    else: ams= [amlow,amhigh]
-    if paramIsGrid[4]: cms= [cm]
-    else: cms= [cmlow,cmhigh]    
+    interpGridShape= ()
+    if paramIsGrid[0]:
+        tes= [teff]
+    else:
+        tes= [tefflow,teffhigh]
+        interpGridShape+= (2,)
+    if paramIsGrid[1]:
+        lgs= [logg]
+    else:
+        lgs= [logglow,logghigh]
+        interpGridShape+= (2,)
+    if paramIsGrid[2]:
+        mes= [metals]
+    else:
+        mes= [metalslow,metalshigh]
+        interpGridShape+= (2,)
+    if paramIsGrid[3]:
+        ams= [am]
+    else:
+        ams= [amlow,amhigh]
+        interpGridShape+= (2,)
+    if paramIsGrid[4]:
+        cms= [cm]
+    else:
+        cms= [cmlow,cmhigh]  
+        interpGridShape+= (2,)
     # Load all of the models surrounding this point, also store the min and
     # max of the opacity scale that we use to interpolate the models on
     models= []
@@ -381,7 +398,39 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None):
     for tatm in models:
         tatm.interpOpacityScale(opmin,opmax)
     # Now interpolate each layer
-    return None
+    coord= []
+    if not paramIsGrid[0]: coord.append([(teff-tefflow)/(teffhigh-tefflow)])
+    if not paramIsGrid[1]: coord.append([(logg-logglow)/(logghigh-logglow)])
+    if not paramIsGrid[2]:
+        coord.append([(metals-metalslow)/(metalshigh-metalslow)])
+    if not paramIsGrid[3]: coord.append([(am-amlow)/(amhigh-amlow)])
+    if not paramIsGrid[4]: coord.append([(cm-cmlow)/(cmhigh-cmlow)])
+    newdeck= numpy.zeros_like(models[0]._deck)
+    newdeck[:,7:]= models[0]._deck[:,7:]
+    for ii in range(models[0]._nlayers): # same number of layers
+        for jj in range(7): # we don't interpolate FLXCNV,VCONV,VELSND
+            # Accumulate all models
+            tlayer= numpy.zeros(interpGridShape)
+            cntr= 0
+            while cntr < numpy.prod(interpGridShape):
+                indx= numpy.unravel_index(cntr,interpGridShape)
+                tlayer[indx]= models[cntr]._deck[ii,jj]
+                cntr+= 1
+            newdeck[ii,jj]=\
+                ndimage.interpolation.map_coordinates(tlayer,coord,order=1)
+    # Also interpolate pradk
+    tlayer= numpy.zeros(interpGridShape)
+    cntr= 0
+    while cntr < numpy.prod(interpGridShape):
+        indx= numpy.unravel_index(cntr,interpGridShape)
+        tlayer[indx]= models[cntr]._pradk
+        cntr+= 1
+    pradk=\
+        ndimage.interpolation.map_coordinates(tlayer,coord,order=1)
+    # Need to fix abchanges
+    return (models[0]._first4lines,models[0]._abscale,models[0]._abchanges,
+            newdeck,pradk)
+
 
 def readAtlas9(filePath):
     """
