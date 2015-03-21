@@ -356,59 +356,54 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
        2015-03-20 - Written - Bovy (IAS)
     """
     # Using simple linear interpolation between the nearest grid points for now
-    # Find the hypercube in the grid that this point lies in
-    # Teff
-    tdiff= teff-appath._modelAtmKurucz_teffgrid
-    tefflow= (appath._modelAtmKurucz_teffgrid[tdiff > 0])[-1]
-    teffhigh= (appath._modelAtmKurucz_teffgrid[tdiff < 0])[0]
-    # Logg
-    if teff >= 3500. and teff <= 6000.:
-        logggrid= appath._modelAtmKurucz_logggrid_G
-    elif teff > 6000. and teff <= 8000.:
-        logggrid= appath._modelAtmKurucz_logggrid_F
-    elif teff > 8000 and teff <= 12000.:
-        logggrid= appath._modelAtmKurucz_logggrid_A
-    elif teff > 12000 and teff <= 20000:
-        logggrid= appath._modelAtmKurucz_logggrid_B
-    else:
-        logggrid= appath._modelAtmKurucz_logggrid_O
-    ldiff= logg-logggrid
-    logglow= (logggrid[ldiff > 0])[-1]
-    logghigh= (logggrid[ldiff < 0])[0]
-    # Metallicity
-    mdiff= metals-appath._modelAtmKurucz_fehgrid
-    metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[0]
-    metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[1]
-    # [C/M]
-    if metals <= -3.5:
-        cmgrid= appath._modelAtmKurucz_cfegrid_lowm
-    elif metals >= 1:
-        cmgrid= appath._modelAtmKurucz_cfegrid_him
-    else:
-        cmgrid= appath._modelAtmKurucz_cfegrid_midm
-    cdiff= cm-cmgrid
-    cmlow= (cmgrid[cdiff > 0])[-1]
-    cmhigh= (cmgrid[cdiff < 0])[0]
-    # [a/M]
-    if metals <= -3.5:
-        amgrid= appath._modelAtmKurucz_afegrid_lowm
-    elif metals >= 1:
-        amgrid= appath._modelAtmKurucz_afegrid_him
-    else:
-        amgrid= appath._modelAtmKurucz_afegrid_midm
-    adiff= am-amgrid
-    amlow= (amgrid[adiff > 0])[-1]
-    amhigh= (amgrid[adiff < 0])[0]
+    try:
+        # Find the hypercube in the grid that this point lies in
+        # Teff
+        tdiff= teff-appath._modelAtmKurucz_teffgrid
+        tefflow= (appath._modelAtmKurucz_teffgrid[tdiff > 0])[-1]
+        teffhigh= (appath._modelAtmKurucz_teffgrid[tdiff < 0])[0]
+        # Logg
+        if teff >= 3500. and teff <= 6000.:
+            logggrid= appath._modelAtmKurucz_logggrid_G
+        elif teff > 6000. and teff <= 8000.:
+            logggrid= appath._modelAtmKurucz_logggrid_F
+        elif teff > 8000 and teff <= 12000.:
+            logggrid= appath._modelAtmKurucz_logggrid_A
+        elif teff > 12000 and teff <= 20000:
+            logggrid= appath._modelAtmKurucz_logggrid_B
+        else:
+            logggrid= appath._modelAtmKurucz_logggrid_O
+        ldiff= logg-logggrid
+        logglow= (logggrid[ldiff > 0])[-1]
+        logghigh= (logggrid[ldiff < 0])[0]
+        # Metallicity
+        mdiff= metals-appath._modelAtmKurucz_fehgrid
+        metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[0]
+        metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[1]
+        # [C/M]
+        if metals <= -3.5:
+            cmgrid= appath._modelAtmKurucz_cfegrid_lowm
+        elif metals >= 1:
+            cmgrid= appath._modelAtmKurucz_cfegrid_him
+        else:
+            cmgrid= appath._modelAtmKurucz_cfegrid_midm
+        cdiff= cm-cmgrid
+        cmlow= (cmgrid[cdiff > 0])[-1]
+        cmhigh= (cmgrid[cdiff < 0])[0]
+        # [a/M]
+        if metals <= -3.5:
+            amgrid= appath._modelAtmKurucz_afegrid_lowm
+        elif metals >= 1:
+            amgrid= appath._modelAtmKurucz_afegrid_him
+        else:
+            amgrid= appath._modelAtmKurucz_afegrid_midm
+        adiff= am-amgrid
+        amlow= (amgrid[adiff > 0])[-1]
+        amhigh= (amgrid[adiff < 0])[0]
+    except IndexError:
+        raise IndexError('Requested model lies outside the grid of model atmospheres')
     # Determine whether any of the parameters is on a grid point
     paramIsGrid= isGridPoint(teff,logg,metals,am,cm,return_indiv=True)
-    """
-    print tefflow, teffhigh
-    print logglow, logghigh
-    print metalslow, metalshigh
-    print amlow, amhigh
-    print cmlow, cmhigh  
-    print paramIsGrid
-    """
     # Determine whether to interpolate over this parameter or not (if it's grid)
     interpGridShape= ()
     if paramIsGrid[0]:
