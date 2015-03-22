@@ -14,6 +14,7 @@ import apogee.spec.window as apwindow
 from apogee.spec.plot import apStarWavegrid
 import apogee.tools.path as appath
 import apogee.tools.download as download
+from apogee.modelatm import atlas9
 from apogee.modelspec import convert_modelAtmosphere
 _WMIN_DEFAULT= 15000.000
 _WMAX_DEFAULT= 17000.000
@@ -161,25 +162,30 @@ def synth(*args,**kwargs):
     # Setup the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
     tmpModelAtmDir= False
-    if not modelatm is None:
-        if isinstance(modelatm,str) and os.path.exists(modelatm):
-            modelfilename= modelatm
-        elif isinstance(modelatm,str):
-            raise ValueError('modelatm= input is a non-existing filename')
-        else: # model atmosphere instance
-            # Need to write this instance to a file; we will run in a temp 
-            # subdirectory of the current directory
-            tmpDir= tempfile.mkdtemp(dir=os.getcwd())
-            tmpModelAtmDir= True # need to remove this later
-            modelfilename= os.path.join(tmpDir,'modelatm.mod')
-            modelatm.writeto(modelfilename)
-    else:
-        pass #!!!! BOVY !!!!
+    if modelatm is None: # Setup a model atmosphere
+        modelatm= atlas9.Atlas9Atmosphere(teff=kwargs.get('teff',4500.),
+                                          logg=kwargs.get('logg',2.5),
+                                          metals=kwargs.get('metals',0.),
+                                          am=kwargs.get('am',0.),
+                                          cm=kwargs.get('cm',0.),
+                                          dr=kwargs.get('dr',None))
+    if isinstance(modelatm,str) and os.path.exists(modelatm):
+        modelfilename= modelatm
+    elif isinstance(modelatm,str):
+        raise ValueError('modelatm= input is a non-existing filename')
+    else: # model atmosphere instance
+        # Need to write this instance to a file; we will run in a temp 
+        # subdirectory of the current directory
+        tmpDir= tempfile.mkdtemp(dir=os.getcwd())
+        tmpModelAtmDir= True # need to remove this later
+        modelfilename= os.path.join(tmpDir,'modelatm.mod')
+        modelatm.writeto(modelfilename)
+    kwargs['modelatm']= modelfilename
     try:
         # Check whether a MOOG version of the model atmosphere exists
         if not os.path.exists(modelfilename.replace('.mod','.org')):
             # Convert to MOOG format
-            convert_modelAtmosphere(modelatm=modelfilename,**kwargs)
+            convert_modelAtmosphere(**kwargs)
         # Run MOOG synth for all abundances
         if len(args) == 0: #special case that there are *no* differences
             args= ([26,0.],)
