@@ -20,90 +20,6 @@ _WMIN_DEFAULT= 15000.000
 _WMAX_DEFAULT= 17000.000
 _DW_DEFAULT= 0.10000000
 _WIDTH_DEFAULT= 7.0000000
-def weedout(**kwargs):
-    """
-    NAME:
-       weedout
-    PURPOSE:
-       Weed-out unnecessary lines from the linelist for a given atmosphere
-    INPUT:
-       linelist= ('moog.201312161124.vac')
-       keepratio= (0.00001) Eliminate lines weaker than keepratio where keepratio = kapnu/kaplam at the approximate line wavelength, calculated at a continuue optical depth of 0.5
-       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
-       lib= ('kurucz_filled') spectral library
-       teff= (4500) grid-point Teff
-       logg= (2.5) grid-point logg
-       metals= (0.) grid-point metallicity
-       cfe= (0.) grid-point carbon-enhancement
-       afe= (0.) grid-point alpha-enhancement
-       vmicro= (2.) grid-point microturbulence
-       dr= return the path corresponding to this data release
-    OUTPUT:
-       (none; just weeds out lines)
-    HISTORY:
-       2015-02-13 - Written - Bovy (IAS)
-    """
-    # Get the name of the linelist
-    linelistfilename= appath.linelistPath(kwargs.pop('linelist',
-                                                     'moog.201312161124.vac'),
-                                      dr=kwargs.get('dr',None))
-    # Get the spectral synthesis limits
-    wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
-    wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
-    dw= kwargs.pop('dw',_DW_DEFAULT)
-    width= kwargs.pop('width',_WIDTH_DEFAULT)
-    # Ratio of lines to keep
-    keepratio= kwargs.pop('keepratio',0.00001)
-    # Get the filename of the model atmosphere
-    modelfilename= appath.modelAtmospherePath(**kwargs)
-    modeldirname= os.path.dirname(modelfilename)
-    modelbasename= os.path.basename(modelfilename)
-    outname= modelbasename.replace('.mod','.lines')
-    # We will run in a subdirectory of the relevant model atmosphere
-    tmpDir= tempfile.mkdtemp(dir=modeldirname)
-    shutil.copy(linelistfilename,tmpDir)
-    # Now write the script file
-    with open(os.path.join(tmpDir,'weedout.par'),'w') as parfile:
-        parfile.write('weedout\n')
-        parfile.write('terminal x11\n')
-        parfile.write('plot 0\n')
-        parfile.write("standard_out '/dev/null'\n")
-        parfile.write("keeplines_out  '../%s'\n" % outname)
-        parfile.write("tosslines_out 'toss.out'\n")
-        parfile.write("summary_out '/dev/null'\n")
-        parfile.write("smoothed_out '/dev/null'\n")
-        parfile.write("damping 0\n")
-        parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
-        parfile.write("lines_in %s\n" % os.path.basename(linelistfilename))
-        parfile.write("atmosphere 1\n")
-        parfile.write("molecules 2\n")
-        parfile.write("lines 1\n")
-        parfile.write("flux/int 0\n")
-        parfile.write("synlimits\n")
-        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax,dw,width))
-    # Now run weedout
-    try:
-        p= subprocess.Popen(['moogsilent'],
-                            cwd=tmpDir,
-                            stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-        p.stdin.write('weedout.par\n')
-        p.stdin.write('%g\n' % keepratio)
-        stdout, stderr= p.communicate()
-    except subprocess.CalledProcessError:
-        print("Running weedout failed ...")
-    finally:
-        if os.path.exists(os.path.join(tmpDir,'weedout.par')):
-            os.remove(os.path.join(tmpDir,'weedout.par'))
-        if os.path.exists(os.path.join(tmpDir,'toss.out')):
-            os.remove(os.path.join(tmpDir,'toss.out'))
-        if os.path.exists(os.path.join(tmpDir,
-                                       os.path.basename(linelistfilename))):
-            os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
-        os.rmdir(tmpDir)
-    return None
-
 def synth(*args,**kwargs):
     """
     NAME:
@@ -128,7 +44,8 @@ def synth(*args,**kwargs):
              'aspcap': Use the continuum normalization method of ASPCAP DR12
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
-          linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+          linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist
+          run_weedout= (True) if True, run MOOG weedout on the linelist first
           wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
@@ -140,6 +57,7 @@ def synth(*args,**kwargs):
                   metals= (0.) metallicity
                   cfe= (0.) carbon-enhancement
                   afe= (0.) alpha-enhancement
+                  lib= ('kurucz_filled') model atmosphere library
                   dr= (None) use model atmospheres from this data release
           vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
        MISCELLANEOUS:
@@ -149,6 +67,7 @@ def synth(*args,**kwargs):
     HISTORY:
        2015-03-15 - Written - Bovy (IAS)
     """
+    run_weedout= kwargs.pop('run_weedout',True)
     # Check that we have the LSF and store the relevant keywords
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
@@ -186,6 +105,10 @@ def synth(*args,**kwargs):
         if not os.path.exists(modelfilename.replace('.mod','.org')):
             # Convert to MOOG format
             convert_modelAtmosphere(**kwargs)
+        # Run weedout on the linelist first if requested
+        if run_weedout:
+            weedout(**kwargs)
+            kwargs['linelist']= modelfilename.replace('.mod','.lines')
         # Run MOOG synth for all abundances
         if len(args) == 0: #special case that there are *no* differences
             args= ([26,0.],)
@@ -216,6 +139,8 @@ def synth(*args,**kwargs):
         moogmodelfilename= modelfilename.replace('.mod','.org')
         if os.path.exists(moogmodelfilename):
             os.remove(moogmodelfilename)
+        if run_weedout:
+            os.remove(modelfilename.replace('.mod','.lines'))
         os.rmdir(tmpDir)
     out*= numpy.tile(cflux,(nsynth,1))
     # Now convolve with the LSF
@@ -274,7 +199,6 @@ def windows(*args,**kwargs):
        SYNTHESIS:
           linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
           wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
-          lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
           teff= (4500) grid-point Teff
           logg= (2.5) grid-point logg
@@ -282,6 +206,7 @@ def windows(*args,**kwargs):
           cfe= (0.) grid-point carbon-enhancement
           afe= (0.) grid-point alpha-enhancement
           vmicro= (2.) grid-point microturbulence
+          lib= ('kurucz_filled') model atmosphere library
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
@@ -373,6 +298,114 @@ def windows(*args,**kwargs):
         cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
         out/= cflux
     return out
+
+def weedout(**kwargs):
+    """
+    NAME:
+       weedout
+    PURPOSE:
+       Weed-out unnecessary lines from the linelist for a given atmosphere
+    INPUT:
+       linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist
+       keepratio= (0.00001) Eliminate lines weaker than keepratio where keepratio = kapnu/kaplam at the approximate line wavelength, calculated at a continuue optical depth of 0.5
+       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       MODEL ATMOSPHERE PARAMETERS:
+          Specify one of the following:
+             (a) modelatm= (None) can be set to the filename of a model atmosphere
+             ( b) parameters of a KURUCZ model atmosphere:
+                  teff= (4500) Teff
+                  logg= (2.5) logg
+                  metals= (0.) metallicity
+                  cfe= (0.) carbon-enhancement
+                  afe= (0.) alpha-enhancement
+                  lib= ('kurucz_filled') model atmosphere library
+                  dr= (None) use model atmospheres from this data release
+          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
+    OUTPUT:
+       (none; just weeds out lines)
+    HISTORY:
+       2015-02-13 - Written - Bovy (IAS)
+    """
+    # Get the name of the linelist
+    linelist= kwargs.pop('linelist','moog.201312161124.vac')
+    if os.path.exists(linelist):
+        linelistfilename= linelist
+    else:
+        linelistfilename= appath.linelistPath(linelist,
+                                              dr=kwargs.get('dr',None))
+    # Get the spectral synthesis limits
+    wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
+    wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
+    dw= kwargs.pop('dw',_DW_DEFAULT)
+    width= kwargs.pop('width',_WIDTH_DEFAULT)
+    # Ratio of lines to keep
+    keepratio= kwargs.pop('keepratio',0.00001)
+    # Get the filename of the model atmosphere
+    modelatm= kwargs.pop('modelatm',None)
+    if not modelatm is None:
+        if isinstance(modelatm,str) and os.path.exists(modelatm):
+            modelfilename= modelatm
+        elif isinstance(modelatm,str):
+            raise ValueError('modelatm= input is a non-existing filename')
+        else:
+            raise ValueError('modelatm= in moogsynth should be set to the name of a file')
+    else:
+        modelfilename= appath.modelAtmospherePath(**kwargs)
+    # Check whether a MOOG version exists
+    if not os.path.exists(modelfilename.replace('.mod','.org')):
+        # Convert to MOOG format
+        convert_modelAtmosphere(modelatm=modelfilename,**kwargs)
+    modeldirname= os.path.dirname(modelfilename)
+    modelbasename= os.path.basename(modelfilename)
+    outname= modelbasename.replace('.mod','.lines')
+    # We will run in a subdirectory of the relevant model atmosphere
+    tmpDir= tempfile.mkdtemp(dir=modeldirname)
+    shutil.copy(linelistfilename,tmpDir)
+    # Now write the script file
+    with open(os.path.join(tmpDir,'weedout.par'),'w') as parfile:
+        parfile.write('weedout\n')
+        parfile.write('terminal x11\n')
+        parfile.write('plot 0\n')
+        parfile.write("standard_out '/dev/null'\n")
+        parfile.write("keeplines_out  '../%s'\n" % outname)
+        parfile.write("tosslines_out 'toss.out'\n")
+        parfile.write("summary_out '/dev/null'\n")
+        parfile.write("smoothed_out '/dev/null'\n")
+        parfile.write("damping 0\n")
+        parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
+        parfile.write("lines_in %s\n" % os.path.basename(linelistfilename))
+        parfile.write("atmosphere 1\n")
+        parfile.write("molecules 2\n")
+        parfile.write("lines 1\n")
+        parfile.write("flux/int 0\n")
+        parfile.write("synlimits\n")
+        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax,dw,width))
+    # Now run weedout
+    sys.stdout.write('\r'+"Running MOOG weedout ...\r")
+    sys.stdout.flush()
+    try:
+        p= subprocess.Popen(['moogsilent'],
+                            cwd=tmpDir,
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+        p.stdin.write('weedout.par\n')
+        p.stdin.write('%g\n' % keepratio)
+        stdout, stderr= p.communicate()
+    except subprocess.CalledProcessError:
+        print("Running weedout failed ...")
+    finally:
+        if os.path.exists(os.path.join(tmpDir,'weedout.par')):
+            os.remove(os.path.join(tmpDir,'weedout.par'))
+        if os.path.exists(os.path.join(tmpDir,'toss.out')):
+            os.remove(os.path.join(tmpDir,'toss.out'))
+        if os.path.exists(os.path.join(tmpDir,
+                                       os.path.basename(linelistfilename))):
+            os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
+        os.rmdir(tmpDir)
+        sys.stdout.write('\r'+"Running MOOG weedout ...\r")
+        sys.stdout.flush()
+    return None
 
 def moogsynth(*args,**kwargs):
     """
