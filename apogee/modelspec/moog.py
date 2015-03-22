@@ -46,7 +46,7 @@ def synth(*args,**kwargs):
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
           linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist
-          run_weedout= (True) if True, run MOOG weedout on the linelist first
+          run_weedout= (False) if True, run MOOG weedout on the linelist first
           wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
@@ -69,7 +69,7 @@ def synth(*args,**kwargs):
     HISTORY:
        2015-03-15 - Written - Bovy (IAS)
     """
-    run_weedout= kwargs.pop('run_weedout',True)
+    run_weedout= kwargs.pop('run_weedout',False)
     # Check that we have the LSF and store the relevant keywords
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
@@ -211,7 +211,7 @@ def windows(*args,**kwargs):
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
           linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
-          run_weedout= (True) if True, run MOOG weedout on the linelist first
+          run_weedout= (False) if True, run MOOG weedout on the linelist first
           wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
@@ -235,7 +235,7 @@ def windows(*args,**kwargs):
        2015-03-18 - Written - Bovy (IAS)
     """
     # Pop some kwargs
-    run_weedout= kwargs.pop('run_weedout',True)
+    run_weedout= kwargs.pop('run_weedout',False)
     baseline= kwargs.pop('baseline',None)
     mwav= kwargs.pop('mwav',None)
     cflux= kwargs.pop('cflux',None)
