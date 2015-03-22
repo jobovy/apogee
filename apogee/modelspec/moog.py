@@ -107,8 +107,9 @@ def synth(*args,**kwargs):
             convert_modelAtmosphere(**kwargs)
         # Run weedout on the linelist first if requested
         if run_weedout:
-            weedout(**kwargs)
             kwargs['linelist']= modelfilename.replace('.mod','.lines')
+            if not os.path.exists(kwargs['linelist']):
+                weedout(**kwargs)
         # Run MOOG synth for all abundances
         if len(args) == 0: #special case that there are *no* differences
             args= ([26,0.],)
