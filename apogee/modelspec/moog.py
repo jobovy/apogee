@@ -12,6 +12,7 @@ import apogee.spec.lsf as aplsf
 import apogee.spec.continuum as apcont
 import apogee.spec.window as apwindow
 from apogee.spec.plot import apStarWavegrid
+from apogee.tools import paramIndx
 import apogee.tools.path as appath
 import apogee.tools.download as download
 from apogee.modelatm import atlas9
@@ -51,15 +52,16 @@ def synth(*args,**kwargs):
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
              (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
-             ( b) parameters of a KURUCZ model atmosphere:
-                  teff= (4500) Teff
-                  logg= (2.5) logg
-                  metals= (0.) metallicity
-                  cfe= (0.) carbon-enhancement
-                  afe= (0.) alpha-enhancement
-                  lib= ('kurucz_filled') model atmosphere library
-                  dr= (None) use model atmospheres from this data release
-          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
+             (b) parameters of a KURUCZ model atmosphere:
+                 (1) teff= (4500) Teff
+                     logg= (2.5) logg
+                     metals= (0.) metallicity
+                     cm= (0.) carbon-enhancement
+                     am= (0.) alpha-enhancement
+                 (2) fparam= standard ASPCAP output format (
+                 lib= ('kurucz_filled') model atmosphere library
+                 dr= (None) use model atmospheres from this data release
+          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found) (can also be part of fparam)
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
@@ -81,6 +83,15 @@ def synth(*args,**kwargs):
     # Setup the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
     tmpModelAtmDir= False
+    # Parse fparam, if present
+    fparam= kwargs.pop('fparam',None)
+    if not fparam is None:
+        kwargs['teff']= fparam[paramIndx('TEFF')]
+        kwargs['logg']= fparam[paramIndx('LOGG')]
+        kwargs['metals']= fparam[paramIndx('METALS')]
+        kwargs['am']= fparam[paramIndx('ALPHA')]
+        kwargs['cm']= fparam[paramIndx('C')]
+        kwargs['vm']= 10.**fparam[paramIndx('LOG10VDOP')]        
     if modelatm is None: # Setup a model atmosphere
         modelatm= atlas9.Atlas9Atmosphere(teff=kwargs.get('teff',4500.),
                                           logg=kwargs.get('logg',2.5),
@@ -205,15 +216,16 @@ def windows(*args,**kwargs):
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
              (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
-             ( b) parameters of a KURUCZ model atmosphere:
-                  teff= (4500) Teff
-                  logg= (2.5) logg
-                  metals= (0.) metallicity
-                  cfe= (0.) carbon-enhancement
-                  afe= (0.) alpha-enhancement
-                  lib= ('kurucz_filled') model atmosphere library
-                  dr= (None) use model atmospheres from this data release
-          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
+             (b) parameters of a KURUCZ model atmosphere:
+                 (1) teff= (4500) Teff
+                     logg= (2.5) logg
+                     metals= (0.) metallicity
+                     cm= (0.) carbon-enhancement
+                     am= (0.) alpha-enhancement
+                 (2) fparam= standard ASPCAP output format (
+                 lib= ('kurucz_filled') model atmosphere library
+                 dr= (None) use model atmospheres from this data release
+          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found) (can also be part of fparam)
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
@@ -257,6 +269,15 @@ def windows(*args,**kwargs):
     # Setup the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
     tmpModelAtmDir= False
+    # Parse fparam, if present
+    fparam= kwargs.pop('fparam',None)
+    if not fparam is None:
+        kwargs['teff']= fparam[0,paramIndx('TEFF')]
+        kwargs['logg']= fparam[0,paramIndx('LOGG')]
+        kwargs['metals']= fparam[0,paramIndx('METALS')]
+        kwargs['am']= fparam[0,paramIndx('ALPHA')]
+        kwargs['cm']= fparam[0,paramIndx('C')]
+        kwargs['vm']= 10.**fparam[0,paramIndx('LOG10VDOP')]        
     if modelatm is None: # Setup a model atmosphere
         modelatm= atlas9.Atlas9Atmosphere(teff=kwargs.get('teff',4500.),
                                           logg=kwargs.get('logg',2.5),
@@ -368,8 +389,8 @@ def weedout(**kwargs):
                   teff= (4500) Teff
                   logg= (2.5) logg
                   metals= (0.) metallicity
-                  cfe= (0.) carbon-enhancement
-                  afe= (0.) alpha-enhancement
+                  cm= (0.) carbon-enhancement
+                  am= (0.) alpha-enhancement
                   lib= ('kurucz_filled') model atmosphere library
                   dr= (None) use model atmospheres from this data release
           vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
@@ -484,8 +505,8 @@ def moogsynth(*args,**kwargs):
               - teff= (4500) grid-point Teff
               - logg= (2.5) grid-point logg
               - metals= (0.) grid-point metallicity
-              - cfe= (0.) grid-point carbon-enhancement
-              - afe= (0.) grid-point alpha-enhancement
+              - cm= (0.) grid-point carbon-enhancement
+              - am= (0.) grid-point alpha-enhancement
               - dr= return the path corresponding to this data release
        vmicro= (2.) microturbulence (km/s) (only used if the MOOG-formatted atmosphere file doesn't already exist)
     OUTPUT:
