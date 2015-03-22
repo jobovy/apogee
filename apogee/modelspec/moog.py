@@ -107,9 +107,10 @@ def synth(*args,**kwargs):
             convert_modelAtmosphere(**kwargs)
         # Run weedout on the linelist first if requested
         if run_weedout:
-            kwargs['linelist']= modelfilename.replace('.mod','.lines')
-            if not os.path.exists(kwargs['linelist']):
+            linelistfilename= modelfilename.replace('.mod','.lines')
+            if not os.path.exists(linelistfilename):
                 weedout(**kwargs)
+            kwargs['linelist']= linelistfilename
         # Run MOOG synth for all abundances
         if len(args) == 0: #special case that there are *no* differences
             args= ([26,0.],)
@@ -199,15 +200,20 @@ def windows(*args,**kwargs):
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
           linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
+          run_weedout= (True) if True, run MOOG weedout on the linelist first
           wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
-          teff= (4500) grid-point Teff
-          logg= (2.5) grid-point logg
-          metals= (0.) grid-point metallicity
-          cfe= (0.) grid-point carbon-enhancement
-          afe= (0.) grid-point alpha-enhancement
-          vmicro= (2.) grid-point microturbulence
-          lib= ('kurucz_filled') model atmosphere library
+          Specify one of the following:
+             (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
+             ( b) parameters of a KURUCZ model atmosphere:
+                  teff= (4500) Teff
+                  logg= (2.5) logg
+                  metals= (0.) metallicity
+                  cfe= (0.) carbon-enhancement
+                  afe= (0.) alpha-enhancement
+                  lib= ('kurucz_filled') model atmosphere library
+                  dr= (None) use model atmospheres from this data release
+          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found)
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
@@ -216,6 +222,11 @@ def windows(*args,**kwargs):
     HISTORY:
        2015-03-18 - Written - Bovy (IAS)
     """
+    # Pop some kwargs
+    run_weedout= kwargs.pop('run_weedout',True)
+    baseline= kwargs.pop('baseline',None)
+    mwav= kwargs.pop('mwav',None)
+    cflux= kwargs.pop('cflux',None)
     # Check that we have the LSF and store the relevant keywords
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
@@ -243,42 +254,82 @@ def windows(*args,**kwargs):
                 si.append(numpy.argmin(numpy.fabs(s-apWave)))
                 ei.append(numpy.argmin(numpy.fabs(e-apWave)))
         args= args[2:]
-    # Run MOOG synth for the whole wavelength range as a baseline, also contin
-    baseline= kwargs.pop('baseline',None)
-    if baseline is None:
-        baseline= moogsynth(**kwargs)[1] 
-    elif isinstance(baseline,tuple): #probably accidentally gave wav as well
-        baseline= baseline[1]
-    mwav= kwargs.pop('mwav',None)
-    cflux= kwargs.pop('cflux',None)
-    if mwav is None or cflux is None:
-        mwav, cflux= moogsynth(doflux=True,**kwargs)
-    # Convert the apStarWavegrid windows to moogWavegrid regions
-    sm,em= [], []
-    for start,end in zip(si,ei):
-        sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
-        em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
-    # Run MOOG synth for all abundances and all windows
-    if len(args) == 0: #special case that there are *no* differences
-        args= ([26,0.],)
-    nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
-    nsynth= numpy.amax(nsynths) #Take the longest abundance list
-    out= numpy.tile(baseline,(nsynth,1))
-    # Run all windows
-    for start, end in zip(sm,em):
-        kwargs['wmin']= mwav[start]
-        kwargs['wmax']= mwav[end]
-        # Check whether the number of syntheses is > 5 and run multiple 
-        # MOOG instances if necessary, bc MOOG only does 5 at a time
-        ninstances= int(numpy.ceil(nsynth/5.))
-        for ii in range(ninstances):
-            newargs= ()
-            for jj in range(len(args)):
-                tab= [args[jj][0]]
-                if len(args[jj][5*ii+1:5*(ii+1)+1]) > 0:
-                    tab.extend(args[jj][5*ii+1:5*(ii+1)+1])
-                    newargs= newargs+(tab,)
-            out[5*ii:5*(ii+1),start:end+1]= moogsynth(*newargs,**kwargs)[1] 
+    # Setup the model atmosphere
+    modelatm= kwargs.pop('modelatm',None)
+    tmpModelAtmDir= False
+    if modelatm is None: # Setup a model atmosphere
+        modelatm= atlas9.Atlas9Atmosphere(teff=kwargs.get('teff',4500.),
+                                          logg=kwargs.get('logg',2.5),
+                                          metals=kwargs.get('metals',0.),
+                                          am=kwargs.get('am',0.),
+                                          cm=kwargs.get('cm',0.),
+                                          dr=kwargs.get('dr',None))
+    if isinstance(modelatm,str) and os.path.exists(modelatm):
+        modelfilename= modelatm
+    elif isinstance(modelatm,str):
+        raise ValueError('modelatm= input is a non-existing filename')
+    else: # model atmosphere instance
+        # Need to write this instance to a file; we will run in a temp 
+        # subdirectory of the current directory
+        tmpDir= tempfile.mkdtemp(dir=os.getcwd())
+        tmpModelAtmDir= True # need to remove this later
+        modelfilename= os.path.join(tmpDir,'modelatm.mod')
+        modelatm.writeto(modelfilename)
+    kwargs['modelatm']= modelfilename
+    try:
+        # Check whether a MOOG version of the model atmosphere exists
+        if not os.path.exists(modelfilename.replace('.mod','.org')):
+            # Convert to MOOG format
+            convert_modelAtmosphere(**kwargs)
+        # Run weedout on the linelist first if requested
+        if run_weedout:
+            linelistfilename= modelfilename.replace('.mod','.lines')
+            if not os.path.exists(linelistfilename):
+                weedout(**kwargs)
+            kwargs['linelist']= linelistfilename
+        # Run MOOG synth for the whole wavelength range as a baseline, also contin
+        if baseline is None:
+            baseline= moogsynth(**kwargs)[1] 
+        elif isinstance(baseline,tuple): #probably accidentally gave wav as well
+            baseline= baseline[1]
+        if mwav is None or cflux is None:
+            mwav, cflux= moogsynth(doflux=True,**kwargs)
+        # Convert the apStarWavegrid windows to moogWavegrid regions
+        sm,em= [], []
+        for start,end in zip(si,ei):
+            sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
+            em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
+        # Run MOOG synth for all abundances and all windows
+        if len(args) == 0: #special case that there are *no* differences
+            args= ([26,0.],)
+        nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
+        nsynth= numpy.amax(nsynths) #Take the longest abundance list
+        out= numpy.tile(baseline,(nsynth,1))
+        # Run all windows
+        for start, end in zip(sm,em):
+            kwargs['wmin']= mwav[start]
+            kwargs['wmax']= mwav[end]
+            # Check whether the number of syntheses is > 5 and run multiple 
+            # MOOG instances if necessary, bc MOOG only does 5 at a time
+            ninstances= int(numpy.ceil(nsynth/5.))
+            for ii in range(ninstances):
+                newargs= ()
+                for jj in range(len(args)):
+                    tab= [args[jj][0]]
+                    if len(args[jj][5*ii+1:5*(ii+1)+1]) > 0:
+                        tab.extend(args[jj][5*ii+1:5*(ii+1)+1])
+                        newargs= newargs+(tab,)
+                out[5*ii:5*(ii+1),start:end+1]= moogsynth(*newargs,**kwargs)[1] 
+    except: raise
+    finally:
+        if tmpModelAtmDir: # need to remove this temporary directory
+            os.remove(modelfilename)
+        moogmodelfilename= modelfilename.replace('.mod','.org')
+        if os.path.exists(moogmodelfilename):
+            os.remove(moogmodelfilename)
+        if run_weedout:
+            os.remove(modelfilename.replace('.mod','.lines'))
+        os.rmdir(tmpDir)
     # Now multiply each continuum-normalized spectrum with the continuum
     out*= numpy.tile(cflux,(nsynth,1))
     # Now convolve with the LSF
