@@ -378,8 +378,8 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         logghigh= (logggrid[ldiff < 0])[0]
         # Metallicity
         mdiff= metals-appath._modelAtmKurucz_fehgrid
-        metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[0]
-        metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[1]
+        metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[-1]
+        metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff < 0])[0]
         # [C/M]
         if metals <= -3.5:
             cmgrid= appath._modelAtmKurucz_cfegrid_lowm
