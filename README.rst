@@ -496,6 +496,13 @@ downloaded and loaded using ``lsf._load_precomp``. Various of the
 spectral analysis functions described below automatically download and
 load these LSFs.
 
+An example of the LSF and macroturbulence functions is displayed
+below: this shows the average LSF of all APOGEE fibers, the proper
+macroturbulence kernel, and a Gaussian macroturbulence kernel (which
+is used in the standard APOGEE analysis):
+
+.. image:: _readme_files/lsf_vmacro_example.png')
+
 ``apogee.spec.lsf`` also contains functions to deal with the raw
 LSF. This includes the ``wavelength->pixel`` and ``pixel->wavelength``
 solution, unpacking the parameters of the LSF, and evaluating the raw
