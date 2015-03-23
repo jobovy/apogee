@@ -561,6 +561,81 @@ which gives
 In the wavelength region shown, the two methods agree nicely (but they
 do not over the full wavelength range).
 
+Working with model atmospheres
++++++++++++++++++++++++++++++++
+
+Generating synthetic spectra as discussed below for MOOG requires
+having a model atmosphere. `Meszaros et
+al. <http://adsabs.harvard.edu/abs/2012AJ....144..120M>`__ have
+computed a grid of ATLAS9 model atmospheres varying effective
+temperature, surface gravity, overall metallicity, and the relative
+enhancement of carbon and alpha elements. ``apogee`` has tools to work
+with these in the ``apogee.modelatm`` module. This grid can be
+downloaded on `this website
+<http://www.iac.es/proyecto/ATLAS-APOGEE/>`__; APOGEE collaborators
+can also use the ``apogee.tools.download.modelAtmosphere`` function to
+download these. Currently, the atmospheres must be put into a
+``bosswork/apogee/spectro/redux/speclib/kurucz_filled`` subdirectory
+of the overall ``$APOGEE_DATA`` data directory (see above); the
+``download.modelAtmosphere`` function automatically puts the model
+atmospheres in the correct location. The functions in
+``apogee.modelatm`` will also automatically download the necessary
+atmospheres, so no setup should be required for collaboration members.
+
+ATLAS9 model-atmosphere functionality is included in
+``apogee.modelatm.atlas9``. The main use of this module is that it
+contains a class ``Atlas9Atmosphere``; instances of this class are
+individual atmospheres and the instance allows one to inspect its
+structure as a function of optical depth and to write the model
+atmosphere to a file (useful for using the atmosphere with MOOG
+below).
+
+For example, to load a grid point do::
+
+    from apogee.modelatm import atlas9
+    atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
+
+One can then look at, for example, the thermal structure::
+
+    atm.plot('T')
+
+.. image:: _readme_files/_atlas9_thermal.png
+
+or the gas pressure::
+
+   atm.plot('P')
+
+.. image:: _readme_files/_atlas9_gaspressure.png
+
+The ``apogee.modelatm.atlas9`` module also contains a rudimentary
+model-atmosphere interpolator. This uses linear interpolation within
+the hypercube of nearby grid points and means that one can load
+non-grid-point atmospheres in the same way as above::
+
+    atm_ng= atlas9.Atlas9Atmosphere(teff=4850.,logg=2.65,metals=-0.3,am=0.15,cm=0.05)
+
+Comparing this to the grid-point atmosphere above::
+
+	  atm.plot('T')
+	  atm_ng.plot('T',overplot=True)
+
+.. image:: _readme_files/_atlas9_thermal_ng.png
+	  
+and::
+
+	atm.plot('P')
+	atm_ng.plot('P',overplot=True)
+
+.. image:: _readme_files/_atlas9_gaspressure_ng.png
+
+All model atmospheres can be written to a file in KURUCZ format using ``writeto``, for example::
+
+    atm_ng.writeto('test.mod')
+
+Only essential parts of the atmosphere are written out here, so don't
+be alarmed that the top lines of the file don't match the model
+atmosphere.
+
 Using MOOG
 +++++++++++
 
