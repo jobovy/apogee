@@ -474,11 +474,20 @@ pixel,pixel+1/3,pixel+2/3, pixel+1, etc.). This allows the convolution
 to be performed efficiently.
 
 ``lsf.convolve`` convolves with both the APOGEE LSF and the
-macroturbulence, modeled as a Gaussian smoothing with a given
-FWHM. The convolution is implemented efficiently as a sparse-matrix
-multiplication. The LSF obtained from ``lsf.eval`` can be returned in
-this sparse format by specifying ``sparse=True`` or you can yourself
-compute the sparse representation by running ``lsf.sparsify``.
+macroturbulence and outputs the spectrum on the standard apStar
+logarithmically-spaced wavelength grid. The macroturbulence can either
+be modeled as a Gaussian smoothing with a given FWHM or the proper
+macroturbulence convolution kernel can be pre-computed using
+``apogee.modelspec.vmacro`` in the same way as the ``lsf.eval``
+function above. The convolutions are implemented efficiently as a
+sparse-matrix multiplication. The LSF obtained from ``lsf.eval`` and
+the macroturbulence kernel from ``apogee.modelspec.macroturbulence``
+can be returned in this sparse format by specifying ``sparse=True`` or
+you can yourself compute the sparse representation by running
+``lsf.sparsify``. If for some reason you do not wish to convolve with
+the APOGEE LSF, you can compute a dummy LSF using ``lsf.dummy`` that
+is just a delta function and this can be passed to ``lsf.convolve``
+(useful for only convolving with macroturbulence).
 
 The average DR12 LSFs for 6 fibers (the standard LSF for ASPCAP
 analysis) or for all fibers is pre-computed and stored online at `this
