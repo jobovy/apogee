@@ -32,7 +32,7 @@ def convolve(wav,spec,
           xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
           dxlsf= (None) spacing of pixel offsets
        fiber= if lsf is None, the LSF is calculated for this fiber
-       vmacro= (6.) Gaussian macroturbulence smoothing to apply as well (FWHM)
+       vmacro= (6.) Gaussian macroturbulence smoothing to apply as well (FWHM or a [sparse] matrix like lsf on the same x grid; can be computed with apogee.modelspec.vmacro)
     OUTPUT:
        spectrum on apStar wavelength grid
     HISTORY:
@@ -54,7 +54,7 @@ def convolve(wav,spec,
     tmpwav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
     tmp= numpy.empty(len(l10wav)*hires)   
     # Setup vmacro
-    if not vmacro is None:
+    if not vmacro is None and isinstance(vmacro,float):
         sigvm= vmacro/3./10.**5./numpy.log(10.)*hires/dowav\
             /2./numpy.sqrt(2.*numpy.log(2.))
     # Interpolate the input spectrum, starting from a polynomial baseline
@@ -68,10 +68,17 @@ def convolve(wav,spec,
                                                      k=3)
         tmp[ii]= baseline(tmpwav)*ip(tmpwav)
     # Add macroturbulence
-    if not vmacro is None:
+    if not vmacro is None and isinstance(vmacro,float):
         tmp= ndimage.gaussian_filter1d(tmp,sigvm,mode='constant',axis=1)
-    # Use sparse representations to quickly calculate the convolution
-    tmp= sparse.csr_matrix(tmp)
+    elif not vmacro is None: 
+        # Use sparse representations to quickly calculate the convolution
+        tmp= sparse.csr_matrix(tmp)
+        if isinstance(vmacro,numpy.ndarray):
+            vmacro= sparsify(vmacro)
+        tmp= vmacro.dot(tmp.T).T
+    if not isinstance(lsf,sparse.csr_matrix):
+        # Use sparse representations to quickly calculate the convolution
+        tmp= sparse.csr_matrix(tmp)
     return lsf.dot(tmp.T).T.toarray()[:,::hires]
 
 def sparsify(lsf):
