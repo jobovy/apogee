@@ -501,7 +501,7 @@ below: this shows the average LSF of all APOGEE fibers, the proper
 macroturbulence kernel, and a Gaussian macroturbulence kernel (which
 is used in the standard APOGEE analysis):
 
-.. image:: _readme_files/lsf_vmacro_example.png')
+.. image:: _readme_files/lsf_vmacro_example.png
 
 ``apogee.spec.lsf`` also contains functions to deal with the raw
 LSF. This includes the ``wavelength->pixel`` and ``pixel->wavelength``
