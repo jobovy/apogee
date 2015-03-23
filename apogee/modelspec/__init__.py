@@ -3,9 +3,11 @@ import os, os.path
 import shutil
 import subprocess
 import numpy
+from scipy import special
 import apogee.tools.read as apread
 import apogee.tools.path as appath
 from apogee.tools import toAspcapGrid
+from apogee.spec.plot import apStarWavegrid
 def specFitInput(func):
     """Decorator to parse the input for spectral fitting"""
     @wraps(func)
@@ -97,3 +99,42 @@ def convert_modelAtmosphere(**kwargs):
         os.remove(os.path.join(modeldirname,'makemoogmodel.awk'))
     return None
 
+def vmacro(x,vmacro=6.,sparse=False,norm=True):
+    """
+    NAME:
+       vmacro
+    PURPOSE:
+       compute the proper macroturbulence kernel
+    INPUT:
+       x - Array of X values for which to compute the macroturbulence kernel, in pixel offset relative to pixel centers; the kernel is calculated at the x offsets for each pixel center; x need to be 1/integer equally-spaced pixel offsets
+       vmacro= (6.) macroturbulence in km/s (FWHM)
+       sparse= (False) if True, return a sparse representation that can be passed to apogee.spec.lsf.convolve for easy convolution      
+       norm= (True) if False, don't normalize to sum to 1 (useful to check whether the kernel actually integrates to 1)
+    OUTPUT:
+       LSF-like array of the macroturbulence
+    HISTORY:
+       2015-03-23 - Written - Bovy (IAS)
+    """
+    from apogee.spec.lsf import sparsify
+    # Convert vmacro to Gaussian sigma / c
+    sigvm= vmacro/3./10.**5./2./numpy.sqrt(2.*numpy.log(2.))
+    # Are the x unit pixels or a fraction 1/hires thereof?
+    hires= int(1./(x[1]-x[0]))
+    # Setup output
+    wav= apStarWavegrid()
+    l10wav= numpy.log10(wav)
+    dowav= l10wav[1]-l10wav[0]
+    # Hi-res wavelength for output
+    hireswav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
+    # Calculate kernel
+    lam= numpy.tile(hireswav,(len(x),1)).T
+    dlam= 10.**(numpy.tile(numpy.log10(hireswav),(len(x),1)).T\
+                    +numpy.tile(x,(len(hireswav),1))*dowav)/lam-1.
+    u= numpy.fabs(dlam/sigvm)
+    out= 2./numpy.sqrt(numpy.pi)*u\
+        *(numpy.exp(-u**2.)/u-numpy.sqrt(numpy.pi)*special.erfc(u))
+    out[dlam == 0.]= 2./numpy.sqrt(numpy.pi)
+    out*= (1.+dlam)*numpy.log(10.)/sigvm
+    if norm: out/= numpy.tile(numpy.sum(out,axis=1),(len(x),1)).T
+    if sparse: out= sparsify(out)
+    return out
