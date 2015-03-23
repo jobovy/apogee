@@ -16,7 +16,9 @@ _SQRTTWO= numpy.sqrt(2.)
 _WAVEPIX_A= apread.apWave('a',ext=2)
 _WAVEPIX_B= apread.apWave('b',ext=2)
 _WAVEPIX_C= apread.apWave('c',ext=2)
-def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
+def convolve(wav,spec,
+             lsf=None,xlsf=None,dxlsf=None,fiber='combo',
+             vmacro=6.):
     """
     NAME:
        convolve
@@ -26,7 +28,9 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
        wav - wavelength array (linear in wavelength in \AA)
        spec - spectrum on wav wavelength grid [nspec,nwave]
        lsf= (None) pre-calculated LSF array from apogee.spec.lsf.eval
-       xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
+       Either:
+          xlsf= (None) 1/integer equally-spaced pixel offsets at which the lsf=lsf input is calculated
+          dxlsf= (None) spacing of pixel offsets
        fiber= if lsf is None, the LSF is calculated for this fiber
        vmacro= (6.) Gaussian macroturbulence smoothing to apply as well (FWHM)
     OUTPUT:
@@ -40,7 +44,10 @@ def convolve(wav,spec,lsf=None,xlsf=None,fiber='combo',vmacro=6.):
         lsf= eval(xlsf,fiber=fiber)
     if not isinstance(lsf,sparse.dia_matrix):
         lsf= sparsify(lsf)
-    dx= xlsf[1]-xlsf[0]
+    if dxlsf is None:
+        dx= xlsf[1]-xlsf[0]
+    else:
+        dx= dxlsf
     hires= int(1./dx)
     l10wav= numpy.log10(apStarWavegrid())
     dowav= l10wav[1]-l10wav[0]
@@ -91,6 +98,33 @@ def sparsify(lsf):
         else:
             diagonals.append(lsf[offset:,ii])
     return sparse.diags(diagonals,offsets)
+
+def dummy(dx=1./3.,sparse=False):
+    """
+    NAME:
+       dummy
+    PURPOSE:
+       return a 'dummy' LSF that is a delta function
+    INPUT:
+       dx= (1/3) spacing between LSF centers in the apStar grid
+       sparse= (False) if True, return a sparse representation that can be passed to apogee.spec.lsf.convolve for easy convolution
+    OUTPUT:
+       LSF(x|pixel center);
+       pixel centers are apStarWavegrid if dx=1, and denser 1/integer versions if dx=1/integer
+    HISTORY:
+       2015-03-23 - Written - Bovy (IAS)
+    """
+    # Are the x unit pixels or a fraction 1/hires thereof?
+    hires= int(1./dx)
+    # Setup output
+    wav= apStarWavegrid()
+    l10wav= numpy.log10(wav)
+    dowav= l10wav[1]-l10wav[0]
+    # Hi-res wavelength for output
+    hireswav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
+    out= numpy.ones((len(hireswav),1))
+    if sparse: out= sparsify(out)
+    return out
 
 def eval(x,fiber='combo',sparse=False):
     """

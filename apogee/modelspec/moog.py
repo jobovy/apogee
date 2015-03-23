@@ -36,7 +36,9 @@ def synth(*args,**kwargs):
     INPUT KEYWORDS:
        LSF:
           lsf= ('all') LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if 'all' or 'combo' a pre-computed version will be downloaded from the web
-          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+          Either:
+             xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+             dxlsf= (None) spacing of pixel offsets
           vmacro= (6.) macroturbulence to apply
        CONTINUUM:
           cont= ('aspcap') continuum-normalization to apply:
@@ -76,7 +78,8 @@ def synth(*args,**kwargs):
         xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
     else:
         xlsf= kwargs.pop('xlsf',None)
-        if xlsf is None: raise ValueError('xlsf input needs to be given if the LSF is given as an array')
+        dxlsf= kwargs.pop('dxlsf',None)
+        if xlsf is None and dxlsf is None: raise ValueError('xlsf= or dxlsf= input needs to be given if the LSF is given as an array')
     vmacro= kwargs.pop('vmacro',6.)
     # Parse continuum-normalization keywords
     cont= kwargs.pop('cont','aspcap')
@@ -158,7 +161,7 @@ def synth(*args,**kwargs):
     out*= numpy.tile(cflux,(nsynth,1))
     # Now convolve with the LSF
     out= aplsf.convolve(mwav,out,
-                        lsf=lsf,xlsf=xlsf,vmacro=vmacro)
+                        lsf=lsf,xlsf=xlsf,dxlsf=dxlsf,vmacro=vmacro)
     # Now continuum-normalize
     if cont.lower() == 'true':
         # Get the true continuum on the apStar wavelength grid
@@ -201,7 +204,9 @@ def windows(*args,**kwargs):
           >>> mwav, cflux= moogsynth(doflux=True,**kwargs)
        LSF:
           lsf= ('all') LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if 'all' or 'combo' a pre-computed version will be downloaded from the web
-          xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+          Either:
+             xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+             dxlsf= (None) spacing of pixel offsets
           vmacro= (6.) macroturbulence to apply
        CONTINUUM:
           cont= ('aspcap') continuum-normalization to apply:
@@ -245,7 +250,8 @@ def windows(*args,**kwargs):
         xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
     else:
         xlsf= kwargs.pop('xlsf',None)
-        if xlsf is None: raise ValueError('xlsf input needs to be given if the LSF is given as an array')
+        dxlsf= kwargs.pop('dxlsf',None)
+        if xlsf is None and dxlsf is None: raise ValueError('xlsf= or dxlsf= input needs to be given if the LSF is given as an array')
     vmacro= kwargs.pop('vmacro',6.)
     # Parse continuum-normalization keywords
     cont= kwargs.pop('cont','aspcap')
@@ -355,7 +361,7 @@ def windows(*args,**kwargs):
     out*= numpy.tile(cflux,(nsynth,1))
     # Now convolve with the LSF
     out= aplsf.convolve(mwav,out,
-                        lsf=lsf,xlsf=xlsf,vmacro=vmacro)
+                        lsf=lsf,xlsf=xlsf,dxlsf=dxlsf,vmacro=vmacro)
     # Now continuum-normalize
     if cont.lower() == 'true':
         # Get the true continuum on the apStar wavelength grid
