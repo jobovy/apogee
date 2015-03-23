@@ -595,7 +595,7 @@ def moogsynth(*args,**kwargs):
         parfile.write("standard_out std.out\n")
         parfile.write("summary_out '../synth.out'\n")
         parfile.write("smoothed_out '/dev/null'\n")
-        parfile.write("strong 0\n")
+        parfile.write("strong 1\n")
         parfile.write("damping 0\n")
         parfile.write("stronglines_in stronglines.vac\n")
         parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
