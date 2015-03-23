@@ -481,9 +481,9 @@ macroturbulence convolution kernel can be pre-computed using
 ``apogee.modelspec.vmacro`` in the same way as the ``lsf.eval``
 function above. The convolutions are implemented efficiently as a
 sparse-matrix multiplication. The LSF obtained from ``lsf.eval`` and
-the macroturbulence kernel from ``apogee.modelspec.macroturbulence``
-can be returned in this sparse format by specifying ``sparse=True`` or
-you can yourself compute the sparse representation by running
+the macroturbulence kernel from ``apogee.modelspec.vmacro`` can be
+returned in this sparse format by specifying ``sparse=True`` or you
+can yourself compute the sparse representation by running
 ``lsf.sparsify``. If for some reason you do not wish to convolve with
 the APOGEE LSF, you can compute a dummy LSF using ``lsf.dummy`` that
 is just a delta function and this can be passed to ``lsf.convolve``
