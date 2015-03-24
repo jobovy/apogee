@@ -639,7 +639,127 @@ atmosphere.
 Using MOOG
 +++++++++++
 
+Synthetic spectra using `MOOG
+<http://www.as.utexas.edu/~chris/moog.html>`__ can be generated using
+functions in the ``apogee.modelspec.moog`` module. The main functions
+in this module are ``moog.synth`` and ``moog.windows``, which provide
+high-level interfaces to MOOG. They both synthesize an arbitrary
+number of spectra for arbitrary combinations of abundances of
+individual elements, convolve with the APOGEE LSF and macroturbulence,
+put the synthetic spectrum on the apStar logarithmic wavelength scale,
+and perform continuum-normalization (see above). The use of
+``moog.synth`` is to generate synthetic spectra over the full APOGEE
+wavelength range, ``moog.windows`` can be used to only vary the
+spectrum within certain windows (although full APOGEE wavelength
+spectra are returned also for ``moog.windows``; see below). There is
+also a lower-level interface to MOOG, ``moog.moogsynth``, which allows
+more direct access to MOOG's ``synth`` and ``doflux`` drivers, and
+``moog.weedout``, which allows MOOG's ``weedout`` driver to be
+run. These are not further discussed here.
 
+The inputs to ``moog.synth`` and ``moog.windows`` are by and large the
+same. Both take an arbitrary number of lists as their first inputs,
+which specify the element to vary and the abundance relative to the
+default abundance in the provided model atmosphere. For example, to
+vary the iron abundance by -0.25 and 0.25 dex, the input would be
+[26,-0.25,0.25]; to also vary the titanium abundance one would also
+provide a list [22,-0.3] (lists do not all have to have the same
+length; they are zero-padded). 
+
+The model atmosphere can be provided in a variety of ways. The first
+is to give a model-atmosphere instance as discussed above as the
+keyword ``modelatm=``. Alternatively, the stellar parameters of the
+atmosphere can be provided (``teff=``, ``logg=``, ``metals=``,
+``cm=``, and ``am=``; they can also be provded as an ``fparam=`` array
+similar to the arrays coming out of ASPCAP [see below]). One also has
+to specify the microturbulence (``vmicro=``, or as part of
+``fparam=``).
+
+To perform the synthesis we need a line list. This can be passed as
+the ``linelist=`` keyword. This can be set to a filename or just to
+the name of an APOGEE line list for APOGEE collaborators (linelists
+can be downloaded using ``apogee.tools.download.linelist``).
+
+The LSF can be given as the ``lsf=`` keyword. This can be set to the
+output of ``apogee.spec.lsf.eval`` (best if it's a sparse version of
+this output; see above), in which case you also have to specify the
+pixel offsets at which the LSF is calculated as ``xlsf=`` or
+``dxlsf``. Alternatively, you can just say ``lsf='all'`` or
+``lsf='combo'`` to use an average LSF of all fibers or a combination
+of 6 fibers (see the section on the LSF above).
+
+Macroturbulence can be set using the ``vmacro=`` keyword. This can be
+a number for a Gaussian macroturbulence, or it can be set to the
+output of ``apogee.modelspec.vmacro`` for a more realistic treatment
+of macroturbulence (again, see the LSF section above).
+
+Continuum normalization can be done in one of three ways:
+``cont='aspcap'`` (the default) which is an implementation of the
+standard continuum normalization performed by ASPCAP;
+``cont='cannon'`` for the Cannon-style normalization described above;
+or ``cont='true'`` for using the true continuum.
+
+Putting all of this together, we can generate the synthetic spectra
+for the two abundances given above and for the atmosphere above as
+follows (we repeat the setup of the model atmosphere and explicitly
+set many of the parameters to their default values)::
+
+	import apogee.modelspec.moog
+	from apogee.modelatm import atlas9
+	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
+	# The following takes a while ...
+	synspec= apogee.modelspec.moog.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,linelist='moog.201312161124.vac',lsf='all',cont='aspcap',vmacro=6.)
+	
+and we can plot these::
+
+    import apogee.spec.plot as splot
+    splot.waveregions(synspec[0])
+    splot.waveregions(synspec[1],overplot=True)
+
+.. image:: _readme_files/_synth_moog_example.png
+
+``apogee.moog.windows`` can generate synthetic spectra for which only
+a set of windows are varied. Typical use of this function is with the
+``apogee.spec.window`` functions that specify the windows for
+different element species. However, arbitrary windows can be specified
+using the ``startindxs`` and ``endindxs`` or ``startlams`` and
+``endlams`` arguments (similar to ``apogee.spec.plot.waveregions``);
+they need to be given before any abundance changes. For example, to
+vary the aluminum abundance for the off-grid model atmosphere above in
+the APOGEE aluminum windows do::
+
+	  abu= [13,-1.,-0.75,-0.5,-0.25,0.,0.25,0.5,0.75,1.]
+	  synspec= apogee.modelspec.moog.windows('Al',abu,modelatm=atm_ng,linelist='moog.201312161124.vac')
+
+and we can plot the aluminum windows::
+
+    splot.windows(synspec[0],'Al')
+    for ii in range(1,len(abu)-1): splot.windows(synspec[ii],'Al',overplot=True)
+
+.. image:: _readme_files/_windows_al_moog_example.png
+
+The ``moog.windows`` synthesis is performed by first synthesizing a
+single full APOGEE wavelength spectrum to use as a baseline and then
+generating multiple synthetic spectra in the requested windows for
+which the baseline is used outside of the window. For most elements of
+interest this is very fast, because their lines only span a narrow
+wavelength range. The baseline can be pre-computed using
+``moog.moogsynth``, such that it can be re-used when varying different
+elements. One has to generate the baseline continuum, the continuum
+normalized spectrum, and the wavelength grid on which the synthesis is
+computed. For example::
+
+	  atm_ng.writeto('tmp.mod') # For the low-level moogsynth interface, we need to specify the atmosphere as a file
+	  baseline= apogee.modelspec.moog.moogsynth(modelatm='tmp.mod',linelist='moog.201312161124.vac')[1] 
+	  mwav, cflux= apogee.modelspec.moog.moogsynth(doflux=True,modelatm='tmp.mod',linelist='moog.201312161124.vac')
+	  
+then we can repeat the calculation above as
+
+     	  synspec= apogee.modelspec.moog.windows('Al',abu,
+	              baseline=baseline,mwav=mwav,cflux=cflux,
+		      modelatm=atm_ng,linelist='moog.201312161124.vac')
+
+This is clearly very fast once we have the baseline.
 
 Fitting spectra
 ^^^^^^^^^^^^^^^^^
