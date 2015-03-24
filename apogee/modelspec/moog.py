@@ -76,6 +76,7 @@ def synth(*args,**kwargs):
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
         xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
+        dxlsf= None
     else:
         xlsf= kwargs.pop('xlsf',None)
         dxlsf= kwargs.pop('dxlsf',None)
@@ -248,6 +249,7 @@ def windows(*args,**kwargs):
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
         xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
+        dxlsf= None
     else:
         xlsf= kwargs.pop('xlsf',None)
         dxlsf= kwargs.pop('dxlsf',None)
