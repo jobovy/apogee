@@ -668,11 +668,12 @@ length; they are zero-padded).
 
 The model atmosphere can be provided in a variety of ways. The first
 is to give a model-atmosphere instance as discussed above as the
-keyword ``modelatm=``. Alternatively, the stellar parameters of the
-atmosphere can be provided (``teff=``, ``logg=``, ``metals=``,
-``cm=``, and ``am=``; they can also be provded as an ``fparam=`` array
-similar to the arrays coming out of ASPCAP [see below]). One also has
-to specify the microturbulence (``vmicro=``, or as part of
+keyword ``modelatm=`` (this keyword can also be the name of file
+holding the model atmosphere). Alternatively, the stellar parameters
+of the atmosphere can be provided (``teff=``, ``logg=``, ``metals=``,
+``cm=``, and ``am=``; they can also be provided as an ``fparam=``
+array similar to the arrays coming out of ASPCAP [see below]). One
+also has to specify the microturbulence (``vmicro=``, or as part of
 ``fparam=``).
 
 To perform the synthesis we need a line list. This can be passed as
@@ -708,7 +709,8 @@ set many of the parameters to their default values)::
 	from apogee.modelatm import atlas9
 	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
 	# The following takes a while ...
-	synspec= apogee.modelspec.moog.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,linelist='moog.201312161124.vac',lsf='all',cont='aspcap',vmacro=6.)
+	synspec= apogee.modelspec.moog.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,\
+		 linelist='moog.201312161124.vac',lsf='all',cont='aspcap',vmacro=6.)
 	
 and we can plot these::
 
@@ -753,7 +755,7 @@ computed. For example::
 	  baseline= apogee.modelspec.moog.moogsynth(modelatm='tmp.mod',linelist='moog.201312161124.vac')[1] 
 	  mwav, cflux= apogee.modelspec.moog.moogsynth(doflux=True,modelatm='tmp.mod',linelist='moog.201312161124.vac')
 	  
-then we can repeat the calculation above as
+then we can repeat the calculation above as::
 
      	  synspec= apogee.modelspec.moog.windows('Al',abu,
 	              baseline=baseline,mwav=mwav,cflux=cflux,
