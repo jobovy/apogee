@@ -397,8 +397,6 @@ the windows.
 ANALYZING SPECTRA
 ==================
 
-SECTION UNDER DEVELOPMENT!!!!
-
 Generating model spectra
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
