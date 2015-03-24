@@ -731,7 +731,8 @@ vary the aluminum abundance for the off-grid model atmosphere above in
 the APOGEE aluminum windows do::
 
 	  abu= [13,-1.,-0.75,-0.5,-0.25,0.,0.25,0.5,0.75,1.]
-	  synspec= apogee.modelspec.moog.windows('Al',abu,modelatm=atm_ng,linelist='moog.201312161124.vac')
+	  synspec= apogee.modelspec.moog.windows('Al',abu,modelatm=atm_ng,\
+	  	   linelist='moog.201312161124.vac')
 
 and we can plot the aluminum windows::
 
@@ -751,14 +752,17 @@ elements. One has to generate the baseline continuum, the continuum
 normalized spectrum, and the wavelength grid on which the synthesis is
 computed. For example::
 
-	  atm_ng.writeto('tmp.mod') # For the low-level moogsynth interface, we need to specify the atmosphere as a file
-	  baseline= apogee.modelspec.moog.moogsynth(modelatm='tmp.mod',linelist='moog.201312161124.vac')[1] 
-	  mwav, cflux= apogee.modelspec.moog.moogsynth(doflux=True,modelatm='tmp.mod',linelist='moog.201312161124.vac')
+	  # For the low-level moogsynth interface, we need to specify the atmosphere as a file
+	  atm_ng.writeto('tmp.mod') 
+	  baseline= apogee.modelspec.moog.moogsynth(modelatm='tmp.mod',\
+	  	    linelist='moog.201312161124.vac')[1] 
+	  mwav, cflux= apogee.modelspec.moog.moogsynth(doflux=True,\
+	  	modelatm='tmp.mod',linelist='moog.201312161124.vac')
 	  
 then we can repeat the calculation above as::
 
-     	  synspec= apogee.modelspec.moog.windows('Al',abu,
-	              baseline=baseline,mwav=mwav,cflux=cflux,
+     	  synspec= apogee.modelspec.moog.windows('Al',abu,\
+	              baseline=baseline,mwav=mwav,cflux=cflux,\
 		      modelatm=atm_ng,linelist='moog.201312161124.vac')
 
 This is clearly very fast once we have the baseline.
