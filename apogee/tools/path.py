@@ -380,6 +380,20 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
                                 'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
     
+    elif dr == 'current':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'current','stars','l25_6d',
+                                _redux_dr(dr=dr),loc_id.strip(),
+                                'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id.strip()))
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'current','stars','l25_6d',
+                                _redux_dr(dr=dr),'%i' % loc_id,
+                                'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))
+    
 def apStarPath(loc_id,apogee_id,dr=None):
     """
     NAME:
@@ -410,6 +424,18 @@ def apStarPath(loc_id,apogee_id,dr=None):
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
             return os.path.join(specReduxPath,'r5','stars','apo25m',
+                                '%i' % loc_id,
+                                'apStar-r5-%s.fits' % apogee_id)
+
+    elif dr == 'current':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'current','stars','apo1m',
+                                loc_id.strip(),
+                                'apStar-r5-%s.fits' % apogee_id.strip())
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'current','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r5-%s.fits' % apogee_id)
 
@@ -533,7 +559,7 @@ def modelAtmospherePath(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
                         cfe=0.,afe=0.,vmicro=2.,dr=None):
     """
     NAME:
-       modelSpecPath
+       modelAtmospherePath
     PURPOSE:
        returns the path of a model spectrum file
     INPUT:
