@@ -206,7 +206,8 @@ def allStar(rmcommissioning=True,
             data['BPG_DIST1_MEAN']= dist['BPG_dist1_mean']
             data['HAYDEN_DIST_PEAK']= 10.**(dist['HAYDEN_distmod_PEAK']/5.-2.)
             data['SCHULTHEIS_DIST']= dist['SCHULTHEIS_dist']
-    if int(path._APOGEE_REDUX[1:]) > 600:
+    if path._APOGEE_REDUX.lower() == 'current' \
+            or int(path._APOGEE_REDUX[1:]) > 600:
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
