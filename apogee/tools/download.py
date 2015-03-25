@@ -12,7 +12,7 @@ import numpy
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
-_PROPRIETARY_URL= 'https://data.sdss.org/sas/bosswork'
+_PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
 def allStar(dr=None):
@@ -294,7 +294,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'bosswork'
+    if dr is None: dr= 'current'
     # First make sure the file doesn't exist
     filePath= path.modelAtmospherePath(lib=lib,teff=teff,logg=logg,
                                        metals=metals,cfe=cfe,afe=afe,
@@ -322,7 +322,7 @@ def linelist(linelist,dr=None,spider=False):
     HISTORY:
        2015-02-13 - Written - Bovy (IAS)
     """
-    if dr is None: dr= 'bosswork'
+    if dr is None: dr= 'current'
     # First make sure the file doesn't exist
     filePath= path.linelistPath(linelist,dr=dr)
     if os.path.exists(filePath): return None
@@ -431,5 +431,5 @@ def _base_url(dr,rc=False):
     else: return _PROPRIETARY_URL
 
 def _dr_string(dr):
-    if dr == 'bosswork': return 'bosswork'
+    if dr == 'current': return 'apogeework'
     else: return 'dr%s' % dr
