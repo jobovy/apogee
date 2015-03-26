@@ -769,11 +769,11 @@ Fitting spectra
 ^^^^^^^^^^^^^^^^^
 
 To replicate the APOGEE data analysis, one can use the APOGEE model
-grids to fit a spectrum. So far this has only been implemented here
-for the overall six (or seven if you vary the microturbulence)
-parameter grid. For example, let's look again at entry 3512 in the
-subsample of S/N > 200 stars in the DR12 red-clump catalog. Load the
-catalog::
+grids to fit a spectrum. This has been implemented here for the
+overall six (or seven if you vary the microturbulence) parameter grid
+as well as for fitting individual elements. For example, let's look
+again at entry 3512 in the subsample of S/N > 200 stars in the DR12
+red-clump catalog. Load the catalog::
 
 	  import apogee.tools.read as apread
 	  data= apread.rcsample()
