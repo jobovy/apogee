@@ -573,7 +573,7 @@ downloaded on `this website
 <http://www.iac.es/proyecto/ATLAS-APOGEE/>`__; APOGEE collaborators
 can also use the ``apogee.tools.download.modelAtmosphere`` function to
 download these. Currently, the atmospheres must be put into a
-``bosswork/apogee/spectro/redux/speclib/kurucz_filled`` subdirectory
+``apogeework/apogee/spectro/redux/speclib/kurucz_filled`` subdirectory
 of the overall ``$APOGEE_DATA`` data directory (see above); the
 ``download.modelAtmosphere`` function automatically puts the model
 atmospheres in the correct location. The functions in
