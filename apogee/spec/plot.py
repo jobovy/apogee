@@ -36,6 +36,9 @@ line_labels['oh']= r'$\mathrm{OH}$'
 line_labels['co']= r'$^{12}\!\mathrm{CO}$'
 line_labels['cn']= r'$\mathrm{CN}$'
 line_labels['13co']= r'$^{13}\!\mathrm{CO}$'
+line_labels['hbrpi']= r'$\mathrm{Br-}\pi$'
+line_labels['hbrla']= r'$\mathrm{Br-}\lambda$'
+line_labels['hbr']= r'$\mathrm{H[Br]}$'
 line_labels['dib']= r'$\mathrm{DIB}$'
 # From Table 2 in Smith et al. (2013)
 _FEI_lines= [air2vac(l) for l in [15194.492,15207.526,15395.718,15490.339,
@@ -70,6 +73,12 @@ _CO_lines= [air2vac(l) for l in [15582.,15780.5,15988.,16189.5]]
 _CN_lines= [air2vac(l) for l in [15260.,15322.,15397.,15332.,15410.,
                                  15447.,15466.,15472.,15482.]]
 _13CO_lines= [air2vac(l) for l in [16122.5,16743.5]]
+#The hydrogen bracket series
+_HBRPI_lines= [15196.005]
+_HBRLA_lines= [15704.960]
+_HBR_lines= [15004.970,15043.157,15086.906,15137.367,15264.717,
+             15345.992,15443.148,15560.708,15884.888,16113.721,
+             16411.681,16811.117]
 
 def apStarWavegrid():
     return 10.**numpy.arange(_LOG10LAMBDA0,
@@ -613,6 +622,9 @@ def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('co',wavemin,wavemax,thisax,lams,spec)
     _label_lines('cn',wavemin,wavemax,thisax,lams,spec)
     _label_lines('13co',wavemin,wavemax,thisax,lams,spec)
+    _label_lines('hbrpi',wavemin,wavemax,thisax,lams,spec)
+    _label_lines('hbrla',wavemin,wavemax,thisax,lams,spec)
+    _label_lines('hbr',wavemin,wavemax,thisax,lams,spec)
     return None
 
 def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
@@ -654,6 +666,12 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
         lines= _CN_lines
     elif elem.lower() == '13co':
         lines= _13CO_lines
+    elif elem.lower() == 'hbrpi':
+        lines= _HBRPI_lines
+    elif elem.lower() == 'hbrla':
+        lines= _HBRLA_lines
+    elif elem.lower() == 'hbr':
+        lines= _HBR_lines
     fontsize= 5.5
     bbox= dict(facecolor='w',edgecolor='none')
     for line in lines:
@@ -710,6 +728,24 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
                             [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB+2,
+                                    0.55*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'fe' and line > 15198. and line < 15199.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.6*ylevel,0.9*ylevel],'k:',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.55*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'ti' and line > 15703. and line < 15704.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.6*ylevel,0.9*ylevel],'k:',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
                                     0.55*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
