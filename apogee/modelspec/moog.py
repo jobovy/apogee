@@ -501,7 +501,7 @@ def moogsynth(*args,**kwargs):
           ...
           [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
     SYNTHEIS KEYWORDS:
-       isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios
+       isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'108.00116':'1.001','606.01212':'1.01'})
        wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        doflux= (False) if True, calculate the continuum flux instead
     LINELIST KEYWORDS:
@@ -531,7 +531,46 @@ def moogsynth(*args,**kwargs):
     dw= kwargs.pop('dw',_DW_DEFAULT)
     width= kwargs.pop('width',_WIDTH_DEFAULT)
     linelist= kwargs.pop('linelist',None)
+    # Parse isotopes
     isotopes= kwargs.pop('isotopes','solar')
+    if isinstance(isotopes,str) and isotopes.lower() == 'solar':
+        isotopes= {'108.00116':'1.001',
+                   '606.01212':'1.01',
+                   '606.01213':'90',
+                   '606.01313':'180',
+                   '607.01214':'1.01',
+                   '607.01314':'90',
+                   '607.01215':'273',
+                   '608.01216':'1.01',
+                   '608.01316':'90',
+                   '608.01217':'1101',
+                   '608.01218':'551',
+                   '114.00128':'1.011',
+                   '114.00129':'20',
+                   '114.00130':'30',
+                   '101.00101':'1.001',
+                   '101.00102':'1000',
+                   '126.00156':'1.00'}
+    elif isinstance(isotopes,str) and isotopes.lower() == 'arcturus':
+        isotopes= {'108.00116':'1.001',
+                   '606.01212':'0.91',
+                   '606.01213':'8',
+                   '606.01313':'81',
+                   '607.01214':'0.91',
+                   '607.01314':'8',
+                   '607.01215':'273',
+                   '608.01216':'0.91',
+                   '608.01316':'8',
+                   '608.01217':'1101',
+                   '608.01218':'551',
+                   '114.00128':'1.011',
+                   '114.00129':'20',
+                   '114.00130':'30',
+                   '101.00101':'1.001',
+                   '101.00102':'1000',
+                   '126.00156':'1.00'}
+    elif not isinstance(isotopes,dict):
+        raise ValueError("'isotopes=' input not understood, should be 'solar', 'arcturus', or a dictionary")
     # Get the filename of the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
     if not modelatm is None:
@@ -615,148 +654,13 @@ def moogsynth(*args,**kwargs):
         parfile.write("lines 1\n")
         parfile.write("flux/int 0\n")
         # Write the isotopes
-        if isotopes.lower() == 'solar':
-            parfile.write("isotopes 17 %i\n" % nsynth)
-            isotopestr= '108.00116'
+        niso= len(isotopes)
+        parfile.write("isotopes %i %i\n" % (niso,nsynth))
+        for iso in isotopes:
+            isotopestr= iso
             for ii in range(nsynth):
-                isotopestr+= ' 1.001'
+                isotopestr+= ' '+isotopes[iso]
             parfile.write(isotopestr+'\n')
-            isotopestr= '606.01212'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.01'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '606.01213'
-            for ii in range(nsynth):
-                isotopestr+= ' 90'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '606.01313'
-            for ii in range(nsynth):
-                isotopestr+= ' 180'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01214'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.01'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01314'
-            for ii in range(nsynth):
-                isotopestr+= ' 90'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01215'
-            for ii in range(nsynth):
-                isotopestr+= ' 273'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01216'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.01'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01316'
-            for ii in range(nsynth):
-                isotopestr+= ' 90'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01217'
-            for ii in range(nsynth):
-                isotopestr+= ' 1101'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01218'
-            for ii in range(nsynth):
-                isotopestr+= ' 551'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00128'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.011'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00129'
-            for ii in range(nsynth):
-                isotopestr+= ' 20'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00130'
-            for ii in range(nsynth):
-                isotopestr+= ' 30'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '101.00101'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.001'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '101.00102'
-            for ii in range(nsynth):
-                isotopestr+= ' 1000'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '126.00156'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.00'
-            parfile.write(isotopestr+'\n')
-        elif isotopes.lower() == 'arcturus':
-            parfile.write("isotopes 17 %i\n" % nsynth)
-            isotopestr= '108.00116'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.001'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '606.01212'
-            for ii in range(nsynth):
-                isotopestr+= ' 0.91'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '606.01213'
-            for ii in range(nsynth):
-                isotopestr+= ' 8'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '606.01313'
-            for ii in range(nsynth):
-                isotopestr+= ' 81'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01214'
-            for ii in range(nsynth):
-                isotopestr+= ' 0.91'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01314'
-            for ii in range(nsynth):
-                isotopestr+= ' 8'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '607.01215'
-            for ii in range(nsynth):
-                isotopestr+= ' 273'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01216'
-            for ii in range(nsynth):
-                isotopestr+= ' 0.91'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01316'
-            for ii in range(nsynth):
-                isotopestr+= ' 8'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01217'
-            for ii in range(nsynth):
-                isotopestr+= ' 1101'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '608.01218'
-            for ii in range(nsynth):
-                isotopestr+= ' 551'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00128'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.011'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00129'
-            for ii in range(nsynth):
-                isotopestr+= ' 20'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '114.00130'
-            for ii in range(nsynth):
-                isotopestr+= ' 30'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '101.00101'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.001'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '101.00102'
-            for ii in range(nsynth):
-                isotopestr+= ' 1000'
-            parfile.write(isotopestr+'\n')
-            isotopestr= '126.00156'
-            for ii in range(nsynth):
-                isotopestr+= ' 1.00'
-            parfile.write(isotopestr+'\n')
-        else:
-            raise ValueError("'isotopes=' input not understood, should be 'solar' or 'arcturus'")
         # Abundances
         parfile.write("abundances %i %i\n" % (nabu,nsynth))
         for ii in range(nabu):
