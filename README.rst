@@ -677,7 +677,9 @@ also has to specify the microturbulence (``vmicro=``, or as part of
 To perform the synthesis we need a line list. This can be passed as
 the ``linelist=`` keyword. This can be set to a filename or just to
 the name of an APOGEE line list for APOGEE collaborators (linelists
-can be downloaded using ``apogee.tools.download.linelist``).
+can be downloaded using ``apogee.tools.download.linelist``). Isotopic
+ratios can be set to either ``isotopes='solar'`` or
+``isotopes='arcturus'`` for typical dwarf or giant isotope ratios.
 
 The LSF can be given as the ``lsf=`` keyword. This can be set to the
 output of ``apogee.spec.lsf.eval`` (best if it's a sparse version of
@@ -708,7 +710,7 @@ set many of the parameters to their default values)::
 	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
 	# The following takes a while ...
 	synspec= apogee.modelspec.moog.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,\
-		 linelist='moog.201312161124.vac',lsf='all',cont='aspcap',vmacro=6.)
+		 linelist='moog.201312161124.vac',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
 	
 and we can plot these::
 
