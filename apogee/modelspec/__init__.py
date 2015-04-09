@@ -138,3 +138,12 @@ def vmacro(x,vmacro=6.,sparse=False,norm=True):
     if norm: out/= numpy.tile(numpy.sum(out,axis=1),(len(x),1)).T
     if sparse: out= sparsify(out)
     return out
+
+def _chi2(mspec,spec,specerr,weights=None):
+    """Internal function that calculates the chi^2 for a given model,
+     assumes that the wavelength axis==-1"""
+    if not weights is None:
+        return numpy.sum(weights*(mspec-spec)**2./specerr**2,axis=-1)
+    else:
+        return numpy.sum((mspec-spec)**2./specerr**2,axis=-1)
+

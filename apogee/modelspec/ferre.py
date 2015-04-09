@@ -12,7 +12,7 @@ from apogee.tools import paramIndx,_ELEM_SYMBOL
 from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.spec.window as apwindow
 import apogee.spec.cannon as cannon
-from apogee.modelspec import specFitInput
+from apogee.modelspec import specFitInput, _chi2
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -715,14 +715,6 @@ def elemchi2(spec,specerr,
                          (1,nvelem)).reshape((nspec*nvelem,spec.shape[1]))
     tchi2= _chi2(ispec,dspec,dspecerr,numpy.tile(weights,(nspec*nvelem,1)))
     return numpy.reshape(tchi2,(nspec,nvelem))
-
-def _chi2(mspec,spec,specerr,weights=None):
-    """Internal function that calculates the chi^2 for a given model,
-     assumes that the wavelength axis==-1"""
-    if not weights is None:
-        return numpy.sum(weights*(mspec-spec)**2./specerr**2,axis=-1)
-    else:
-        return numpy.sum((mspec-spec)**2./specerr**2,axis=-1)
 
 def run_ferre(dir,verbose=False):
     """
