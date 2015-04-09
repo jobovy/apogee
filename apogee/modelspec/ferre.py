@@ -13,6 +13,7 @@ from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.spec.window as apwindow
 import apogee.spec.cannon as cannon
 from apogee.modelspec import specFitInput, _chi2
+import apogee.util.emcee
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
@@ -715,6 +716,217 @@ def elemchi2(spec,specerr,
                          (1,nvelem)).reshape((nspec*nvelem,spec.shape[1]))
     tchi2= _chi2(ispec,dspec,dspecerr,numpy.tile(weights,(nspec*nvelem,1)))
     return numpy.reshape(tchi2,(nspec,nvelem))
+
+@specFitInput
+def mcmc(spec,specerr,
+         fparam=None,
+         teff=4750.,logg=2.5,metals=0.,am=0.,nm=0.,cm=0.,vm=None,
+         nsamples=1000,nwalkers=40,initsig=[100.,0.2,0.2,0.1,0.1,0.1,0.1],
+         fixteff=False,fixlogg=False,fixmetals=False,fixam=False,fixcm=False,
+         fixnm=False,fixvm=False,
+         lib='GK',pca=True,sixd=True,dr=None,
+         inter=3,f_format=1,f_access=None,
+         verbose=False):
+    """
+    NAME:
+       mcmc
+    PURPOSE:
+       Perform MCMC of the 6/7 parameter global fit of model spectra to a given data spectrum
+    INPUT:
+       Either:
+          (1) location ID - single or list/array of location IDs
+              APOGEE ID - single or list/array of APOGEE IDs; loads aspcapStar
+          (2) spec - spectrum: can be (nwave) or (nspec,nwave)
+              specerr - spectrum errors: can be (nwave) or (nspec,nwave)
+       Input parameters (can be 1D arrays)
+          Either:
+             (1) fparam= (None) output of ferre.fit
+             (2) teff= (4750.) Effective temperature (K)
+                 logg= (2.5) log10 surface gravity / cm s^-2
+                 metals= (0.) overall metallicity
+                 am= (0.) [alpha/M]
+                 nm= (0.) [N/M]
+                 cm= (0.) [C/M]
+                 vm= if using the 7D library, also specify the microturbulence
+       MCMC options:
+          nsamples= (1000) number of samples to get
+          nwalkers= (40) number of ensemble walkers to use in the MCMC
+          initsig= std. dev. of the initial ball of walkers around 
+                   [Teff,logg,log10vmicro,metals,cm,nm,am]
+                   specify log10vmicro even when using a 6D library
+          fixteff= (True) if True, fix teff at the input value
+          fixlogg= (True) if True, fix logg at the input value
+          fixvm= (True) if True, fix vm at the input value (only if sixd is False)
+          fixmetals= (None) if True, fix metals at the input value
+          fixam= (None) if True, fix am at the input value
+          fixcm= (None) if True, fix cm at the input value
+          fixnm= (None) if True, fix nm at the input value
+       Library options:
+          lib= ('GK') spectral library
+          pca= (True) if True, use a PCA compressed library
+          sixd= (True) if True, use the 6D library (w/o vm)
+          dr= data release
+       FERRE options:
+          inter= (3) order of the interpolation
+          f_format= (1) file format (0=ascii, 1=unf)
+          f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+       verbose= (False) if True, run FERRE in verbose mode
+    OUTPUT:
+       TBD
+    HISTORY:
+       2015-04-08 - Written - Bovy (IAS)
+    """
+    # Parse fparam
+    if not fparam is None:
+        teff= fparam[:,paramIndx('TEFF')]
+        logg= fparam[:,paramIndx('LOGG')]
+        metals= fparam[:,paramIndx('METALS')]
+        am= fparam[:,paramIndx('ALPHA')]
+        nm= fparam[:,paramIndx('N')]
+        cm= fparam[:,paramIndx('C')]
+        if sixd:
+            vm= None
+        else:
+            vm= fparam[:,paramIndx('LOG10VDOP')]        
+    # Make sure the Teff etc. have the right dimensionality
+    if len(spec.shape) == 1:
+        nspec= 1
+    else:
+        raise ValueError("apogee.modelspec.ferre.mcmc only works for a single spectrum")
+        nspec= spec.shape[0]
+    if nspec > 1 and isinstance(teff,float):
+        teff= teff*numpy.ones(nspec)
+    if nspec > 1 and isinstance(logg,float):
+        logg= logg*numpy.ones(nspec)
+    if nspec > 1 and isinstance(metals,float):
+        metals= metals*numpy.ones(nspec)
+    if nspec > 1 and isinstance(am,float):
+        am= am*numpy.ones(nspec)
+    if nspec > 1 and isinstance(nm,float):
+        nm= nm*numpy.ones(nspec)
+    if nspec > 1 and isinstance(cm,float):
+        cm= cm*numpy.ones(nspec)
+    if nspec > 1 and not vm is None and isinstance(vm,float):
+        vm= vm*numpy.ones(nspec)
+    if dr is None: dr= appath._default_dr()
+    # Setup the walkers
+    ndim= 7-sixd-fixvm+sixd*fixvm-fixteff-fixlogg-fixmetals-fixam-fixcm-fixnm
+    p0= []
+    for ii in range(nwalkers):
+        tp0= []
+        # Teff
+        if not fixteff:
+            tteff= teff+numpy.random.normal()*initsig[0]
+            if tteff > 6000.: tteff= 6000.
+            if tteff < 3500.: tteff= 3500.
+            tp0.append(tteff)
+        # logg
+        if not fixlogg:
+            tlogg= logg+numpy.random.normal()*initsig[1]
+            if logg > 5.: tlogg= 5.
+            if logg < 0.: tlogg= 0.
+            tp0.append(tlogg)
+        # log10vmicro
+        if not (fixvm or sixd):
+            tvm= numpy.log10(vm)+numpy.random.normal()*initsig[2]
+            if tvm > numpy.log10(8.0): tvm= numpy.log10(8.0)
+            if tvm < numpy.log10(0.5): tvm= numpy.log10(0.5)
+            tp0.append(tvm)
+        # metals
+        if not fixmetals:
+            tmetals= metals+numpy.random.normal()*initsig[3]
+            if metals > 0.5: tmetals= 0.5
+            if metals < -2.5: tmetals= -2.5
+            tp0.append(tmetals)
+        # cm
+        if not fixcm:
+            tcm= cm+numpy.random.normal()*initsig[4]
+            if cm > 1.0: tcm= 1.0
+            if cm < -1.0: tcm= -1.
+            tp0.append(tcm)
+        # nm
+        if not fixnm:
+            tnm= nm+numpy.random.normal()*initsig[5]
+            if nm > 0.5: tnm= 1.0
+            if nm < -1.0: tnm= -1.0
+            tp0.append(tnm)
+        # am
+        if not fixam:
+            tam= am+numpy.random.normal()*initsig[6]
+            if am > 0.5: tam= 1.0
+            if am < -1.0: tam= -1.0
+            tp0.append(tam)
+        p0.append(numpy.array(tp0)[:,0])
+    p0= numpy.array(p0)
+    # Prepare the data
+    dspec= numpy.tile(spec,(nwalkers,1))
+    dspecerr= numpy.tile(specerr,(nwalkers,1))
+    # Run MCMC
+    sampler= apogee.util.emcee.EnsembleSampler(nwalkers,ndim,_mcmc_lnprob,
+                                               args=[dspec,dspecerr,
+                                                     teff,logg,vm,metals,
+                                                     cm,nm,am,
+                                                     fixteff,fixlogg,fixvm,
+                                                     fixmetals,fixcm,fixnm,
+                                                     fixam,sixd,pca,
+                                                     dr,lib,
+                                                     inter,f_format,f_access])
+    # Burn-in 10% of nsamples
+    pos, prob, state = sampler.run_mcmc(p0,nsamples//10)
+    sampler.reset()
+    # Run main MCMC
+    sampler.run_mcmc(pos,nsamples)
+    return sampler.flatchain
+
+def _mcmc_lnprob(p,dspec,dspecerr,
+                 teff,logg,vm,metals,cm,nm,am,
+                 fixteff,fixlogg,fixvm,fixmetals,fixcm,fixnm,fixam,
+                 sixd,pca,dr,lib,inter,f_format,f_access):
+    # First fill in the fixed parameters
+    parIndx= 0
+    if fixteff:
+        tteff= teff*numpy.ones(len(p))
+    else:
+        tteff= p[:,parIndx]
+        parIndx+= 1
+    if fixlogg:
+        tlogg= logg*numpy.ones(len(p))
+    else:
+        tlogg= p[:,parIndx]
+        parIndx+= 1
+    if fixvm and not sixd:
+        tvm= vm*numpy.ones(len(p))
+    elif sixd:
+        tvm= None
+    else:
+        tvm= 10.**p[:,parIndx]
+        parIndx+= 1
+    if fixmetals:
+        tmetals= metals*numpy.ones(len(p))
+    else:
+        tmetals= p[:,parIndx]
+        parIndx+= 1
+    if fixcm:
+        tcm= cm*numpy.ones(len(p))
+    else:
+        tcm= p[:,parIndx]
+        parIndx+= 1
+    if fixnm:
+        tnm= nm*numpy.ones(len(p))
+    else:
+        tnm= p[:,parIndx]
+        parIndx+= 1
+    if fixam:
+        tam= am*numpy.ones(len(p))
+    else:
+        tam= p[:,parIndx]
+    # Get the interpolated spectra
+    ispec= interpolate(tteff,tlogg,tmetals,tam,tnm,tcm,vm=tvm,
+                       sixd=True,apStarWavegrid=False,dr=dr,pca=pca,
+                       lib=lib,inter=inter,f_format=f_format,f_access=f_access)
+    # Compute the chi^2
+    chi2= _chi2(ispec,dspec[:len(ispec)],dspecerr[:len(ispec)])
+    return -chi2/2.
 
 def run_ferre(dir,verbose=False):
     """
