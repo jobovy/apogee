@@ -148,7 +148,7 @@ class Atlas9Atmosphere(object):
         self._rosslandtau()
         return None
 
-    def writeto(self,filename):
+    def writeto(self,filename,turbo=False):
         """
         NAME:
            writeto
@@ -156,11 +156,14 @@ class Atlas9Atmosphere(object):
            write the model atmosphere to a file in the KURUCZ format
         INPUT:
            filename - name of the file to which the atmosphere will be written
+           turbo= (False) if True, write a file in 'Turbospectrum' format
         OUTPUT:
            (none; just writes the file)
         HISTORY:
            2015-03-20 - Written - Bovy (IAS)
         """
+        if turbo:
+            return self._writeto_turbo(filename)
         with open(filename,'w') as outfile:
             # Write the first four lines
             for ii in range(4):
@@ -200,6 +203,20 @@ class Atlas9Atmosphere(object):
             outfile.write('PRADK %.4E\n' % self._pradk)
             outfile.write('BEGIN                    ITERATION  15 COMPLETED\n')
             return None
+
+    def _writeto_turbo(self,filename):
+        """writeto for 'Turbospectrum' format"""
+        with open(filename,'w') as outfile:
+            # Write the first line
+            outfile.write("'KURUCZ' 72 5000 %.2f 0 0.\n" % self._logg)
+            # Write the deck
+            for ii in range(self._nlayers):
+                tdeck= (self._deck[ii,0],8,)
+                tdeck+= tuple(self._deck[ii,1:-2])
+                newline= ' %.8E %*.1f %.3E %.3E %.3E %.3E %.3E %.3E' %\
+                    tdeck
+                outfile.write(newline+'\n')
+        return None
 
     def _loadGridPoint(self):
         """Load the model corresponding to this grid point"""
