@@ -1,5 +1,5 @@
 ###############################################################################
-# apogee.modelspec.moog: functions to run MOGG with the APOGEE analysis
+# apogee.modelspec.moog: functions to run MOOG with the APOGEE analysis
 ###############################################################################
 import sys
 import os, os.path
