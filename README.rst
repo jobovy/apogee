@@ -26,6 +26,9 @@ or
 
 ``python setup.py install --prefix=/some/directory/``
 
+Installing FERRE
+^^^^^^^^^^^^^^^^^
+
 The installation can also automatically install Carlos Allende Prieto's `FERRE <http://leda.as.utexas.edu/ferre/>`__ code. To do this do
 
 ``python setup.py install --install-ferre``
@@ -41,6 +44,28 @@ a length of 200 characters.
 If you have already installed FERRE yourself, you should alias the
 FERRE binary to ``ferre`` and FERRE's ascii2bin to ``ascii2bin`` to
 use FERRE within this package.
+
+Installing MOOG and Turbospectrum
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This package can also use `MOOG
+<http://www.as.utexas.edu/~chris/moog.html>`__ and `Turbospectrum
+<http://www.pages-perso-bertrand-plez.univ-montp2.fr/>`__. They are,
+however, not installed by this package's installer. You can install
+MOOG from the source given on the MOOG `website
+<http://www.as.utexas.edu/~chris/moog.html>`__, or you can use
+@andycasey's `MOOG installer <https://github.com/andycasey/moog>`__
+(updated to the July 2014 release of MOOG in the `batch
+<https://github.com/jobovy/moog/tree/batch>`__ branch of my fork of
+Andy's code).
+
+Turbospectrum v14.1 can be downloaded from Betrand Plez' `website
+<http://www.pages-perso-bertrand-plez.univ-montp2.fr/>`__. To use
+Turbospectrum with the ``apogee`` package, please define an
+environment variable $TURBODATA that points to Turbospectrum's DATA
+directory and make sure that the *babsma_lu* and *bsyn_lu* commands
+are directly callable (by, for example, copying them to
+/usr/local/bin).
 
 DEPENDENCIES
 =============
