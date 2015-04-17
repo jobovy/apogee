@@ -2,15 +2,19 @@
 # apogee.modelspec.turbospec: functions to run Turbospectrum with the APOGEE 
 #                             analysis
 ###############################################################################
+import sys
 import os, os.path
 import shutil
 import tempfile
 import subprocess
 import numpy
 import apogee.tools.path as appath
+import apogee.tools.download as download
+from apogee.util import solarabundances
 _WMIN_DEFAULT= 15000.000
 _WMAX_DEFAULT= 17000.000
 _DW_DEFAULT= 0.10000000
+_CUTLINELIST= False # Option to cut the linelist to the requested wav. range; unnecessary for Turbospectrum, but kept for now
 def turbosynth(*args,**kwargs):
     """
     NAME:
@@ -18,30 +22,24 @@ def turbosynth(*args,**kwargs):
     PURPOSE:
        Run a Turbospectrum synthesis (direct interface to the Turbospectrum code; use 'synth' for a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output)
     INPUT ARGUMENTS:
-       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
-          [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
-          [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
+       lists with abundances:
+          [Atomic number1,diff1]
+          [Atomic number2,diff2]
           ...
-          [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
+          [Atomic numberM,diffM]
     SYNTHEIS KEYWORDS:
        isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'6.012':'0.9375','6.013':'0.0625'})
        wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000) spectral synthesis limits and step of calculation (see MOOG)
     LINELIST KEYWORDS:
-       linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec', and 'Hlinedata'; if none of these filename strings include the substring 'Hlinedata' then the internal Turbospectrum Hlinedata will be used
+       Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None , then the internal Turbospectrum Hlinedata will be used
+       linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
     ATMOSPHERE KEYWORDS:
-       Either:
-          (a) modelatm= (None) can be set to the filename of a model atmosphere in turbospectrum format
-          (b) specify the stellar parameters for a grid point in model atm by
-              - lib= ('kurucz_filled') spectral library
-              - teff= (4500) grid-point Teff
-              - logg= (2.5) grid-point logg
-              - metals= (0.) grid-point metallicity
-              - cm= (0.) grid-point carbon-enhancement
-              - am= (0.) grid-point alpha-enhancement
-              - dr= return the path corresponding to this data release
+       modelatm= (None) model-atmosphere instance
        vmicro= (2.) microturbulence (km/s)
+    MISCELLANEOUS KEYWORDS:
+       dr= data release
     OUTPUT:
-       (wavelengths,spectrum (nwave))
+       (wavelengths,cont-norm. spectrum, spectrum (nwave))
     HISTORY:
        2015-04-13 - Written - Bovy (IAS)
     """
@@ -50,6 +48,7 @@ def turbosynth(*args,**kwargs):
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
     # Linelists
+    Hlinelist= kwargs.pop('Hinelist',None)
     linelist= kwargs.pop('linelist',None)
     # Parse isotopes
     isotopes= kwargs.pop('isotopes','solar')
@@ -60,177 +59,281 @@ def turbosynth(*args,**kwargs):
                    '6.013':'0.0625'}
     elif not isinstance(isotopes,dict):
         raise ValueError("'isotopes=' input not understood, should be 'solar', 'arcturus', or a dictionary")
-    # Get the filename of the model atmosphere
+    # We will run in a subdirectory of the current directory
+    tmpDir= tempfile.mkdtemp(dir=os.getcwd())
+    # Get the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
     if not modelatm is None:
         if isinstance(modelatm,str) and os.path.exists(modelatm):
-            modelfilename= modelatm
+            raise ValueError('modelatm= input is an existing filename, but you need to give an Atmosphere object instead')
         elif isinstance(modelatm,str):
-            raise ValueError('modelatm= input is a non-existing filename')
+            raise ValueError('modelatm= input needs to be an Atmosphere instance')
         else:
-            raise ValueError('modelatm= in moogsynth should be set to the name of a file')
+            # Write atmosphere to file
+            modelfilename= os.path.join(tmpDir,'atm.mod')
+            modelatm.writeto(modelfilename,turbo=True)
     modeldirname= os.path.dirname(modelfilename)
     modelbasename= os.path.basename(modelfilename)
-    # Get the name of the linelist
-    if linelist is None:
-        linelistfilename= modelbasename.replace('.mod','.lines')
-        if not os.path.exists(os.path.join(modeldirname,linelistfilename)):
-            raise IOError('No linelist given and no weed-out version found for this atmosphere; either specify a linelist or run weedout first')
-        linelistfilename= os.path.join(modeldirname,linelistfilename)
-    elif os.path.exists(linelist):
-        linelistfilename= linelist
-    else:
-        linelistfilename= appath.linelistPath(linelist,
-                                              dr=kwargs.get('dr',None))
-    # We will run in a subdirectory of the relevant model atmosphere
-    tmpDir= tempfile.mkdtemp(dir=modeldirname)
-    shutil.copy(linelistfilename,tmpDir)
-    # Cut the linelist to the desired wavelength range
-    with open(os.path.join(tmpDir,'cutlines.awk'),'w') as awkfile:
-        awkfile.write('($1>%.3f && $1<%.3f) || )substr($1,1,1) == "'+"'"
-                      +'")\n' %(wmin-7.,wmax+7.))
-    keeplines= open(os.path.join(tmpDir,'lines.tmp'),'w')
-    stderr= open('/dev/null','w')
-    try:
-        subprocess.check_call(['awk','-f','cutlines.awk',
-                               os.path.basename(linelistfilename)],
-                              cwd=tmpDir,stdout=keeplines,stderr=stderr)
-        keeplines.close()
-    except subprocess.CalledProcessError:
-        os.remove(os.path.join(tmpDir,'lines.tmp'))
-        raise subprocess.CalledProcessError("Removing unnecessary linelist entries failed ...")
-    finally:
-        os.remove(os.path.join(tmpDir,'cutlines.awk'))
-        stderr.close()
-    # Also remove elements that aren't used altogether, adjust nlines
-    with open(os.path.join(tmpDir,'lines.tmp','r')) as infile:
-        lines= infile.readlines()
-    nl_list= [l[0] == "'" for l in lines]
-    nl= numpy.array(nl_list,dtype='int')
-    nl_list.append(True)
-    nl_list.append(True)
-    nlines= [numpy.sum(1-nl[ii:nl_list[ii+2:].index(True)+ii+2]) 
-             for ii in range(len(nl))]
-    with open(os.path.join(tmpDir,os.path.basename(linelistfilename)),'w') \
-            as outfile:
-        for ii, line in enumerate(lines):
-            if ii < len(lines)-2:
-                if not lines[ii][0] == "'":
-                    outfile.write(lines[ii])
-                elif not (lines[ii+2][0] == "'" and lines[ii+1][0] == "'"):
-                    if lines[ii+1][0] == "'":
-                        # Adjust nlines                       
-                        outfile.write(lines[ii].replace(lines[ii].split()[-1]+'\n',
-                                                        '%i\n' % nlines[ii]))
-                    else:
-                        outfile.write(lines[ii])
+    # Get the name of the linelists
+    if Hlinelist is None:
+        Hlinelist= 'DATA/Hlinedata' # will be symlinked
+    linelistfilenames= [Hlinelist]
+    if isinstance(linelist,str):
+        if os.path.exists(linelist):
+            linelistfilenames.append(linelist)
+        else:
+            # Try finding the linelist
+            atomlinelistfilename= appath.linelistPath(\
+                '%s.atoms' % linelist,
+                dr=kwargs.get('dr',None))
+            moleclinelistfilename= appath.linelistPath(\
+                '%s.molec' % linelist,
+                dr=kwargs.get('dr',None))
+            if os.path.exists(atomlinelistfilename) \
+                    and os.path.exists(moleclinelistfilename):
+                linelistfilenames.append(atomlinelistfilename)
+                linelistfilenames.append(moleclinelistfilename)
             else:
-                if not lines[ii][0] == "'": outfile.write(lines[ii])
-    os.remove(os.path.join(tmpDir,'lines.tmp'))
-    # Now write the script file
+                atomlinelistfilename= appath.linelistPath(\
+                    'turboatoms.%s' % linelist,
+                    dr=kwargs.get('dr',None))
+                moleclinelistfilename= appath.linelistPath(\
+                    'turbomolec.%s' % linelist,
+                    dr=kwargs.get('dr',None))
+                if os.path.exists(atomlinelistfilename) \
+                        and os.path.exists(moleclinelistfilename):
+                    linelistfilenames.append(atomlinelistfilename)
+                    linelistfilenames.append(moleclinelistfilename)
+    if linelist is None or len(linelistfilenames) == 1:
+       raise ValueError('linelist= must be set (see documentation)')
+    # Link the Turbospectrum DATA directory
+    os.symlink(os.getenv('TURBODATA'),os.path.join(tmpDir,'DATA'))
+    # Cut the linelist to the desired wavelength range, if necessary,
+    # Skipped because it is unnecessary, but left in case we still want to 
+    # use it
+    rmLinelists= False
+    for ll, linelistfilename in enumerate(linelistfilenames[1:]):
+        if not _CUTLINELIST: continue #SKIP
+        if wmin == _WMIN_DEFAULT and wmax == _WMAX_DEFAULT: continue
+        rmLinelists= True
+        with open(os.path.join(tmpDir,'cutlines.awk'),'w') as awkfile:
+            awkfile.write('($1>%.3f && $1<%.3f) || ( substr($1,1,1) == "' 
+                          %(wmin-7.,wmax+7.) +"'"+'")\n')
+        keeplines= open(os.path.join(tmpDir,'lines.tmp'),'w')
+        stderr= open('/dev/null','w')
+        try:
+            subprocess.check_call(['awk','-f','cutlines.awk',
+                                   linelistfilename],
+                                  cwd=tmpDir,stdout=keeplines,stderr=stderr)
+            keeplines.close()
+        except subprocess.CalledProcessError:
+            os.remove(os.path.join(tmpDir,'lines.tmp'))
+            os.remove(os.path.join(tmpDir,'DATA'))
+            raise RuntimeError("Removing unnecessary linelist entries failed ...")
+        finally:
+            os.remove(os.path.join(tmpDir,'cutlines.awk'))
+            stderr.close()
+        # Remove elements that aren't used altogether, adjust nlines
+        with open(os.path.join(tmpDir,'lines.tmp'),'r') as infile:
+            lines= infile.readlines()
+        nl_list= [l[0] == "'" for l in lines]
+        nl= numpy.array(nl_list,dtype='int')
+        nl_list.append(True)
+        nl_list.append(True)
+        nlines= [numpy.sum(1-nl[ii:nl_list[ii+2:].index(True)+ii+2]) 
+                 for ii in range(len(nl))]
+        with open(os.path.join(tmpDir,os.path.basename(linelistfilename)),
+                  'w') \
+                as outfile:
+            for ii, line in enumerate(lines):
+                if ii < len(lines)-2:
+                    if not lines[ii][0] == "'":
+                        outfile.write(lines[ii])
+                    elif not (lines[ii+2][0] == "'" and lines[ii+1][0] == "'"):
+                        if lines[ii+1][0] == "'":
+                            # Adjust nlines                       
+                            outfile.write(lines[ii].replace(lines[ii].split()[-1]+'\n',
+                                                            '%i\n' % nlines[ii]))
+                        else:
+                            outfile.write(lines[ii])
+                else:
+                    if not lines[ii][0] == "'": outfile.write(lines[ii])
+        os.remove(os.path.join(tmpDir,'lines.tmp'))
+        # cp the linelists to the temporary directory
+        shutil.copy(linelistfilename,tmpDir)
+        linelistfilenames[ll]= os.path.basename(linelistfilename)
+    # Parse the abundances
     if len(args) == 0: #special case that there are *no* differences
         args= ([26,0.],)
-    nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
-    nsynth= numpy.amax(nsynths) #Take the longest abundance list
-    if nsynth > 5:
-        raise ValueError("MOOG only allows five syntheses to be run at the same time; please reduce the number of abundance values in the apogee.modelspec.moog.moogsynth input")
-    nabu= len(args)
-    with open(os.path.join(tmpDir,'synth.par'),'w') as parfile:
-        if doflux:
-            parfile.write('doflux\n')
-        else:
-            parfile.write('synth\n')
-        parfile.write('terminal x11\n')
-        parfile.write('plot 1\n')
-        parfile.write("standard_out std.out\n")
-        parfile.write("summary_out '../synth.out'\n")
-        parfile.write("smoothed_out '/dev/null'\n")
-        parfile.write("strong 1\n")
-        parfile.write("damping 0\n")
-        parfile.write("stronglines_in stronglines.vac\n")
-        parfile.write("model_in '../%s'\n" % modelbasename.replace('.mod','.org'))
-        parfile.write("lines_in %s\n" % os.path.basename(linelistfilename))
-        parfile.write("atmosphere 1\n")
-        parfile.write("molecules 2\n")
-        parfile.write("lines 1\n")
-        parfile.write("flux/int 0\n")
-        # Write the isotopes
-        niso= len(isotopes)
-        parfile.write("isotopes %i %i\n" % (niso,nsynth))
-        for iso in isotopes:
-            isotopestr= iso
-            for ii in range(nsynth):
-                isotopestr+= ' '+isotopes[iso]
-            parfile.write(isotopestr+'\n')
-        # Abundances
-        parfile.write("abundances %i %i\n" % (nabu,nsynth))
-        for ii in range(nabu):
-            abustr= '%i' % args[ii][0]
-            for jj in range(nsynth):
-                try:
-                    abustr+= ' %.3f' % args[ii][jj+1]
-                except IndexError:
-                    abustr+= ' 0.0'
-            parfile.write(abustr+"\n")
-        # Synthesis limits
-        parfile.write("synlimits\n") # Add 0.001 to make sure wmax is included
-        parfile.write("%.3f  %.3f  %.3f  %.3f\n" % (wmin,wmax+0.001,dw,width))
-    # Now run synth
-    sys.stdout.write('\r'+"Running MOOG synth ...\r")
+    indiv_abu= {}
+    for arg in args:
+        indiv_abu[arg[0]]= arg[1]+solarabundances._ASPLUND05[arg[0]]\
+            +modelatm._metals
+        if arg == 6: indiv_abu[arg[0]]+= modelatm._cm
+        if arg == 7: indiv_abu[arg[0]]+= modelatm._nm
+        if arg in [8,10,12,14,16,18,20,22]: indiv_abu[arg[0]]+= modelatm.nm
+    # Now write the script file for babsma_lu
+    scriptfilename= os.path.join(tmpDir,'babsma.par')
+    modelopacname= os.path.join(tmpDir,'mopac')
+    _write_script(scriptfilename,
+                  wmin,wmax,dw,
+                  modelfilename,
+                  None,
+                  modelopacname,
+                  modelatm._metals,
+                  modelatm._am,
+                  indiv_abu,
+                  kwargs.get('vmicro',2.),
+                  None,None,None,bsyn=False)
+    # Run babsma
+    sys.stdout.write('\r'+"Running Turbospectrum babsma_lu ...\r")
     sys.stdout.flush()
+    if kwargs.get('verbose',False):
+        stdout= None
+        stderr= None
+    else:
+        stdout= open('/dev/null', 'w')
+        stderr= subprocess.STDOUT
     try:
-        p= subprocess.Popen(['moogsilent'],
+        p= subprocess.Popen(['babsma_lu'],
                             cwd=tmpDir,
                             stdin=subprocess.PIPE,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
-        p.stdin.write('synth.par\n')
+                            stdout=stdout,
+                            stderr=stderr)
+        with open(os.path.join(tmpDir,'babsma.par'),'r') as parfile:
+            for line in parfile:
+                p.stdin.write(line)
         stdout, stderr= p.communicate()
     except subprocess.CalledProcessError:
-        print("Running synth failed ...")
+        for linelistfilename in linelistfilenames:
+            os.remove(linelistfilename,tmpDir)
+        if os.path.exists(os.path.join(tmpDir,'DATA')):
+            os.remove(os.path.join(tmpDir,'DATA'))
+        raise RuntimeError("Running babsma_lu failed ...")
     finally:
-        if os.path.exists(os.path.join(tmpDir,'synth.par')):
-            os.remove(os.path.join(tmpDir,'synth.par'))
-        if os.path.exists(os.path.join(tmpDir,'std.out')):
-            os.remove(os.path.join(tmpDir,'std.out'))
-        if os.path.exists(os.path.join(tmpDir,
-                                       os.path.basename(linelistfilename))):
-            os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
-        if os.path.exists(os.path.join(tmpDir,'stronglines.vac')):
-            os.remove(os.path.join(tmpDir,'stronglines.vac'))
-        os.rmdir(tmpDir)
+        if os.path.exists(os.path.join(tmpDir,'babsma.par')):
+            os.remove(os.path.join(tmpDir,'babsma.par'))
+        if not kwargs.get('verbose',False): stdout.close()
         sys.stdout.write('\r'+download._ERASESTR+'\r')
-        sys.stdout.flush()        
+        sys.stdout.flush()
+    # Now write the script file for bsyn_lu
+    scriptfilename= os.path.join(tmpDir,'bsyn.par')
+    outfilename= os.path.join(tmpDir,'bsyn.out')
+    _write_script(scriptfilename,
+                  wmin,wmax,dw,
+                  modelfilename,
+                  None,
+                  modelopacname,
+                  modelatm._metals,
+                  modelatm._am,
+                  indiv_abu,
+                  None,
+                  outfilename,
+                  isotopes,
+                  linelistfilenames,
+                  bsyn=True)
+    # Run bsyn
+    sys.stdout.write('\r'+"Running Turbospectrum bsyn_lu ...\r")
+    sys.stdout.flush()
+    if kwargs.get('verbose',False):
+        stdout= None
+        stderr= None
+    else:
+        stdout= open('/dev/null', 'w')
+        stderr= subprocess.STDOUT
+    try:
+        p= subprocess.Popen(['bsyn_lu'],
+                            cwd=tmpDir,
+                            stdin=subprocess.PIPE,
+                            stdout=stdout,
+                            stderr=stderr)
+        with open(os.path.join(tmpDir,'bsyn.par'),'r') as parfile:
+            for line in parfile:
+                p.stdin.write(line)
+        stdout, stderr= p.communicate()
+    except subprocess.CalledProcessError:
+        raise RuntimeError("Running bsyn_lu failed ...")
+    finally:
+        if os.path.exists(os.path.join(tmpDir,'bsyn.par')):
+            os.remove(os.path.join(tmpDir,'bsyn.par'))
+        if os.path.exists(modelopacname):
+            os.remove(modelopacname)
+        if os.path.exists(os.path.join(tmpDir,'DATA')):
+            os.remove(os.path.join(tmpDir,'DATA'))
+        if rmLinelists:
+            for linelistfilename in linelistfilenames[1:]:
+                os.remove(linelistfilename)
+        if not kwargs.get('verbose',False): stdout.close()
+        sys.stdout.write('\r'+download._ERASESTR+'\r')
+        sys.stdout.flush()
     # Now read the output
-    wavs= numpy.arange(wmin,wmax+dw,dw)
-    if wavs[-1] > wmax+dw/2.: wavs= wavs[:-1]
-    if doflux:
-        contdata= numpy.loadtxt(os.path.join(modeldirname,'synth.out'),
-                                converters={0:lambda x: x.replace('D','E'),
-                                            1:lambda x: x.replace('D','E')},
-                                usecols=[0,1])
-        # Wavelength in summary file appears to be wrong from comparing to 
-        # the standard output file
-        out= contdata[:,1]
-        out/= numpy.nanmean(out) # Make the numbers more manageable
-    else:
-        with open(os.path.join(modeldirname,'synth.out')) as summfile:
-            out= numpy.empty((nsynth,len(wavs)))
-            for ii in range(nsynth):
-                # Skip to beginning of synthetic spectrum
-                while True:
-                    line= summfile.readline()
-                    if line[0] == 'M': break
-                summfile.readline()
-                tout= []
-                while True:
-                    line= summfile.readline()
-                    if not line or line[0] == 'A': break
-                    tout.extend([float(s) for s in line.split()])
-                out[ii]= numpy.array(tout)
-    os.remove(os.path.join(modeldirname,'synth.out'))
-    if doflux:
-        return (wavs,out)
-    else:
-        return (wavs,1.-out)
+    turboOut= numpy.loadtxt(outfilename)
+    # Clean up
+    os.remove(os.path.join(tmpDir,'mopac.mod'))
+    os.remove(os.path.join(tmpDir,'dummy-output.dat'))
+    os.remove(outfilename)
+    os.remove(modelfilename)
+    os.rmdir(tmpDir)
+    # Return wav, cont-norm, full spectrum
+    return (turboOut[:,0],turboOut[:,1],turboOut[:,2])
 
+def _write_script(scriptfilename,
+                  wmin,wmax,dw,
+                  modelfilename,
+                  marcsfile,
+                  modelopacname,
+                  metals,
+                  alphafe,
+                  indiv_abu, # dictionary with atomic number, abundance
+                  vmicro,
+                  resultfilename,
+                  isotopes,
+                  linelistfilenames,
+                  bsyn=False):
+    """Write the script file for babsma and bsyn"""
+    with open(scriptfilename,'w') as scriptfile:
+        scriptfile.write("'LAMBDA_MIN:'  '%.3f'\n" % wmin)
+        scriptfile.write("'LAMBDA_MAX:'  '%.3f'\n" % wmax)
+        scriptfile.write("'LAMBDA_STEP:' '%.3f'\n" % dw)
+        if bsyn:
+            scriptfile.write("'INTENSITY/FLUX:' 'Flux'\n")
+            scriptfile.write("'COS(THETA)    :' '1.00'\n")
+            scriptfile.write("'ABFIND        :' '.false.'\n")
+        scriptfile.write("'MODELINPUT:' '%s'\n" % modelfilename)
+        if marcsfile is None:
+            scriptfile.write("'MARCS-FILE:' '.false.'\n")
+        scriptfile.write("'MODELOPAC:' '%s'\n" % modelopacname)
+        if bsyn:
+            scriptfile.write("'RESULTFILE :' '%s'\n" 
+                             % resultfilename)
+        scriptfile.write("'METALLICITY:'    '%.3f'\n" % metals)
+        scriptfile.write("'ALPHA/Fe   :'    '%.3f'\n" % alphafe)
+        scriptfile.write("'HELIUM     :'    '0.00'\n")
+        scriptfile.write("'R-PROCESS  :'    '0.00'\n")
+        scriptfile.write("'S-PROCESS  :'    '0.00'\n")
+        # Individual abundances
+        nabu= len(indiv_abu)
+        if nabu > 0:
+            scriptfile.write("'INDIVIDUAL ABUNDANCES:'   '%i'\n" % nabu)
+            for abu in indiv_abu:
+                scriptfile.write("%i %.3f\n" % (abu,indiv_abu[abu]))
+        if bsyn:
+            niso= len(isotopes)
+            if niso > 0:
+                scriptfile.write("'ISOTOPES : ' '%i'\n" % niso)
+                for iso in isotopes:
+                    scriptfile.write('%s %s\n' % (iso,isotopes[iso]))
+            # Linelists
+            nlines= len(linelistfilenames)
+            scriptfile.write("'NFILES   :' '%i'\n" % nlines)
+            for linelistfilename in linelistfilenames:
+                scriptfile.write("%s\n" % linelistfilename)
+            scriptfile.write("'SPHERICAL:'  'F'\n")
+            scriptfile.write("30\n")
+            scriptfile.write("300.00\n")
+            scriptfile.write("15\n")
+            scriptfile.write("1.30\n")
+        else:
+            scriptfile.write("'XIFIX:' 'T'\n")
+            scriptfile.write("%.3f\n" % vmicro)
+    return None
