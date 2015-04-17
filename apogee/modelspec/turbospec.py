@@ -36,6 +36,9 @@ def turbosynth(*args,**kwargs):
     ATMOSPHERE KEYWORDS:
        modelatm= (None) model-atmosphere instance
        vmicro= (2.) microturbulence (km/s)
+       modelopac= (None) 
+                  (a) if set to an existing filename: assume babsma_lu has already been run and use this continuous opacity in bsyn_lu
+                  (b) if set to a non-existing filename: store the continuous opacity in this file
     MISCELLANEOUS KEYWORDS:
        dr= data release
     OUTPUT:
@@ -172,50 +175,58 @@ def turbosynth(*args,**kwargs):
         if arg == 6: indiv_abu[arg[0]]+= modelatm._cm
         if arg == 7: indiv_abu[arg[0]]+= modelatm._nm
         if arg in [8,10,12,14,16,18,20,22]: indiv_abu[arg[0]]+= modelatm.nm
-    # Now write the script file for babsma_lu
-    scriptfilename= os.path.join(tmpDir,'babsma.par')
-    modelopacname= os.path.join(tmpDir,'mopac')
-    _write_script(scriptfilename,
-                  wmin,wmax,dw,
-                  modelfilename,
-                  None,
-                  modelopacname,
-                  modelatm._metals,
-                  modelatm._am,
-                  indiv_abu,
-                  kwargs.get('vmicro',2.),
-                  None,None,None,bsyn=False)
-    # Run babsma
-    sys.stdout.write('\r'+"Running Turbospectrum babsma_lu ...\r")
-    sys.stdout.flush()
-    if kwargs.get('verbose',False):
-        stdout= None
-        stderr= None
-    else:
-        stdout= open('/dev/null', 'w')
-        stderr= subprocess.STDOUT
-    try:
-        p= subprocess.Popen(['babsma_lu'],
-                            cwd=tmpDir,
-                            stdin=subprocess.PIPE,
-                            stdout=stdout,
-                            stderr=stderr)
-        with open(os.path.join(tmpDir,'babsma.par'),'r') as parfile:
-            for line in parfile:
-                p.stdin.write(line)
-        stdout, stderr= p.communicate()
-    except subprocess.CalledProcessError:
-        for linelistfilename in linelistfilenames:
-            os.remove(linelistfilename,tmpDir)
-        if os.path.exists(os.path.join(tmpDir,'DATA')):
-            os.remove(os.path.join(tmpDir,'DATA'))
-        raise RuntimeError("Running babsma_lu failed ...")
-    finally:
-        if os.path.exists(os.path.join(tmpDir,'babsma.par')):
-            os.remove(os.path.join(tmpDir,'babsma.par'))
-        if not kwargs.get('verbose',False): stdout.close()
-        sys.stdout.write('\r'+download._ERASESTR+'\r')
+    modelopac= kwargs.get('modelopac',None)
+    if modelopac is None or \
+            (isinstance(modelopac,str) and not os.path.exists(modelopac)):
+        # Now write the script file for babsma_lu
+        scriptfilename= os.path.join(tmpDir,'babsma.par')
+        modelopacname= os.path.join(tmpDir,'mopac')
+        _write_script(scriptfilename,
+                      wmin,wmax,dw,
+                      modelfilename,
+                      None,
+                      modelopacname,
+                      modelatm._metals,
+                      modelatm._am,
+                      indiv_abu,
+                      kwargs.get('vmicro',2.),
+                      None,None,None,bsyn=False)
+        # Run babsma
+        sys.stdout.write('\r'+"Running Turbospectrum babsma_lu ...\r")
         sys.stdout.flush()
+        if kwargs.get('verbose',False):
+            stdout= None
+            stderr= None
+        else:
+            stdout= open('/dev/null', 'w')
+            stderr= subprocess.STDOUT
+        try:
+            p= subprocess.Popen(['babsma_lu'],
+                                cwd=tmpDir,
+                                stdin=subprocess.PIPE,
+                                stdout=stdout,
+                                stderr=stderr)
+            with open(os.path.join(tmpDir,'babsma.par'),'r') as parfile:
+                for line in parfile:
+                    p.stdin.write(line)
+            stdout, stderr= p.communicate()
+        except subprocess.CalledProcessError:
+            for linelistfilename in linelistfilenames:
+                os.remove(linelistfilename,tmpDir)
+            if os.path.exists(os.path.join(tmpDir,'DATA')):
+                os.remove(os.path.join(tmpDir,'DATA'))
+            raise RuntimeError("Running babsma_lu failed ...")
+        finally:
+            if os.path.exists(os.path.join(tmpDir,'babsma.par')):
+                os.remove(os.path.join(tmpDir,'babsma.par'))
+            if not kwargs.get('verbose',False): stdout.close()
+            sys.stdout.write('\r'+download._ERASESTR+'\r')
+            sys.stdout.flush()
+        if isinstance(modelopac,str):
+            shutil.copy(modelopacname,modelopac)
+    else:
+        shutil.copy(modelopac,tmpDir)
+        modelopacname= os.path.join(tmpDir,os.path.basename(modelopac))
     # Now write the script file for bsyn_lu
     scriptfilename= os.path.join(tmpDir,'bsyn.par')
     outfilename= os.path.join(tmpDir,'bsyn.out')
@@ -260,19 +271,19 @@ def turbosynth(*args,**kwargs):
             os.remove(modelopacname)
         if os.path.exists(os.path.join(tmpDir,'DATA')):
             os.remove(os.path.join(tmpDir,'DATA'))
+        if os.path.exists(os.path.join(tmpDir,'dummy-output.dat')):
+            os.remove(os.path.join(tmpDir,'dummy-output.dat'))
+        if os.path.exists(modelfilename):
+            os.remove(modelfilename)
         if rmLinelists:
             for linelistfilename in linelistfilenames[1:]:
                 os.remove(linelistfilename)
-        if not kwargs.get('verbose',False): stdout.close()
         sys.stdout.write('\r'+download._ERASESTR+'\r')
         sys.stdout.flush()
     # Now read the output
     turboOut= numpy.loadtxt(outfilename)
     # Clean up
-    os.remove(os.path.join(tmpDir,'mopac.mod'))
-    os.remove(os.path.join(tmpDir,'dummy-output.dat'))
     os.remove(outfilename)
-    os.remove(modelfilename)
     os.rmdir(tmpDir)
     # Return wav, cont-norm, full spectrum
     return (turboOut[:,0],turboOut[:,1],turboOut[:,2])
