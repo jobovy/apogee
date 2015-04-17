@@ -135,9 +135,10 @@ def synth(*args,**kwargs):
     if cont.lower() == 'true':
         # Get the true continuum on the apStar wavelength grid
         apWave= apStarWavegrid()
-        baseline= numpy.polynomial.Polynomial.fit(mwav,cflux,4)
+        baseline= numpy.polynomial.Polynomial.fit(mwav,tmpOut[2]/tmpOut[1],4)
         ip= interpolate.InterpolatedUnivariateSpline(mwav,
-                                                     cflux/baseline(mwav),
+                                                     tmpOut[2]/tmpOut[1]\
+                                                         /baseline(mwav),
                                                      k=3)
         cflux= baseline(apWave)*ip(apWave)
         # Divide it out
