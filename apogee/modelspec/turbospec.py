@@ -11,9 +11,12 @@ import numpy
 from scipy import interpolate
 import apogee.spec.lsf as aplsf
 import apogee.spec.continuum as apcont
+import apogee.spec.window as apwindow
 import apogee.tools.path as appath
+from apogee.tools import paramIndx
 from apogee.spec.plot import apStarWavegrid
 import apogee.tools.download as download
+from apogee.modelatm import atlas9
 from apogee.util import solarabundances
 _WMIN_DEFAULT= 15000.000
 _WMAX_DEFAULT= 17000.000
@@ -47,7 +50,7 @@ def synth(*args,**kwargs):
        SYNTHESIS:
           Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None , then the internal Turbospectrum Hlinedata will be used
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
-          wmin, wmax, dw= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+          wmin, wmax, dw= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
@@ -82,7 +85,6 @@ def synth(*args,**kwargs):
     cont= kwargs.pop('cont','aspcap')
     # Setup the model atmosphere
     modelatm= kwargs.pop('modelatm',None)
-    tmpModelAtmDir= False
     # Parse fparam, if present
     fparam= kwargs.pop('fparam',None)
     if not fparam is None:
@@ -116,15 +118,15 @@ def synth(*args,**kwargs):
                             -kwargs.get('wmin',_WMIN_DEFAULT))\
                            /kwargs.get('dw',_DW_DEFAULT)+1)
         out= numpy.empty((nsynth,nturbowav))
-        for ii in range(nsynths):
+        for ii in range(nsynth):
             newargs= ()
             for jj in range(len(args)):
                 tab= [args[jj][0]]
-                if len(args[jj][ii+1:(ii+1)+1]) > 0:
-                    tab.extend(args[jj][ii+1:(ii+1)+1])
+                if len(args[jj]) > ii+1:
+                    tab.append(args[jj][ii+1])
                     newargs= newargs+(tab,)
             tmpOut= turbosynth(*newargs,**kwargs)
-            out[ii:(ii+1)]= tmpOut[2] # incl. continuum
+            out[ii]= tmpOut[2] # incl. continuum
         # wavelength grid from final one
         mwav= tmpOut[0]
     except: raise
@@ -139,6 +141,199 @@ def synth(*args,**kwargs):
         ip= interpolate.InterpolatedUnivariateSpline(mwav,
                                                      tmpOut[2]/tmpOut[1]\
                                                          /baseline(mwav),
+                                                     k=3)
+        cflux= baseline(apWave)*ip(apWave)
+        # Divide it out
+        out/= numpy.tile(cflux,(nsynth,1))
+    elif not cont is None:
+        cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
+        out/= cflux
+    return out
+
+def windows(*args,**kwargs):
+    """
+    NAME:
+       windows
+    PURPOSE:
+       Generate model APOGEE spectra using Turbospectrum in selected wavelength windows (but the whole APOGEE spectral range is returned): this is a general routine that generates the non-continuum-normalized spectrum, convolves with the LSF and macrotubulence, and optionally continuum normalizes the output; use 'turbosynth' for a direct interface to Turbospectrum
+    INPUT ARGUMENTS:
+       Windows specification: Provide one of
+          (1) Element string: the APOGEE windows for this element will be loaded
+          (2) startindxs, endindxs= start and end indexes of the windows on the apStar wavelength grid
+          (3) startlams, endlams= start and end wavelengths in \AA
+       lists with abundance differences wrt the atmosphere (they don't all have to have the same length, missing ones are filled in with zeros):
+          [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
+          [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
+          ...
+          [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
+    INPUT KEYWORDS:
+       BASELINE: you can specify the baseline spectrum and the continuous opacity to not always re-compute it
+          baseline= baseline c-normalized spectrum on Turbospectrum wavelength grid (obtained from turbosynth)
+          mwav= Turbospectrum wavelength grid (obtained from turbosynth)
+          cflux= continuum flux from Turbospectrum
+          modelopac= (None) 
+                     (a) if set to an existing filename: assume babsma_lu has already been run and use this continuous opacity in bsyn_lu
+                     (b) if set to a non-existing filename: store the continuous opacity in this file
+          Typically, you can obtain these three keywords by doing (kwargs are the keywords you provide to this function as well, and includes modelopac='SOME FILENAME')
+          >>> baseline= turbosynth(**kwargs)
+          >>> mwav= baseline[0]
+          >>> cflux= baseline[2]/baseline[1]
+          >>> baseline= baseline[1]
+       LSF:
+          lsf= ('all') LSF to convolve with; output of apogee.spec.lsf.eval; sparsify for efficiency; if 'all' or 'combo' a pre-computed version will be downloaded from the web
+          Either:
+             xlsf= (None) pixel offset grid on which the LSF is computed (see apogee.spec.lsf.eval); unnecessary if lsf=='all' or 'combo'
+             dxlsf= (None) spacing of pixel offsets
+          vmacro= (6.) macroturbulence to apply
+       CONTINUUM:
+          cont= ('aspcap') continuum-normalization to apply:
+             None: no continuum normalization
+             'true': Use the true continuum
+             'aspcap': Use the continuum normalization method of ASPCAP DR12
+             'cannon': Normalize using continuum pixels derived from the Cannon
+       SYNTHESIS:
+          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None , then the internal Turbospectrum Hlinedata will be used
+          linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
+          wmin, wmax, dw= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       MODEL ATMOSPHERE PARAMETERS:
+          Specify one of the following:
+             (a) modelatm= (None) model-atmosphere instance
+             (b) parameters of a KURUCZ model atmosphere:
+                 (1) teff= (4500) Teff
+                     logg= (2.5) logg
+                     metals= (0.) metallicity
+                     cm= (0.) carbon-enhancement
+                     am= (0.) alpha-enhancement
+                 (2) fparam= standard ASPCAP output format
+                 lib= ('kurucz_filled') model atmosphere library
+          vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found) (can also be part of fparam)
+       MISCELLANEOUS:
+          dr= return the path corresponding to this data release
+    OUTPUT:
+       spectra (nspec,nwave)
+    HISTORY:
+       2015-04-17 - Written - Bovy (IAS)
+    """
+    # Pop some kwargs
+    baseline= kwargs.pop('baseline',None)
+    mwav= kwargs.pop('mwav',None)
+    cflux= kwargs.pop('cflux',None)
+    # Check that we have the LSF and store the relevant keywords
+    lsf= kwargs.pop('lsf','all')
+    if isinstance(lsf,str):
+        xlsf, lsf= aplsf._load_precomp(dr=kwargs.get('dr',None),fiber=lsf)
+        dxlsf= None
+    else:
+        xlsf= kwargs.pop('xlsf',None)
+        dxlsf= kwargs.pop('dxlsf',None)
+        if xlsf is None and dxlsf is None: raise ValueError('xlsf= or dxlsf= input needs to be given if the LSF is given as an array')
+    vmacro= kwargs.pop('vmacro',6.)
+    # Parse continuum-normalization keywords
+    cont= kwargs.pop('cont','aspcap')
+    # Parse the wavelength regions
+    apWave= apStarWavegrid()
+    if isinstance(args[0],str): #element string given
+        si,ei= apwindow.waveregions(args[0],pad=3,asIndex=True)
+        args= args[1:]
+    else:
+        if isinstance(args[0][0],int): # assume index
+            si,ei= args[0], args[1]
+        else: # assume wavelengths in \AA
+            sl,el= args[0], args[1]
+            # Convert to index
+            si, ei= [], []
+            for s,e in zip(sl,el):
+                # Find closest index into apWave
+                si.append(numpy.argmin(numpy.fabs(s-apWave)))
+                ei.append(numpy.argmin(numpy.fabs(e-apWave)))
+        args= args[2:]
+    # Setup the model atmosphere
+    modelatm= kwargs.pop('modelatm',None)
+    # Parse fparam, if present
+    fparam= kwargs.pop('fparam',None)
+    if not fparam is None:
+        kwargs['teff']= fparam[0,paramIndx('TEFF')]
+        kwargs['logg']= fparam[0,paramIndx('LOGG')]
+        kwargs['metals']= fparam[0,paramIndx('METALS')]
+        kwargs['am']= fparam[0,paramIndx('ALPHA')]
+        kwargs['cm']= fparam[0,paramIndx('C')]
+        kwargs['vm']= 10.**fparam[0,paramIndx('LOG10VDOP')]        
+    # Need to pass a model atmosphere instance to turbosynth (needs to be made
+    # more efficient, because now turbosynth always write the atmosphere
+    if modelatm is None: # Setup a model atmosphere
+        modelatm= atlas9.Atlas9Atmosphere(teff=kwargs.get('teff',4500.),
+                                          logg=kwargs.get('logg',2.5),
+                                          metals=kwargs.get('metals',0.),
+                                          am=kwargs.get('am',0.),
+                                          cm=kwargs.get('cm',0.),
+                                          dr=kwargs.get('dr',None))
+    if isinstance(modelatm,str) and os.path.exists(modelatm):
+        raise ValueError('modelatm= input is an existing filename, but you need to give an Atmosphere object instead')
+    elif isinstance(modelatm,str):
+        raise ValueError('modelatm= input needs to be an Atmosphere instance')
+    kwargs['modelatm']= modelatm
+    try:
+        rmModelopac= False
+        if not 'modelopac' in kwargs:
+            rmModelopac= True
+            kwargs['modelopac']= tempfile.mktemp('mopac')
+        elif 'modelopac' in kwargs and not isinstance(kwargs['modelopac'],str):
+            raise ValueError('modelopac needs to be set to a filename')
+        # Run synth for the whole wavelength range as a baseline
+        if baseline is None or mwav is None or cflux is None:
+            baseline= turbosynth(**kwargs)
+            mwav= baseline[0]
+            cflux= baseline[2]/baseline[1]
+            baseline= baseline[1]
+        elif isinstance(baseline,tuple): #probably accidentally gave the entire output of turbosynth
+            mwav= baseline[0]
+            cflux= baseline[2]/baseline[1]
+            baseline= baseline[1]
+        # Convert the apStarWavegrid windows to turboWavegrid regions
+        sm,em= [], []
+        for start,end in zip(si,ei):
+            sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
+            em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
+        # Run Turbospectrum synth for all abundances and all windows
+        if len(args) == 0: #special case that there are *no* differences
+            args= ([26,0.],)
+        nsynths= numpy.array([len(args[ii])-1 for ii in range(len(args))])
+        nsynth= numpy.amax(nsynths) #Take the longest abundance list
+        out= numpy.tile(baseline,(nsynth,1))
+        # Run all windows
+        for start, end in zip(sm,em):
+            kwargs['wmin']= mwav[start]
+            kwargs['wmax']= mwav[end]
+            for ii in range(nsynth):
+                newargs= ()
+                for jj in range(len(args)):
+                    tab= [args[jj][0]]
+                    if len(args[jj]) > ii+1:
+                        tab.append(args[jj][ii+1])
+                        newargs= newargs+(tab,)
+                tmpOut= turbosynth(*newargs,**kwargs)
+                if numpy.isnan(tmpOut[1][-1]): 
+                    # NaN returned for reasons that I don't understand
+                    out[ii,start:end]= tmpOut[1][:-1]
+                else:
+                    out[ii,start:end+1]= tmpOut[1]
+    except: raise
+    finally:
+        if rmModelopac and os.path.exists(kwargs['modelopac']):
+            os.remove(kwargs['modelopac'])
+            kwargs.pop('modelopac')
+    # Now multiply each continuum-normalized spectrum with the continuum
+    out*= numpy.tile(cflux,(nsynth,1))
+    # Now convolve with the LSF
+    out= aplsf.convolve(mwav,out,
+                        lsf=lsf,xlsf=xlsf,dxlsf=dxlsf,vmacro=vmacro)
+    # Now continuum-normalize
+    if cont.lower() == 'true':
+        # Get the true continuum on the apStar wavelength grid
+        apWave= apStarWavegrid()
+        baseline= numpy.polynomial.Polynomial.fit(mwav,cflux,4)
+        ip= interpolate.InterpolatedUnivariateSpline(mwav,
+                                                     cflux/baseline(mwav),
                                                      k=3)
         cflux= baseline(apWave)*ip(apWave)
         # Divide it out
