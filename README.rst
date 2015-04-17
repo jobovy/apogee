@@ -867,8 +867,9 @@ then we can repeat the calculation above as::
 	              baseline=baseline,mwav=mwav,cflux=cflux,modelopac='mpac',\
 		      modelatm=atm_ng,linelist='turbospec.201312161124.new.vac')
 
-which is indistinguishable from the plot above.
-
+which is indistinguishable from the plot above. Remember that you end
+up with a file that contains the continuous opacity, so you might want
+to remove it again.
 
 Fitting spectra
 ^^^^^^^^^^^^^^^^^
