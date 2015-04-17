@@ -428,8 +428,8 @@ Generating model spectra
 ``apogee.modelspec`` contains various ways to generate model spectra
 for APOGEE spectra. The easiest way is to use grids generated for
 APOGEE data analysis and use FERRE (see above) to interpolate on these
-grids. Using MOOG allows for more flexibility, but this functionality
-is currently under development.
+grids. Using MOOG or Turbospectrum allows for more flexibility, but
+this functionality is currently under development.
 
 Using APOGEE model grids (using FERRE)
 +++++++++++++++++++++++++++++++++++++++
@@ -791,6 +791,84 @@ then we can repeat the calculation above as::
 		      modelatm=atm_ng,linelist='moog.201312161124.vac')
 
 This is clearly very fast once we have the baseline.
+
+Using Turbospectrum
+++++++++++++++++++++
+
+A similar interface as described in detail above for MOOG exists for
+`Turbospectrum
+<http://www.pages-perso-bertrand-plez.univ-montp2.fr/>`__ in
+``apogee.modelspec.turbospec``. The high-level interfaces
+``turbospec.synth`` and ``turbospec.windows`` are exactly the same as
+the equivalents for MOOG above, but the low-level interface
+``turbospec.turbosynth`` to running Turbospec is slightly
+different. The main difference between Turbospectrum and MOOG is how
+the linelist is specified. The ``linelist=`` keyword can either be set
+to a list of linelists to use (like an atomic and a molecular one) or
+to a string. In the latter case, if the string filename does not exist
+the code will also look for linelists that start in
+*turboatoms*/*turbomolec* or end in *.atoms*/*.molec*.
+
+We repeat the calculations done above using MOOG with
+Turbospectrum here as an example::
+
+	import apogee.modelspec.turbospec
+	from apogee.modelatm import atlas9
+	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
+	# The following takes a while ...
+	synspec= apogee.modelspec.turbospec.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,\
+		 linelist='turbospec.201312161124.new.vac',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
+	
+and we can again plot these::
+
+    import apogee.spec.plot as splot
+    splot.waveregions(synspec[0])
+    splot.waveregions(synspec[1],overplot=True)
+
+.. image:: _readme_files/_synth_turbospec_example.png
+
+And for the Al variations in Al windows (re-using ``atm_ng`` from
+higher up)::
+
+	  abu= [13,-1.,-0.75,-0.5,-0.25,0.,0.25,0.5,0.75,1.]
+	  synspec= apogee.modelspec.turbospec.windows('Al',abu,modelatm=atm_ng,\
+	  	   linelist='turbospec.201312161124.new.vac')
+
+and we can plot the aluminum windows::
+
+    splot.windows(synspec[0],'Al')
+    for ii in range(1,len(abu)-1): splot.windows(synspec[ii],'Al',overplot=True)
+
+.. image:: _readme_files/_windows_al_turbospec_example.png
+
+Again, the ``turbospec.windows`` synthesis is performed by first
+synthesizing a single full APOGEE wavelength spectrum to use as a
+baseline and then generating multiple synthetic spectra in the
+requested windows for which the baseline is used outside of the
+window. For most elements of interest this is very fast, because their
+lines only span a narrow wavelength range. The baseline can be
+pre-computed using ``turbospec.turbosynth``, such that it can be
+re-used when varying different elements. One has to generate the
+baseline continuum, the continuum normalized spectrum, the wavelength
+grid on which the synthesis is computed, but also the continuous
+opacity, which can be saved to a file by specifying the ``modelopac=``
+keyword. For example::
+
+	 baseline= apogee.modelspec.turbospec.turbosynth(modelatm=atm_ng,\
+	  	    linelist='turbospec.201312161124.new.vac',\
+		    modelopac='mpac')
+         mwav= baseline[0]
+         cflux= baseline[2]/baseline[1]
+         baseline= baseline[1]
+	  
+then we can repeat the calculation above as::
+
+     	  synspec= apogee.modelspec.turbospec.windows('Al',abu,\
+	              baseline=baseline,mwav=mwav,cflux=cflux,modelopac='mpac',\
+		      modelatm=atm_ng,linelist='turbospec.201312161124.new.vac')
+
+which is indistinguishable from the plot above.
+
 
 Fitting spectra
 ^^^^^^^^^^^^^^^^^
