@@ -26,9 +26,9 @@ def synth(*args,**kwargs):
     NAME:
        synth
     PURPOSE:
-       Generate model APOGEE spectra using MOOG: this is a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
+       Generate model APOGEE spectra using MOOG: this is a general routine that generates the non-continuum-normalized spectrum, convolves with the LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
     INPUT ARGUMENTS:
-       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
+       lists with abundances wrt the atmosphere (they don't all have to have the same length, missing ones are filled in with zeros):
           [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
           [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
           ...
@@ -49,7 +49,7 @@ def synth(*args,**kwargs):
        SYNTHESIS:
           linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist
           run_weedout= (False) if True, run MOOG weedout on the linelist first
-          wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+          wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
@@ -60,7 +60,7 @@ def synth(*args,**kwargs):
                      metals= (0.) metallicity
                      cm= (0.) carbon-enhancement
                      am= (0.) alpha-enhancement
-                 (2) fparam= standard ASPCAP output format (
+                 (2) fparam= standard ASPCAP output format
                  lib= ('kurucz_filled') model atmosphere library
                  dr= (None) use model atmospheres from this data release
           vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found) (can also be part of fparam)
@@ -184,13 +184,13 @@ def windows(*args,**kwargs):
     NAME:
        windows
     PURPOSE:
-       Generate model APOGEE spectra using MOOG in selected wavelength windows (but the whole APOGEE spectral range is returned): this is a general routine that generates the non-continuum-normalized spectrum, convolves withe LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
+       Generate model APOGEE spectra using MOOG in selected wavelength windows (but the whole APOGEE spectral range is returned): this is a general routine that generates the non-continuum-normalized spectrum, convolves with the LSF and macrotubulence, and optionally continuum normalizes the output; use 'moogsynth' for a direct interface to MOOG
     INPUT ARGUMENTS:
        Windows specification: Provide one of
           (1) Element string: the APOGEE windows for this element will be loaded
           (2) startindxs, endindxs= start and end indexes of the windows on the apStar wavelength grid
           (3) startlams, endlams= start and end wavelengths in \AA
-       lists with abundances (they don't all have to have the same length, missing ones are filled in with zeros):
+       lists with abundance differences wrt the atmosphere (they don't all have to have the same length, missing ones are filled in with zeros):
           [Atomic number1,diff1_1,diff1_2,diff1_3,...,diff1_N]
           [Atomic number2,diff2_1,diff2_2,diff2_3,...,diff2_N]
           ...
@@ -218,7 +218,7 @@ def windows(*args,**kwargs):
        SYNTHESIS:
           linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere
           run_weedout= (False) if True, run MOOG weedout on the linelist first
-          wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
+          wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
              (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
@@ -389,7 +389,7 @@ def weedout(**kwargs):
     INPUT:
        linelist= (None) linelist to use; can be set to the path of a linelist file or to the name of an APOGEE linelist
        keepratio= (0.00001) Eliminate lines weaker than keepratio where keepratio = kapnu/kaplam at the approximate line wavelength, calculated at a continuue optical depth of 0.5
-       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
              (a) modelatm= (None) can be set to the filename of a model atmosphere
@@ -502,7 +502,7 @@ def moogsynth(*args,**kwargs):
           [Atomic numberM,diffM_1,diffM_2,diffM_3,...,diffM_N]
     SYNTHEIS KEYWORDS:
        isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'108.00116':'1.001','606.01212':'1.01'})
-       wmin, wmax, dw, width= (15150.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+       wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        doflux= (False) if True, calculate the continuum flux instead
     LINELIST KEYWORDS:
        linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere; otherwise can be set to the path of a linelist file or to the name of an APOGEE linelist
