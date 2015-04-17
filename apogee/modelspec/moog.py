@@ -235,8 +235,7 @@ def windows(*args,**kwargs):
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
     OUTPUT:
-       (wavelengths,spectra (nspec,nwave)) for synth driver
-       (wavelengths,continuum spectr (nwave)) for doflux driver     
+       spectra (nspec,nwave)
     HISTORY:
        2015-03-18 - Written - Bovy (IAS)
     """
