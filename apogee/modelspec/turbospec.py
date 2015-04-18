@@ -500,9 +500,9 @@ def turbosynth(*args,**kwargs):
     for arg in args:
         indiv_abu[arg[0]]= arg[1]+solarabundances._ASPLUND05[arg[0]]\
             +modelatm._metals
-        if arg == 6: indiv_abu[arg[0]]+= modelatm._cm
-        if arg == 7: indiv_abu[arg[0]]+= modelatm._nm
-        if arg in [8,10,12,14,16,18,20,22]: indiv_abu[arg[0]]+= modelatm.nm
+        if arg[0] == 6: indiv_abu[arg[0]]+= modelatm._cm
+        if arg[0] == 7: indiv_abu[arg[0]]+= modelatm._nm
+        if arg[0] in [8,10,12,14,16,18,20,22]: indiv_abu[arg[0]]+= modelatm._am
     modelopac= kwargs.get('modelopac',None)
     if modelopac is None or \
             (isinstance(modelopac,str) and not os.path.exists(modelopac)):
