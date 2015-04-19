@@ -53,7 +53,7 @@ def synth(*args,**kwargs):
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
-             (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
+             (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance (if filename, needs to end in .mod)
              (b) parameters of a KURUCZ model atmosphere:
                  (1) teff= (4500) Teff
                      logg= (2.5) logg
@@ -221,7 +221,7 @@ def windows(*args,**kwargs):
           wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits *for the whole spectrum* (not just the windows), step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
-             (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance
+             (a) modelatm= (None) can be set to the filename of a model atmosphere or to a model-atmosphere instance (if filename, needs to end in .mod)
              (b) parameters of a KURUCZ model atmosphere:
                  (1) teff= (4500) Teff
                      logg= (2.5) logg
@@ -391,7 +391,7 @@ def weedout(**kwargs):
        wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
-             (a) modelatm= (None) can be set to the filename of a model atmosphere
+             (a) modelatm= (None) can be set to the filename of a model atmosphere (needs to end in .mod)
              ( b) parameters of a KURUCZ model atmosphere:
                   teff= (4500) Teff
                   logg= (2.5) logg
@@ -507,7 +507,7 @@ def moogsynth(*args,**kwargs):
        linelist= (None) linelist to use; if this is None, the code looks for a weed-out version of the linelist appropriate for the given model atmosphere; otherwise can be set to the path of a linelist file or to the name of an APOGEE linelist
     ATMOSPHERE KEYWORDS:
        Either:
-          (a) modelatm= (None) can be set to the filename of a model atmosphere
+          (a) modelatm= (None) can be set to the filename of a model atmosphere (needs to end in .mod)
           (b) specify the stellar parameters for a grid point in model atm by
               - lib= ('kurucz_filled') spectral library
               - teff= (4500) grid-point Teff
