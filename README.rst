@@ -807,7 +807,10 @@ the linelist is specified. The ``linelist=`` keyword can either be set
 to a list of linelists to use (like an atomic and a molecular one) or
 to a string. In the latter case, if the string filename does not exist
 the code will also look for linelists that start in
-*turboatoms.*/*turbomolec.* or end in *.atoms*/*.molec*.
+*turboatoms.*/*turbomolec.* or end in *.atoms*/*.molec*. You will have
+to download the ``Hlinedata.vac`` linelist from the APOGEE linelist
+directory as well (can be done with
+``apogee.tools.download.linelist('Hlinedata.vac')``.
 
 We repeat the calculations done above using MOOG with
 Turbospectrum here as an example::
