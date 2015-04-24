@@ -6,6 +6,7 @@ from functools import wraps
 import math
 import numpy
 from scipy import special, interpolate, sparse, ndimage
+import scipy.sparse.linalg
 import fitsio
 import apogee.tools.read as apread
 import apogee.tools.path as appath
@@ -485,7 +486,6 @@ def deconvolve(spec,specerr,
         # b
         Cinvs= Cinv.dot(tspec)
         b= (slsf.T).dot(Cinvs)
-        import scipy.sparse.linalg
         tmp= scipy.sparse.linalg.bicg(A,b)
         if tmp[1] == 0:
             tmp= tmp[0]
