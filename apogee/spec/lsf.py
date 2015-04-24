@@ -430,3 +430,73 @@ def _load_precomp(dr=None,fiber='combo'):
     x= numpy.linspace(-7.,7.,43)
     elsf= fitsio.read(filePath)
     return (x,sparsify(elsf))
+
+def deconvolve(spec,specerr,
+               lsf=None,eps=2500.,smooth=None):
+    """
+    NAME:
+       deconvolve
+    PURPOSE:
+       deconvolve the LSF
+    INPUT:
+       spec - spectrum (nwave)
+       specerr - spectrum uncertainty array (nwave)
+       lsf= (None) LSF to deconvolve, needs to be specified in non-sparse format
+       eps= (2500.) smoothness parameter
+       smooth= (None) if set to a resolution, smooth with a FWHM resolution of 'smooth' and return the spectrum on the apStar wavelength grid
+    OUTPUT:
+       high-resolution deconvolved spectrum or smoothed deconvolved spectrum on apStar wavelength grid is smooth= is set
+    HISTORY:
+       2015-04-24 - Written - Bovy (IAS)
+    """
+    # Parse LSF input
+    if lsf is None:
+        raise ValueError("lsf= keyword with LSF in non-sparse format required for apogee.spec.lsf.deconvolve")
+    if isinstance(lsf,sparse.dia_matrix):
+        raise ValueError("lsf= keyword with LSF needs to be in non-sparse format")
+    lsf[numpy.isnan(lsf)]= 0.
+    # How much higher resolution is the LSF than the data?
+    hires= int(round(lsf.shape[0]/8575.))
+    # Setup output
+    out= numpy.zeros(lsf.shape[0])
+    # Loop through the detectors and analyze each one separately
+    for sindx, eindx in zip([140,3450,6250],[3370,6200,8450]):
+        # Get the LSF for this detector
+        slsf= sparsify(lsf[hires*sindx:hires*eindx])
+        # Parse the spectrum and its error for this detector, normalize
+        tspec= numpy.ones((eindx-sindx)*hires)
+        tinvspecerr= numpy.zeros((eindx-sindx)*hires)
+        norm= numpy.nanmean(spec[sindx:eindx])
+        tspec[::hires]= spec[sindx:eindx]/norm
+        tinvspecerr[::hires]= norm/specerr[sindx:eindx]
+        # Deal with NaNs
+        tinvspecerr[numpy.isnan(tspec)]= 0.
+        tspec[numpy.isnan(tspec)]= 1.
+        # Set up the necessary sparse matrices
+        Cinv= sparse.diags([tinvspecerr**2.],[0])
+        CinvL= Cinv.dot(slsf)
+        LTCinvL= (slsf.T).dot(CinvL)
+        # P smoothness matrix
+        diags1= -numpy.ones(slsf.shape[1])
+        diags1[-1]= 0.
+        diags2= numpy.ones(slsf.shape[1]-1)
+        P= sparse.diags([diags1,diags2],[0,1])
+        A= LTCinvL+eps*(P.T).dot(P)
+        # b
+        Cinvs= Cinv.dot(tspec)
+        b= (slsf.T).dot(Cinvs)
+        import scipy.sparse.linalg
+        tmp= scipy.sparse.linalg.bicg(A,b)
+        if tmp[1] == 0:
+            tmp= tmp[0]
+        else:
+            raise RuntimeError("Deconvolution did not converge")
+        out[sindx*hires:eindx*hires]= tmp*norm
+    if not smooth is None:
+        wav= apStarWavegrid()
+        l10wav= numpy.log10(wav)
+        dowav= l10wav[1]-l10wav[0]
+        sigvm= hires/dowav/smooth/numpy.log(10.)\
+            /2./numpy.sqrt(2.*numpy.log(2.))
+        out= ndimage.gaussian_filter1d(out,sigvm,mode='constant')[::3]
+    return out
