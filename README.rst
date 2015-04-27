@@ -809,8 +809,11 @@ to a string. In the latter case, if the string filename does not exist
 the code will also look for linelists that start in
 *turboatoms.*/*turbomolec.* or end in *.atoms*/*.molec*. You will have
 to download the ``Hlinedata.vac`` linelist from the APOGEE linelist
-directory as well (can be done with
-``apogee.tools.download.linelist('Hlinedata.vac')``.
+directory as well if you are working in vacuum (the default; this can
+be done with ``apogee.tools.download.linelist('Hlinedata.vac')``. If
+you are working in air wavelengths, specify ``air=True`` when running
+Turbospectrum syntheses (then the internal Turbospectrum Hlinedata
+will be used).
 
 We repeat the calculations done above using MOOG with
 Turbospectrum here as an example::
