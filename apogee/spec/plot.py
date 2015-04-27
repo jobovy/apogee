@@ -7,6 +7,7 @@ from galpy.util import bovy_plot
 from matplotlib import pyplot
 import matplotlib.ticker as ticker
 from matplotlib.ticker import NullFormatter
+from matplotlib.backends.backend_pdf import PdfPages
 import apogee.spec.window as apwindow
 import apogee.tools.read as apread
 from apogee.tools import air2vac, atomic_number
@@ -579,6 +580,26 @@ def highres(*args,**kwargs):
             if kwargs.get('labelLines',True): kwargs['labelLines']= False
             kwargs.pop('fig_width',None)
         yield ii
+
+def highres2pdf(*args,**kwargs):
+    """
+    NAME:
+       highres2df
+    PURPOSE:
+       plot a series of spectra in great detail and save them as pages in a PDF file (simple wrapper around highres)
+    INPUT:
+       arguments are spectra on the apStar or ASPCAP wavelength grid
+       + other apogee.spec.plot.highres inputs
+       pdfname= name of the PDF file to save to
+    OUTPUT:
+       (none; just saves a PDF)
+    HISTORY:
+       2015-04-27 - Written - Bovy (IAS)
+    """
+    with PdfPages(kwargs.pop('pdfname')) as pdf:
+        for panel in highres(*args,**kwargs):
+            pdf.savefig()
+            pyplot.close()
 
 def elements(elem,*args,**kwargs):
     """
