@@ -176,7 +176,8 @@ def synth(*args,**kwargs):
         out/= numpy.tile(cflux,(nsynth,1))
     elif not cont is None:
         cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
-        out/= cflux
+        out[cflux > 0.]/= cflux[cflux > 0.]
+        out[cflux <= 0.]= numpy.nan
     return out
 
 def windows(*args,**kwargs):
@@ -376,7 +377,8 @@ def windows(*args,**kwargs):
         out/= numpy.tile(cflux,(nsynth,1))
     elif not cont is None:
         cflux= apcont.fit(out,numpy.ones_like(out),type=cont)
-        out/= cflux
+        out[cflux > 0.]/= cflux[cflux > 0.]
+        out[cflux <= 0.]= numpy.nan
     return out
 
 def weedout(**kwargs):
