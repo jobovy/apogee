@@ -78,35 +78,43 @@ def atomic_number(elem):
     except (NameError,KeyError):
         return elements.__dict__[elem.lower().capitalize].number
 
-def vac2air(wave):
+def vac2air(wave,sdssweb=False):
     """
     NAME:
        vac2air
     PURPOSE:
-       Convert from vacuum to air wavelengths (Morton 1991; see http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
+       Convert from vacuum to air wavelengths (See Allende Prieto technical note: http://hebe.as.utexas.edu/apogee/docs/air_vacuum.pdf)
     INPUT:
        wave - vacuum wavelength in \AA
+       sdssweb= (False) if True, use the expression from the SDSS website (http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
     OUTPUT:
        air wavelength in \AA
     HISTORY:
        2014-12-04 - Written - Bovy (IAS)
+       2015-04-27 - Updated to CAP note expression - Bovy (IAS)
     """
-    return wave/(1.+2.735182*10.**-4.+131.4182/wave**2.+2.76249*10.**8./wave**4.)
+    if sdssweb:
+        return wave/(1.+2.735182*10.**-4.+131.4182/wave**2.+2.76249*10.**8./wave**4.)
+    else:
+        return wave/(1.+0.05792105/(238.0185-(10000./wave)**2.)+0.00167917/(57.362-(10000./wave)**2.))
 
-def air2vac(wave):
+def air2vac(wave,sdssweb=False):
     """
     NAME:
        air2vac
     PURPOSE:
-       Convert from air to vacuum wavelengths (Morton 1991; see http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
+       Convert from air to vacuum wavelengths (See Allende Prieto technical note: http://hebe.as.utexas.edu/apogee/docs/air_vacuum.pdf)
     INPUT:
        wave - air wavelength in \AA
+       sdssweb= (False) if True, use the expression from the SDSS website (http://classic.sdss.org/dr7/products/spectra/vacwavelength.html)
     OUTPUT:
        vacuum wavelength in \AA
     HISTORY:
        2014-12-04 - Written - Bovy (IAS)
+       2015-04-27 - Updated to CAP note expression - Bovy (IAS)
     """
-    return optimize.brentq(lambda x: vac2air(x)-wave,wave-100,wave+100.)
+    return optimize.brentq(lambda x: vac2air(x,sdssweb=sdssweb)-wave,
+                           wave-20,wave+20.)
 
 def toAspcapGrid(spec):
     """
