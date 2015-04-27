@@ -13,7 +13,7 @@ import apogee.spec.lsf as aplsf
 import apogee.spec.continuum as apcont
 import apogee.spec.window as apwindow
 import apogee.tools.path as appath
-from apogee.tools import paramIndx
+from apogee.tools import paramIndx, air2vac
 from apogee.spec.plot import apStarWavegrid
 import apogee.tools.download as download
 from apogee.modelatm import atlas9
@@ -48,6 +48,7 @@ def synth(*args,**kwargs):
              'aspcap': Use the continuum normalization method of ASPCAP DR12
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
+          air= (False) if True, perform the synthesis in air wavelengths (output is still in vacuum)
           Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory and if this is not found, the internal Turbospectrum Hlinedata will be used (but that's probably wrong, as that one is in air wavelength)
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
           wmin, wmax, dw= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step
@@ -130,6 +131,9 @@ def synth(*args,**kwargs):
         # wavelength grid from final one
         mwav= tmpOut[0]
     except: raise
+    # If the synthesis was done in air, convert wavelength array
+    if kwargs.get('air',False):
+        mwav= numpy.array([air2vac(w) for w in list(mwav)])
     # Now convolve with the LSF
     out= aplsf.convolve(mwav,out,
                         lsf=lsf,xlsf=xlsf,dxlsf=dxlsf,vmacro=vmacro)
@@ -379,7 +383,7 @@ def turbosynth(*args,**kwargs):
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
     # Linelists
-    Hlinelist= kwargs.pop('Hinelist',None)
+    Hlinelist= kwargs.pop('Hlinelist',None)
     linelist= kwargs.pop('linelist',None)
     # Parse isotopes
     isotopes= kwargs.pop('isotopes','solar')
