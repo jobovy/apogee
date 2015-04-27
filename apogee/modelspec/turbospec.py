@@ -52,6 +52,7 @@ def synth(*args,**kwargs):
           Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
           wmin, wmax, dw= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step
+          costheta= (1.) cosine of the viewing angle
           lib= ('kurucz_filled') spectral library
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
@@ -201,6 +202,7 @@ def windows(*args,**kwargs):
           Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
           wmin, wmax, dw= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
+          costheta= (1.) cosine of the viewing angle
        MODEL ATMOSPHERE PARAMETERS:
           Specify one of the following:
              (a) modelatm= (None) model-atmosphere instance
@@ -368,6 +370,7 @@ def turbosynth(*args,**kwargs):
     SYNTHEIS KEYWORDS:
        isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'6.012':'0.9375','6.013':'0.0625'})
        wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step of calculation (see MOOG)
+       costheta= (1.) cosine of the viewing angle
     LINELIST KEYWORDS:
           air= (False) if True, perform the synthesis in air wavelengths (affects the default Hlinelist, nothing else; output is in air if air, vacuum otherwise)
           Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
@@ -389,6 +392,7 @@ def turbosynth(*args,**kwargs):
     wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
+    costheta= kwargs.pop('costheta',1.)
     # Linelists
     Hlinelist= kwargs.pop('Hlinelist',None)
     linelist= kwargs.pop('linelist',None)
@@ -532,6 +536,7 @@ def turbosynth(*args,**kwargs):
         modelopacname= os.path.join(tmpDir,'mopac')
         _write_script(scriptfilename,
                       wmin,wmax,dw,
+                      None,
                       modelfilename,
                       None,
                       modelopacname,
@@ -580,6 +585,7 @@ def turbosynth(*args,**kwargs):
     outfilename= os.path.join(tmpDir,'bsyn.out')
     _write_script(scriptfilename,
                   wmin,wmax,dw,
+                  costheta,
                   modelfilename,
                   None,
                   modelopacname,
@@ -640,6 +646,7 @@ def turbosynth(*args,**kwargs):
 
 def _write_script(scriptfilename,
                   wmin,wmax,dw,
+                  costheta,
                   modelfilename,
                   marcsfile,
                   modelopacname,
@@ -658,7 +665,7 @@ def _write_script(scriptfilename,
         scriptfile.write("'LAMBDA_STEP:' '%.3f'\n" % dw)
         if bsyn:
             scriptfile.write("'INTENSITY/FLUX:' 'Flux'\n")
-            scriptfile.write("'COS(THETA)    :' '1.00'\n")
+            scriptfile.write("'COS(THETA)    :' '%.3f'\n" % costheta)
             scriptfile.write("'ABFIND        :' '.false.'\n")
         scriptfile.write("'MODELINPUT:' '%s'\n" % modelfilename)
         if marcsfile is None:
