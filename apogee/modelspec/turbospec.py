@@ -392,6 +392,8 @@ def turbosynth(*args,**kwargs):
     wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
+    if int(numpy.ceil((wmax-wmin)/dw > 150000)):
+        raise ValueError('Too many wavelengths for Turbospectrum synthesis, reduce the wavelength step dw (to, e.g., 0.016)')
     costheta= kwargs.pop('costheta',1.)
     # Linelists
     Hlinelist= kwargs.pop('Hlinelist',None)
