@@ -386,6 +386,12 @@ and::
 
 .. image:: _readme_files/_detectorRedPlot_example.png 
 
+If you want even more detail, check out ``apogee.spec.plot.highres``,
+which returns an iterator over a 12-panel plot of the spectrum,
+allowing much detail to be seen in the spectrum. With
+``apogee.spec.plot.highres2pdf`` you can save these 12 panels to a 12
+page PDF file.
+
 It is also possible to plot the parts of a spectrum corresponding to
 the abundance windows used by APOGEE's abundance determination. For
 example, to plot the spectrum and the best fit for the window for Si
