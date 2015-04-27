@@ -520,6 +520,66 @@ def windows(*args,**kwargs):
                         top_left=True,fontsize=10,backgroundcolor='w')
     return None
 
+def highres(*args,**kwargs):
+    """
+    NAME:
+       highres
+    PURPOSE:
+       plot a series of spectra in great detail; this function returns an iterator over a twelve panel plot, with four panels / detector; the iterator yields the panel (zero-based indexing), so can be used as
+
+       for panel in apogee.spec.plot.highres(spectrum1,spectrum2):
+          # add some labels for specific panels
+          if panel == 0:
+             bovy_plot.bovy_text(r'$\mathrm{2M01515031 + 8549063}$',top_left=True)
+          show()
+
+    INPUT:
+       arguments are spectra on the apStar or ASPCAP wavelength grid
+    KEYWORDS:
+       color= () list of colors (1 or #spectra)
+       ls= () list of linestyles (1 or #spectra)
+       other relevant apogee.spec.plot.waveregions keywords
+    OUTPUT:
+       iterator over panels
+    HISTORY:
+       2015-04-27 - Written - Bovy (IAS)
+    """
+    startindxs= [188,988,1755,2600,3605,4150,4827,5500,6382,6830,7343,7900]
+    endindxs= [988,1755,2600,3250,4150,4827,5500,6100,6830,7343,7900,8325]
+    # Parse colors
+    if 'color' in kwargs and isinstance(kwargs.get('color'),str):
+        kwargs['color']= [kwargs['color'] for ii in range(len(args))]
+    if 'color' in kwargs and len(kwargs.get('color')) < len(args):
+        kwargs['color']= [kwargs['color'][0] for ii in range(len(args))]
+    if 'color' in kwargs: colors= kwargs['color']
+    # Parse linestyles
+    if 'ls' in kwargs and isinstance(kwargs.get('ls'),str):
+        kwargs['ls']= [kwargs['ls'] for ii in range(len(args))]
+    if 'ls' in kwargs and len(kwargs.get('ls')) < len(args):
+        kwargs['lss']= [kwargs['ls'][0] for ii in range(len(args))]
+    if 'ls' in kwargs: lss= kwargs['ls']
+    # Turn off fig_width, labelLines for 2nd spectrum and following
+    fig_width= kwargs.pop('fig_width',None)
+    labelLines= kwargs.pop('labelLines',False)
+    for ii in range(len(startindxs)):
+        kwargs['overplot']= False
+        kwargs['fig_width']= fig_width
+        if kwargs.get('fig_width') is None: kwargs.pop('fig_width')
+        kwargs['labelLines']= labelLines
+        for jj in range(len(args)):
+            if 'color' in kwargs:
+                kwargs['color']= colors[jj]
+            if 'ls' in kwargs:
+                kwargs['ls']= lss[jj]
+            waveregions(args[jj],
+                        startindxs=[startindxs[ii]],
+                        endindxs=[endindxs[ii]],
+                        **kwargs)
+            if not kwargs.get('overplot'): kwargs['overplot']= True
+            if kwargs.get('labelLines',True): kwargs['labelLines']= False
+            kwargs.pop('fig_width',None)
+        yield ii
+
 def elements(elem,*args,**kwargs):
     """
     NAME:
