@@ -49,7 +49,7 @@ def synth(*args,**kwargs):
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
           air= (False) if True, perform the synthesis in air wavelengths (output is still in vacuum)
-          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory and if this is not found, the internal Turbospectrum Hlinedata will be used (but that's probably wrong, as that one is in air wavelength)
+          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
           wmin, wmax, dw= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step
           lib= ('kurucz_filled') spectral library
@@ -196,7 +196,8 @@ def windows(*args,**kwargs):
              'aspcap': Use the continuum normalization method of ASPCAP DR12
              'cannon': Normalize using continuum pixels derived from the Cannon
        SYNTHESIS:
-          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory and if this is not found, the internal Turbospectrum Hlinedata will be used (but that's probably wrong, as that one is in air wavelength)
+          air= (False) if True, perform the synthesis in air wavelengths (output is still in vacuum)
+          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
           linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
           wmin, wmax, dw= (15000.000, 17000.000, 0.10000000, 7.0000000) spectral synthesis limits, step, and width of calculation (see MOOG)
        MODEL ATMOSPHERE PARAMETERS:
@@ -328,6 +329,9 @@ def windows(*args,**kwargs):
             kwargs.pop('modelopac')
     # Now multiply each continuum-normalized spectrum with the continuum
     out*= numpy.tile(cflux,(nsynth,1))
+    # If the synthesis was done in air, convert wavelength array
+    if kwargs.get('air',False):
+        mwav= numpy.array([air2vac(w) for w in list(mwav)])
     # Now convolve with the LSF
     out= aplsf.convolve(mwav,out,
                         lsf=lsf,xlsf=xlsf,dxlsf=dxlsf,vmacro=vmacro)
@@ -363,7 +367,8 @@ def turbosynth(*args,**kwargs):
        isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'6.012':'0.9375','6.013':'0.0625'})
        wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step of calculation (see MOOG)
     LINELIST KEYWORDS:
-          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory and if this is not found, the internal Turbospectrum Hlinedata will be used (but that's probably wrong, as that one is in air wavelength)
+          air= (False) if True, perform the synthesis in air wavelengths (affects the default Hlinelist, nothing else; output is in air if air, vacuum otherwise)
+          Hlinelist= (None) Hydrogen linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist; if None, then we first search for the Hlinedata.vac in the APOGEE linelist directory (if air=False) or we use the internal Turbospectrum Hlinelist (if air=True)
        linelist= (None) molecular and atomic linelists to use; can be set to the path of a linelist file or to the name of an APOGEE linelist, or lists of such files; if a single filename is given, the code will first search for files with extensions '.atoms', '.molec' or that start with 'turboatoms.' and 'turbomolec.'
     ATMOSPHERE KEYWORDS:
        modelatm= (None) model-atmosphere instance
@@ -411,12 +416,15 @@ def turbosynth(*args,**kwargs):
     modelbasename= os.path.basename(modelfilename)
     # Get the name of the linelists
     if Hlinelist is None:
-        Hlinelist= appath.linelistPath('Hlinedata.vac',
-                                       dr=kwargs.get('dr',None))
-    if not os.path.exists(Hlinelist):
+        if kwargs.get('air',False):
+            Hlinelist= 'DATA/Hlinedata' # will be symlinked
+        else:
+            Hlinelist= appath.linelistPath('Hlinedata.vac',
+                                           dr=kwargs.get('dr',None))
+    if not os.path.exists(Hlinelist) and not Hlinelist == 'DATA/Hlinedata':
         Hlinelist= appath.linelistPath(Hlinelist,
                                        dr=kwargs.get('dr',None))
-    if not os.path.exists(Hlinelist):
+    if not os.path.exists(Hlinelist) and not kwargs.get('air',False):
         print("Hlinelist in vacuum linelist not found, using Turbospectrum's, which is in air...")
         Hlinelist= 'DATA/Hlinedata' # will be symlinked
     linelistfilenames= [Hlinelist]
