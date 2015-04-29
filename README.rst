@@ -1286,7 +1286,7 @@ and::
 .. image:: _readme_files/_rc_popmass.png
 
 
-For convenience, the data in Figs. 3, 12, 13, and 14 in `Bovy et
+For convenience, the data in Figs. 3, 13, 14, and 15 in `Bovy et
 al. 2014 <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__ has
 been stored as functions in this codebase. For example, we can
 calculate distances as follows::
@@ -1299,7 +1299,7 @@ calculate distances as follows::
 where the inputs to *rcd* are *J-K*\ :sub:`s` color, metallicity *Z*
 (converted from [Fe/H]), and the apparant *K*\ :sub:`s` magnitude.
 
-We can also get the data from Figs. 12, 13, and 14. This can be
+We can also get the data from Figs. 13, 14, and 15. This can be
 achieved as follows::
 
 	 from apogee.samples.rc import rcpop
@@ -1317,11 +1317,11 @@ and we can plot them. E.g.::
 
     rcp.plot_avgmass()
 
-produces Fig. 12 and::
+produces Fig. 13 and::
 
 	 rcp.plot_popmass()
 
-gives the bottom panel of Fig. 13. We can also calculate the age
+gives the bottom panel of Fig. 14. We can also calculate the age
 distribution::
 
 	age_func= rcp.calc_age_pdf()
@@ -1332,5 +1332,5 @@ can also directly plot it::
 
     rcp.plot_age_pdf()
 
-which gives Fig. 14. More info on all of these functions is available
+which gives Fig. 15. More info on all of these functions is available
 in the docstrings.
