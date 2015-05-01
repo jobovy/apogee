@@ -383,6 +383,8 @@ def obslog(year=None):
        2013-11-04 - Written - Bovy (IAS)
     """
     obslogfilename= path.obslogPath(year=year)
+    if not os.path.exists(obslogfilename):
+        download.obslog(year=year)
     obslogtxt= numpy.genfromtxt(obslogfilename,skiprows=2,delimiter='|',
                                 dtype=[('Fieldname','S14'),
                                        ('LocID','int'),
