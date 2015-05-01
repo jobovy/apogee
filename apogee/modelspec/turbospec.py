@@ -383,6 +383,7 @@ def turbosynth(*args,**kwargs):
                   (b) if set to a non-existing filename: store the continuous opacity in this file
     MISCELLANEOUS KEYWORDS:
        dr= data release
+       saveTurboInput= if set to a string, the input to and output from Turbospectrum will be saved as a tar.gz file with this name; can be a filename in the current directory or a full path
     OUTPUT:
        (wavelengths,cont-norm. spectrum, spectrum (nwave))
     HISTORY:
