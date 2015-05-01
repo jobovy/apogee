@@ -418,7 +418,7 @@ def pix2wave(pix,chip,fiber=300):
     out[pix > 2047]= numpy.nan
     return out
 
-def _load_precomp(dr=None,fiber='combo'):
+def _load_precomp(dr=None,fiber='combo',sparse=True):
     """Load a precomputed LSF"""
     if dr is None: dr= appath._default_dr()
     fileDir= os.path.dirname(appath.apLSFPath('a',dr=dr))
@@ -430,7 +430,10 @@ def _load_precomp(dr=None,fiber='combo'):
         _download_file(dlink,filePath,dr)
     x= numpy.linspace(-7.,7.,43)
     elsf= fitsio.read(filePath)
-    return (x,sparsify(elsf))
+    if sparse:
+        return (x,sparsify(elsf))
+    else:
+        return (x,elsf)
 
 def deconvolve(spec,specerr,
                lsf=None,eps=2500.,smooth=None):
