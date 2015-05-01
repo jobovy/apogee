@@ -383,6 +383,29 @@ def apLSF(chip,dr=None):
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
+def obslog(year=None):
+    """
+    NAME:
+       obslog
+    PURPOSE:
+       download the observation log
+    INPUT:
+       year= observation log up to this year (None)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-05-01 - Written - Bovy (IAS)
+    """
+    # First make sure the file doesn't exist
+    filePath= path.obslogPath(year=year)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath= \
+        filePath.replace(os.path.dirname(filePath),
+                         'https://zenodo.org/record/17300/files')
+    _download_file(downloadPath,filePath,None)
+    return None
+
 def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))
