@@ -111,7 +111,10 @@ similar directories).
 For the target selection code to work, the allStar-$APOGEE_REDUX.fits,
 allVisit-$APOGEE_REDUX.fits files need to be present, as well as the
 targeting files in the *drXX/* directories. The observation log
-obs-summary-year1+2.csv also needs to be present.
+obs-summary-year1+2.csv (for DR11) or obs-summary-year1+2+3.csv (for
+DR12) also needs to be present. These are available `here
+<https://zenodo.org/record/17300>`__ and they will be automatically
+downloaded by the code when they are needed.
 
 Files of individual spectra live in directories that mirror the SAS as
 well:
