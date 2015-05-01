@@ -49,7 +49,7 @@ def convolve(wav,spec,
         dx= xlsf[1]-xlsf[0]
     else:
         dx= dxlsf
-    hires= int(1./dx)
+    hires= int(round(1./dx))
     l10wav= numpy.log10(apStarWavegrid())
     dowav= l10wav[1]-l10wav[0]
     tmpwav= 10.**numpy.arange(l10wav[0],l10wav[-1]+dowav/hires,dowav/hires)
@@ -123,7 +123,7 @@ def dummy(dx=1./3.,sparse=False):
        2015-03-23 - Written - Bovy (IAS)
     """
     # Are the x unit pixels or a fraction 1/hires thereof?
-    hires= int(1./dx)
+    hires= int(round(1./dx))
     # Setup output
     wav= apStarWavegrid()
     l10wav= numpy.log10(wav)
@@ -158,7 +158,7 @@ def eval(x,fiber='combo',sparse=False):
     elif not isinstance(fiber,list) and isinstance(fiber[0],int):
         raise ValueError('fiber input to apogee.spec.lsf.eval not understood ...')
     # Are the x unit pixels or a fraction 1/hires thereof?
-    hires= int(1./(x[1]-x[0]))
+    hires= int(round(1./(x[1]-x[0])))
     # Setup output
     wav= apStarWavegrid()
     l10wav= numpy.log10(wav)
@@ -501,5 +501,5 @@ def deconvolve(spec,specerr,
         dowav= l10wav[1]-l10wav[0]
         sigvm= hires/dowav/smooth/numpy.log(10.)\
             /2./numpy.sqrt(2.*numpy.log(2.))
-        out= ndimage.gaussian_filter1d(out,sigvm,mode='constant')[::3]
+        out= ndimage.gaussian_filter1d(out,sigvm,mode='constant')[::hires]
     return out
