@@ -54,8 +54,9 @@ This package can also use `MOOG
 however, not installed by this package's installer. You can install
 MOOG from the source given on the MOOG `website
 <http://www.as.utexas.edu/~chris/moog.html>`__, or you can use
-@andycasey's `MOOG installer <https://github.com/andycasey/moog>`__
-(updated to the July 2014 release of MOOG in the `batch
+`@andycasey <https://github.com/andycasey>`__'s `MOOG installer
+<https://github.com/andycasey/moog>`__ (updated to the July 2014
+release of MOOG in the `batch
 <https://github.com/jobovy/moog/tree/batch>`__ branch of my fork of
 Andy's code).
 
