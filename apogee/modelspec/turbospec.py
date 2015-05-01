@@ -573,7 +573,8 @@ def turbosynth(*args,**kwargs):
                 os.remove(os.path.join(tmpDir,'DATA'))
             raise RuntimeError("Running babsma_lu failed ...")
         finally:
-            if os.path.exists(os.path.join(tmpDir,'babsma.par')):
+            if os.path.exists(os.path.join(tmpDir,'babsma.par')) \
+                    and not 'saveTurboInput' in kwargs:
                 os.remove(os.path.join(tmpDir,'babsma.par'))
             sys.stdout.write('\r'+download._ERASESTR+'\r')
             sys.stdout.flush()
@@ -621,6 +622,18 @@ def turbosynth(*args,**kwargs):
     except subprocess.CalledProcessError:
         raise RuntimeError("Running bsyn_lu failed ...")
     finally:
+        if 'saveTurboInput' in kwargs:
+            turbosavefilename= kwargs['saveTurboInput']
+            if os.path.dirname(turbosavefilename) == '':
+                turbosavefilename= os.path.join(os.getcwd(),turbosavefilename)
+            try:
+                subprocess.check_call(['tar','cvzf',turbosavefilename,
+                                       os.path.basename(os.path.normpath(tmpDir))])
+            except subprocess.CalledProcessError:
+                raise RuntimeError("Tar-zipping the Turbospectrum input and output failed; you will have to manually delete the temporary directory ...")
+            # Need to remove babsma.par, bc not removed above
+            if os.path.exists(os.path.join(tmpDir,'babsma.par')):
+                os.remove(os.path.join(tmpDir,'babsma.par'))
         if os.path.exists(os.path.join(tmpDir,'bsyn.par')):
             os.remove(os.path.join(tmpDir,'bsyn.par'))
         if os.path.exists(modelopacname):
