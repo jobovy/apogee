@@ -219,10 +219,10 @@ def obslogPath(year=None):
         else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,
-                            'obs-summary-year1+2.csv')
+                            'obs-summary-year12.csv')
     elif year == 3:
         return os.path.join(_APOGEE_DATA,
-                            'obs-summary-year1+2+3.csv')
+                            'obs-summary-year123.csv')
 
 def apogeeTargetDirPath(dr=None):
     """
