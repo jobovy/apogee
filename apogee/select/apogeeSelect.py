@@ -1269,7 +1269,7 @@ class apogeeSelect:
         if self._year == 1:
             self._dr= '10'
         elif self._year == 2:
-            self._dr= 'X'
+            self._dr= '11'
         elif self._year == 3:
             self._dr= '12'
         #Match up plates with designs           

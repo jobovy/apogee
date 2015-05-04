@@ -740,7 +740,7 @@ def _default_dr():
 def _redux_dr(dr=None):
     if dr is None: dr= _default_dr()
     if dr == '10': return _DR10REDUX
-    elif dr == '11' or dr == '11': return _DR11REDUX
+    elif dr == '11': return _DR11REDUX
     elif dr == '12': return _DR12REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
