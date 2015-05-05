@@ -183,8 +183,8 @@ def waveregions(*args,**kwargs):
         startindxs= []
         endindxs= []
         for ii in range(len(startlams)):
-            startindxs.append(numpy.amin(numpy.fabs(startlams[ii]-args[0])))
-            endindxs.append(numpy.amin(numpy.fabs(endlams[ii]-args[0])))
+            startindxs.append(numpy.argmin(numpy.fabs(startlams[ii]-args[0])))
+            endindxs.append(numpy.argmin(numpy.fabs(endlams[ii]-args[0])))
     else:
         startindxs= kwargs.pop('startindxs',
                                [322,1794,2707,3850,4740,5820,7185])
@@ -490,7 +490,7 @@ def windows(*args,**kwargs):
     # Set initial space to zero
     kwargs['_startendskip']= 0
     # Set initial figure width
-    if not kwargs.get('overplot',False):
+    if not kwargs.get('overplot',False) and not 'fig_width' in kwargs:
         if dlam > 150.:
             kwargs['fig_width']= 8.4
         else:
