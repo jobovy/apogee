@@ -511,7 +511,7 @@ def windows(*args,**kwargs):
             kwargs['yrange']= kwargs.get('yrange',[0.,1.2])
     # mark the 'lines'
     markLines= kwargs.get('markLines',not 'overplot' in kwargs)
-    if markLines:
+    if markLines and not '_markwav' in kwargs:
         kwargs['_markwav']= apwindow.lines(args[2])
     # Plot
     waveregions(args[0],args[1],startindxs=si,endindxs=ei,
