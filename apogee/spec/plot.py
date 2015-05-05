@@ -183,8 +183,8 @@ def waveregions(*args,**kwargs):
         startindxs= []
         endindxs= []
         for ii in range(len(startlams)):
-            startindxs.append(numpy.amin(numpy.fabs(startlams-args[0])))
-            endindxs.append(numpy.amin(numpy.fabs(endlams-args[0])))
+            startindxs.append(numpy.amin(numpy.fabs(startlams[ii]-args[0])))
+            endindxs.append(numpy.amin(numpy.fabs(endlams[ii]-args[0])))
     else:
         startindxs= kwargs.pop('startindxs',
                                [322,1794,2707,3850,4740,5820,7185])
