@@ -13,7 +13,8 @@ _OPSCALE= 'ROSSTAU' # could be 'ROSSTAU' for Rossland optical depth or 'RHOX'
 class Atlas9Atmosphere(object):
     """Atlas9Atmosphere: tools for dealing with ATLAS9 model atmospheres"""
     def __init__(self,teff=4500.,logg=2.5,metals=0.,am=0.,cm=0.,
-                 dr=None,interp_x=_OPSCALE):
+                 dr=None,interp_x=_OPSCALE,
+                 atmfile=None):
         """
         NAME:
            __init__
@@ -27,12 +28,14 @@ class Atlas9Atmosphere(object):
            cm= (0.) carbon enhancement
            dr= (None) load model atmospheres from this data release
            interp_x= (might be changed) quantity to use for putting models onto a common opacity scale when interpolating ('ROSSTAU' or 'RHOX')
+           atmfile= (None) if set to an existing filename, read the atmosphere from this file rather than getting it from the grid (no need to specify teff etc.)
         OUTPUT:
            instance
         BUGS:
            currently only works for grid points in model-atmosphere space
         HISTORY:
            2015-03-19 - Started - Bovy (IAS)
+           2015-05-06 - Added atmfile initialization - Bovy (IAS)
         """
         # Save the input parameters
         self._teff= teff
@@ -44,8 +47,11 @@ class Atlas9Atmosphere(object):
         # First establish whether this is a grid point in model atm space
         self._isGrid= isGridPoint(self._teff,self._logg,self._metals,self._am,
                                   self._cm)
+        # If atmfile is an existing file, load the atmosphere from that file
+        if not atmfile is None and os.path.exists(atmfile):
+            self._loadFile(atmfile)
         # If it's a grid point, load the file
-        if self._isGrid:
+        elif self._isGrid:
             self._loadGridPoint()
         else:
             self._loadByInterpolation(interp_x=interp_x)
@@ -218,6 +224,18 @@ class Atlas9Atmosphere(object):
                 outfile.write(newline+'\n')
         return None
 
+    def _loadFile(self,filePath):
+        """Load the model from a given file"""
+        atContent= readAtlas9(filePath)
+        # Unpack
+        self._first4lines= atContent[0]
+        self._abscale= atContent[1]
+        self._abchanges= atContent[2]
+        self._deck= atContent[3]
+        self._pradk= atContent[4]
+        self._nlayers= self._deck.shape[0]
+        return None
+    
     def _loadGridPoint(self):
         """Load the model corresponding to this grid point"""
         filePath= appath.modelAtmospherePath(lib='kurucz_filled',
