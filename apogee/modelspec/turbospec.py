@@ -96,7 +96,7 @@ def synth(*args,**kwargs):
         kwargs['metals']= fparam[paramIndx('METALS')]
         kwargs['am']= fparam[paramIndx('ALPHA')]
         kwargs['cm']= fparam[paramIndx('C')]
-        kwargs['vm']= 10.**fparam[paramIndx('LOG10VDOP')]        
+        kwargs['vmicro']= 10.**fparam[paramIndx('LOG10VDOP')]        
     # Need to pass a model atmosphere instance to turbosynth (needs to be made
     # more efficient, because now turbosynth always write the atmosphere
     if modelatm is None: # Setup a model atmosphere
@@ -269,7 +269,7 @@ def windows(*args,**kwargs):
         kwargs['metals']= fparam[0,paramIndx('METALS')]
         kwargs['am']= fparam[0,paramIndx('ALPHA')]
         kwargs['cm']= fparam[0,paramIndx('C')]
-        kwargs['vm']= 10.**fparam[0,paramIndx('LOG10VDOP')]        
+        kwargs['vmicro']= 10.**fparam[0,paramIndx('LOG10VDOP')]        
     # Need to pass a model atmosphere instance to turbosynth (needs to be made
     # more efficient, because now turbosynth always write the atmosphere
     if modelatm is None: # Setup a model atmosphere
