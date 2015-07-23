@@ -7,6 +7,7 @@ import os, os.path
 import shutil
 import tempfile
 import subprocess
+import warnings
 import numpy
 from scipy import interpolate
 import apogee.spec.lsf as aplsf
@@ -109,6 +110,9 @@ def synth(*args,**kwargs):
         raise ValueError('modelatm= input is an existing filename, but you need to give an Atmosphere object instead')
     elif isinstance(modelatm,str):
         raise ValueError('modelatm= input needs to be an Atmosphere instance')
+    # Check temperature
+    if modelatm._teff > 7000.:
+        warnings.warn('Turbospectrum does not include all necessary physics to model stars hotter than about 7000 K; proceed with caution',RuntimeWarning)
     kwargs['modelatm']= modelatm
     try:
         # Run turbosynth for all abundances
@@ -279,6 +283,9 @@ def windows(*args,**kwargs):
         raise ValueError('modelatm= input is an existing filename, but you need to give an Atmosphere object instead')
     elif isinstance(modelatm,str):
         raise ValueError('modelatm= input needs to be an Atmosphere instance')
+    # Check temperature
+    if modelatm._teff > 7000.:
+        warnings.warn('Turbospectrum does not include all necessary physics to model stars hotter than about 7000 K; proceed with caution',RuntimeWarning)
     kwargs['modelatm']= modelatm
     try:
         rmModelopac= False
@@ -418,6 +425,9 @@ def turbosynth(*args,**kwargs):
         elif isinstance(modelatm,str):
             raise ValueError('modelatm= input needs to be an Atmosphere instance')
         else:
+            # Check temperature
+            if modelatm._teff > 7000.:
+                warnings.warn('Turbospectrum does not include all necessary physics to model stars hotter than about 7000 K; proceed with caution',RuntimeWarning)
             # Write atmosphere to file
             modelfilename= os.path.join(tmpDir,'atm.mod')
             modelatm.writeto(modelfilename,turbo=True)
