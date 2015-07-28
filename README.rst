@@ -819,11 +819,14 @@ to a string. In the latter case, if the string filename does not exist
 the code will also look for linelists that start in
 *turboatoms.*/*turbomolec.* or end in *.atoms*/*.molec*. You will have
 to download the ``Hlinedata.vac`` linelist from the APOGEE linelist
-directory as well if you are working in vacuum (the default; this can
-be done with ``apogee.tools.download.linelist('Hlinedata.vac')``. If
-you are working in air wavelengths, specify ``air=True`` when running
-Turbospectrum syntheses (then the internal Turbospectrum Hlinedata
-will be used).
+directory as well if you are working in vacuum (the default is to work
+in air wavelengths, which Turbospectrum expects; the vacuum Hlinedata
+can be obtained with
+``apogee.tools.download.linelist('Hlinedata.vac')``. When working in
+air wavelengths, the internal Turbospectrum Hlinedata will be used. To
+work in vacuum, specify ``air=False`` when running Turbospectrum
+syntheses. However, this is not recommended as Turbospectrum is
+designed to run in air wavelengths!
 
 We repeat the calculations done above using MOOG with
 Turbospectrum here as an example::
@@ -833,7 +836,7 @@ Turbospectrum here as an example::
 	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
 	# The following takes a while ...
 	synspec= apogee.modelspec.turbospec.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,\
-		 linelist='turbospec.201312161124.new.vac',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
+		 linelist='turbospec.201312161124',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
 	
 and we can again plot these::
 
@@ -848,7 +851,7 @@ higher up)::
 
 	  abu= [13,-1.,-0.75,-0.5,-0.25,0.,0.25,0.5,0.75,1.]
 	  synspec= apogee.modelspec.turbospec.windows('Al',abu,modelatm=atm_ng,\
-	  	   linelist='turbospec.201312161124.new.vac')
+	  	   linelist='turbospec.201312161124')
 
 and we can plot the aluminum windows::
 
@@ -871,7 +874,7 @@ opacity, which can be saved to a file by specifying the ``modelopac=``
 keyword. For example::
 
 	 baseline= apogee.modelspec.turbospec.turbosynth(modelatm=atm_ng,\
-	  	    linelist='turbospec.201312161124.new.vac',\
+	  	    linelist='turbospec.201312161124',\
 		    modelopac='mpac')
          mwav= baseline[0]
          cflux= baseline[2]/baseline[1]
@@ -881,7 +884,7 @@ then we can repeat the calculation above as::
 
      	  synspec= apogee.modelspec.turbospec.windows('Al',abu,\
 	              baseline=baseline,mwav=mwav,cflux=cflux,modelopac='mpac',\
-		      modelatm=atm_ng,linelist='turbospec.201312161124.new.vac')
+		      modelatm=atm_ng,linelist='turbospec.201312161124')
 
 which is indistinguishable from the plot above. Remember that you end
 up with a file that contains the continuous opacity, so you might want
