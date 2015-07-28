@@ -14,7 +14,7 @@ import apogee.spec.lsf as aplsf
 import apogee.spec.continuum as apcont
 import apogee.spec.window as apwindow
 import apogee.tools.path as appath
-from apogee.tools import paramIndx, air2vac
+from apogee.tools import paramIndx, air2vac, vac2air
 from apogee.spec.plot import apStarWavegrid
 import apogee.tools.download as download
 from apogee.modelatm import atlas9
@@ -307,8 +307,12 @@ def windows(*args,**kwargs):
         # Convert the apStarWavegrid windows to turboWavegrid regions
         sm,em= [], []
         for start,end in zip(si,ei):
-            sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
-            em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
+            if kwargs.get('air',True):
+                sm.append(numpy.argmin(numpy.fabs(vac2air(apWave[start])-mwav)))
+                em.append(numpy.argmin(numpy.fabs(vac2air(apWave[end])-mwav)))
+            else:
+                sm.append(numpy.argmin(numpy.fabs(apWave[start]-mwav)))
+                em.append(numpy.argmin(numpy.fabs(apWave[end]-mwav)))
         # Run Turbospectrum synth for all abundances and all windows
         if len(args) == 0: #special case that there are *no* differences
             args= ([26,0.],)
