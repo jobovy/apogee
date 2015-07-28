@@ -395,8 +395,8 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         # Find the hypercube in the grid that this point lies in
         # Teff
         tdiff= teff-appath._modelAtmKurucz_teffgrid
-        tefflow= (appath._modelAtmKurucz_teffgrid[tdiff > 0])[-1]
-        teffhigh= (appath._modelAtmKurucz_teffgrid[tdiff < 0])[0]
+        tefflow= (appath._modelAtmKurucz_teffgrid[tdiff >= 0])[-1]
+        teffhigh= (appath._modelAtmKurucz_teffgrid[tdiff <= 0])[0]
         # Logg
         if teff >= 3500. and teff <= 6000.:
             logggrid= appath._modelAtmKurucz_logggrid_G
@@ -409,12 +409,12 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         else:
             logggrid= appath._modelAtmKurucz_logggrid_O
         ldiff= logg-logggrid
-        logglow= (logggrid[ldiff > 0])[-1]
-        logghigh= (logggrid[ldiff < 0])[0]
+        logglow= (logggrid[ldiff >= 0])[-1]
+        logghigh= (logggrid[ldiff <= 0])[0]
         # Metallicity
         mdiff= metals-appath._modelAtmKurucz_fehgrid
-        metalslow= (appath._modelAtmKurucz_fehgrid[mdiff > 0])[-1]
-        metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff < 0])[0]
+        metalslow= (appath._modelAtmKurucz_fehgrid[mdiff >= 0])[-1]
+        metalshigh= (appath._modelAtmKurucz_fehgrid[mdiff <= 0])[0]
         # [C/M]
         if metals <= -3.5:
             cmgrid= appath._modelAtmKurucz_cfegrid_lowm
@@ -423,8 +423,8 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         else:
             cmgrid= appath._modelAtmKurucz_cfegrid_midm
         cdiff= cm-cmgrid
-        cmlow= (cmgrid[cdiff > 0])[-1]
-        cmhigh= (cmgrid[cdiff < 0])[0]
+        cmlow= (cmgrid[cdiff >= 0])[-1]
+        cmhigh= (cmgrid[cdiff <= 0])[0]
         # [a/M]
         if metals <= -3.5:
             amgrid= appath._modelAtmKurucz_afegrid_lowm
@@ -433,8 +433,8 @@ def interpolateAtlas9(teff,logg,metals,am,cm,dr=None,interp_x=_OPSCALE):
         else:
             amgrid= appath._modelAtmKurucz_afegrid_midm
         adiff= am-amgrid
-        amlow= (amgrid[adiff > 0])[-1]
-        amhigh= (amgrid[adiff < 0])[0]
+        amlow= (amgrid[adiff >= 0])[-1]
+        amhigh= (amgrid[adiff <= 0])[0]
     except IndexError:
         raise IndexError('Requested model lies outside the grid of model atmospheres')
     # Determine whether any of the parameters is on a grid point
