@@ -99,6 +99,7 @@ def test_elem_named():
             'Ni','Fe','Al','K','Na','V','Mn']
     ferreOverM= ['C','N','O','Mg','Si','S','Ca','Ti']
     for ii,elem in enumerate(elems):
+        if elem == 'C' or elem == 'N' or elem == 'O': continue
         elemval= copy.copy(_DATA['ELEM'][:,elemIndx(elem)])
         if elem in ferreOverM: elemval+= _DATA['FPARAM'][:,paramIndx('metals')]
         #BOVY: What about the following?
