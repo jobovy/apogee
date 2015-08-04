@@ -14,7 +14,10 @@ from apogee.tools.read import modelspecOnApStarWavegrid
 import apogee.spec.window as apwindow
 import apogee.spec.cannon as cannon
 from apogee.modelspec import specFitInput, _chi2
-import apogee.util.emcee
+try:
+    import apogee.util.emcee
+except ImportError:
+    pass
 def paramArrayInputDecorator(startIndx):
     """Decorator to parse spectral input parameters given as arrays,
     assumes the arguments are: something,somethingelse,teff,logg,metals,am,nm,cm,vmicro=,
