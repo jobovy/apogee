@@ -75,7 +75,7 @@ class Interpolator:
         if f_access is None:
             f_access= 1
         write_input_nml(self._tmpDir,
-                        '/dev/stdin','/dev/stdout',
+                        '/dev/stdin','/dev/stderr',
                         ndim=7-sixd,
                         nov=0,
                         synthfile=appath.ferreModelLibraryPath\
@@ -85,28 +85,15 @@ class Interpolator:
                         f_access=f_access)
         # Start FERRE
         if verbose:
-            stderr= None
+            stdout= None
         else:
-            stderr= open('/dev/null', 'w')
+            stdout= open('/dev/null', 'w')
         try:
             self._proc= subprocess.Popen(['ferre'],
                                          cwd=self._tmpDir,
                                          stdin=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
-                                         stderr=stderr)
-        except subprocess.CalledProcessError:
-            raise Exception("Starting FERRE instance for ferre.Interpolator in directory %s failed ..." % dir)
-        # Run a dummy input through and flush stdout
-        if sixd:
-            paramStr= self._paramStr(5000.,2.5,0.,0.,0.,0.)
-        else:
-            paramStr= self._paramStr(5000.,2.5,0.,0.,0.,0.,vm=1.)
-        try:
-            self._proc.stdin.write(paramStr+'\n')
-            while True:
-                line= self._proc.stdout.readline()
-                if 'next object' in line and ' 2' in line: break
-            #self._proc.stdout.seek(0,2)
+                                         stdout=stdout,
+                                         stderr=subprocess.PIPE)
         except subprocess.CalledProcessError:
             raise Exception("Starting FERRE instance for ferre.Interpolator in directory %s failed ..." % dir)
         return None
@@ -137,9 +124,7 @@ class Interpolator:
             self._proc.stdin.write(paramStr+'\n')
         except subprocess.CalledProcessError:
             raise Exception("Running FERRE Interpolator instance in directory %s failed ..." % dir)
-        out= numpy.loadtxt(StringIO(self._proc.stdout.readline()))
-        self._proc.stdout.readline() # 'ellapsed time' line
-        self._proc.stdout.readline() # 'next object' line
+        out= numpy.loadtxt(StringIO(self._proc.stderr.readline()))
         return out
 
     def _paramStr(self,teff,logg,metals,am,nm,cm,vm=None):
