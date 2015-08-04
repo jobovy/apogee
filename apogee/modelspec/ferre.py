@@ -4,6 +4,7 @@
 import os, os.path
 import copy
 import subprocess
+from StringIO import StringIO
 import numpy
 from functools import wraps
 import tempfile
@@ -36,6 +37,137 @@ def paramArrayInputDecorator(startIndx):
             return result
         return scalar_wrapper
     return wrapper
+
+class Interpolator:
+    """Return an interpolator that can directly interact with the FERRE Fortran library"""
+    def __init__(self,lib='GK',pca=True,sixd=True,dr=None,
+                 inter=3,f_format=1,f_access=None,
+                 verbose=False,apStarWavegrid=True):
+        """
+        NAME:
+           __init__
+        PURPOSE:
+           Setup a ferre.Interpolator for a given model spectral library, which allows a model spectrum to be returned at a desired point
+        INPUT:
+           Library options:
+              lib= ('GK') spectral library
+              pca= (True) if True, use a PCA compressed library
+              sixd= (True) if True, use the 6D library (w/o vm)
+              dr= data release
+           FERRE options:
+              inter= (3) order of the interpolation
+              f_format= (1) file format (0=ascii, 1=unf)
+              f_access= (None) 0: load whole library, 1: use direct access (for small numbers of interpolations), None: automatically determine a good value (currently, 1)
+           Object-wide output options:
+              apStarWavegrid= (True) if True, output the spectrum onto the apStar wavelength grid, otherwise just give the ASPCAP version (blue+green+red directly concatenated)
+              verbose= (False) if True, run FERRE in verbose mode
+        OUTPUT:
+           Object
+        HISTORY:
+           2015-08-04 - Written, based on ferre.interpolate - Bovy (UofT)
+        """
+        # Setup temporary directory to run FERRE from
+        self._tmpDir= tempfile.mkdtemp(dir='./')
+        # Now write the input.nml file
+        if f_access is None:
+            f_access= 1
+        write_input_nml(self._tmpDir,
+                        '/dev/stdin','/dev/stdout',
+                        ndim=7-sixd,
+                        nov=0,
+                        synthfile=appath.ferreModelLibraryPath\
+                            (lib=lib,pca=pca,sixd=sixd,dr=dr,
+                             header=True,unf=False),
+                        inter=inter,f_format=f_format,
+                        f_access=f_access)
+        # Start FERRE
+        if verbose:
+            stderr= None
+        else:
+            stderr= open('/dev/null', 'w')
+        try:
+            self._proc= subprocess.Popen(['ferre'],
+                                         cwd=self._tmpDir,
+                                         stdin=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
+                                         stderr=stderr)
+        except subprocess.CalledProcessError:
+            raise Exception("Starting FERRE instance for ferre.Interpolator in directory %s failed ..." % dir)
+        # Run a dummy input through and flush stdout
+        if sixd:
+            paramStr= self._paramStr(5000.,2.5,0.,0.,0.,0.)
+        else:
+            paramStr= self._paramStr(5000.,2.5,0.,0.,0.,0.,vm=1.)
+        try:
+            self._proc.stdin.write(paramStr+'\n')
+            while True:
+                line= self._proc.stdout.readline()
+                if 'next object' in line and ' 2' in line: break
+            #self._proc.stdout.seek(0,2)
+        except subprocess.CalledProcessError:
+            raise Exception("Starting FERRE instance for ferre.Interpolator in directory %s failed ..." % dir)
+        return None
+
+    @modelspecOnApStarWavegrid
+    def __call__(self,teff,logg,metals,am,nm,cm,vm=None):
+        """
+        NAME:
+           __call__
+        PURPOSE:
+           return an interpolated spectrum at the requested parameters
+        INPUT:
+           teff - Effective temperature (K)
+           logg - log10 surface gravity / cm s^-2
+           metals - overall metallicity
+           am - [alpha/M]
+           nm - [N/M]
+           cm - [C/M]
+           vm= if using the 7D library, also specify the microturbulence
+        OUTPUT:
+           interpolated spectrum
+        HISTORY:
+           2015-08-04 - Written - Bovy (UofT)
+        """
+        # Build parameter string
+        paramStr= self._paramStr(teff,logg,metals,am,nm,cm,vm=None)
+        try:
+            self._proc.stdin.write(paramStr+'\n')
+        except subprocess.CalledProcessError:
+            raise Exception("Running FERRE Interpolator instance in directory %s failed ..." % dir)
+        out= numpy.loadtxt(StringIO(self._proc.stdout.readline()))
+        self._proc.stdout.readline() # 'ellapsed time' line
+        self._proc.stdout.readline() # 'next object' line
+        return out
+
+    def _paramStr(self,teff,logg,metals,am,nm,cm,vm=None):
+        """Build the input string for a set of parameters"""
+        # Build parameter string
+        paramStr= 'dummy '
+        if not vm is None:
+            paramStr+= '%.3f ' % numpy.log10(vm)
+        paramStr+= '%.3f %.3f %.3f %.3f %.3f %.1f\n' \
+            % (cm,nm,am,metals,logg,teff)
+        return paramStr
+
+    def close(self):
+        """
+        NAME:
+           close
+        PURPOSE:
+           Terminate the Interpolator object (cleans up temporary directory and terminates FERRE process)
+        INPUT:
+           (none)
+        OUTPUT:
+           (none)
+        HISTORY:
+           2015-08-04 - Written - Bovy (UofT)
+        """
+        # Terminate process
+        self._proc.terminate()
+        # Clean up temporary directory
+        if os.path.exists(os.path.join(self._tmpDir,'input.nml')):
+            os.remove(os.path.join(self._tmpDir,'input.nml'))
+        os.rmdir(self._tmpDir)
 
 @modelspecOnApStarWavegrid
 @paramArrayInputDecorator(0)
