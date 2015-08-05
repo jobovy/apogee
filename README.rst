@@ -460,7 +460,8 @@ binary locally). **Because the model libraries are quite large, these
 are not downloaded automatically, so you need to run this command to
 download the library**. Currently only DR12 grids are supported.
 
-With this library, you can generate model spectra using::
+With this library, you can generate model spectra using (see below for
+an alternative method)::
 
      from apogee.modelspec import ferre
      mspec= ferre.interpolate(4750.,2.5,-0.1,0.1,0.,0.)
@@ -483,6 +484,28 @@ spectra. For example::
 Asking for tens of spectra simultaneously is more efficient, because
 you only need to run the FERRE setup once (but it becomes inefficient
 for many hundreds...).
+
+An alternative method for generating interpolated spectra from the
+grids is to use an ``Interpolator`` instance, which keeps FERRE
+running in the background and is thus more efficient at interpolating
+individual spectra. These are set up as::
+
+      ip= ferre.Interpolator(lib='GK')
+
+and can then be used as
+
+    mspec= ip(4750.,2.5,-0.1,0.1,0.,0.)
+
+To properly clean up, the instance should be closed before exiting::
+
+   ip.close()
+
+``ferre.Interpolator`` instances can also be used as a *context
+manager*, which automatically takes care of the necessary clean-up in
+case of an Exception::
+
+     with ferre.Interpolator(lib='GK') as ip:
+     	  mspec= ip(4750.,2.5,-0.1,0.1,0.,0.)
 
 The APOGEE LSF and continuum normalization
 +++++++++++++++++++++++++++++++++++++++++++
