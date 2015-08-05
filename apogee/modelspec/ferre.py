@@ -98,6 +98,13 @@ class Interpolator:
             raise Exception("Starting FERRE instance for ferre.Interpolator in directory %s failed ..." % dir)
         return None
 
+    # Context manager functions
+    def __enter__(self):
+        return self
+    def __exit__(self,type,value,traceback):
+        self.close()
+        return None
+
     @modelspecOnApStarWavegrid
     def __call__(self,teff,logg,metals,am,nm,cm,vm=None):
         """
