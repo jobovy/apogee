@@ -492,7 +492,7 @@ individual spectra. These are set up as::
 
       ip= ferre.Interpolator(lib='GK')
 
-and can then be used as
+and can then be used as:
 
     mspec= ip(4750.,2.5,-0.1,0.1,0.,0.)
 
