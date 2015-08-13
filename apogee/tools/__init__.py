@@ -130,11 +130,11 @@ def toAspcapGrid(spec):
        2015-02-17 - Written - Bovy (IAS)
     """
     if len(spec.shape) == 2: # (nspec,nwave)
-        out= numpy.zeros((spec.shape[0],7214))
+        out= numpy.zeros((spec.shape[0],7214),dtpe=spec.dtype)
         oneSpec= False
     else:
         oneSpec= True
-        out= numpy.zeros((1,7214))
+        out= numpy.zeros((1,7214),dtype=spec.dtype)
         spec= numpy.reshape(spec,(1,len(spec)))
     out[:,:2920]= spec[:,322:3242]
     out[:,2920:5320]= spec[:,3648:6048]
