@@ -158,11 +158,11 @@ def toApStarGrid(spec):
        2015-02-17 - Written - Bovy (IAS)
     """
     if len(spec.shape) == 2: # (nspec,nwave)
-        out= numpy.zeros((spec.shape[0],8575))
+        out= numpy.zeros((spec.shape[0],8575),dtype=spec.dtype)
         oneSpec= False
     else:
         oneSpec= True
-        out= numpy.zeros((1,8575))
+        out= numpy.zeros((1,8575),dtype=spec.dtype)
         spec= numpy.reshape(spec,(1,len(spec)))
     out[:,322:3242]= spec[:,:2920]
     out[:,3648:6048]= spec[:,2920:5320]
