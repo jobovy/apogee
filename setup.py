@@ -53,7 +53,7 @@ if _INSTALL_FERRE:
 
 if _INSTALL_FERRE:
     # Download the code
-    _FERRE_FILE= 'ferre_4.5.tar.gz'
+    _FERRE_FILE= 'ferre_4.5.6.tar.gz'
     _FERRE_URL= 'http://leda.as.utexas.edu/ferre/%s' % _FERRE_FILE
     print '\033[1m'+"Downloading and installing FERRE from %s ..." % _FERRE_URL +'\033[0m'
     # Create temporary directory
