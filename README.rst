@@ -84,21 +84,25 @@ DATA FILES AND ENVIRONMENT VARIABLES
 =====================================
 
 This code depends on a number of data files and environment
-variables. The environment variables are
+variables. The environment variables are (**WARNING: THESE HAVE
+RECENTLY CHANGED TO BE MORE CONSISTENT WITH SDSS' OWN ENVIRONMENT
+VARIABLES**)
 
-* **APOGEE_DATA**: top-level directory with APOGEE data
-* **APOGEE_REDUX**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12)
+* **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
+* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12)
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
 
-Most data files live in the $APOGEE_DATA directory. For example,
-allStar-$APOGEE_REDUX.fits, allVisit-$APOGEE_REDUX.fits, and
-APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits live there. Files related
-to the spectra and the target selection live in sub-directories
+**NEW**: Data files mirror the SDSS SAS as much as possible
+(previously, many data files lived in the $SDSS_LOCAL_SAS_MIRROR
+directory, then known as the $APOGEE_DATA directory). Some files still
+live directly under the $SDSS_LOCAL_SAS_MIRROR directory (for example,
+APOKASC_Catalog.APOGEE_$APOKASC_REDUX.fits). Files related to the
+spectra and the target selection live in sub-directories
 **drXX/**. These sub-directories mirror the directory structure of
 spectra- and targeting-related files on the SDSS-III `SAS
 <http://data.sdss3.org/sas/dr12/apogee>`__:
 
-* **$APOGEE_DATA/dr12/apogee/target/**
+* **$SDSS_LOCAL_SAS_MIRROR/dr12/apogee/target/**
 
 with sub-directories in that last *target/* directory
 
@@ -120,12 +124,12 @@ downloaded by the code when they are needed.
 Files of individual spectra live in directories that mirror the SAS as
 well:
 
-* **$APOGEE_DATA/dr12/apogee/spectra/**
+* **$SDSS_LOCAL_SAS_MIRROR/dr12/apogee/spectra/**
 
 Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files. A typical tree looks something like::
 
-      $APOGEE_DATA/
+      $SDSS_LOCAL_SAS_MIRROR/
 	allStar-v603.fits
 	allVisit-v603.fits
 	apogee-rc-DR12.fits
@@ -160,7 +164,7 @@ paths to the different files. A typical tree looks something like::
 	   *similar to dr12/*
 
 **The apogee package will automatically attempt to download most of
-the data files, so provided you have setup APOGEE_DATA and
+the data files, so provided you have setup SDSS_LOCAL_SAS_MIRROR and
 APOGEE_REDUX, you will not have to download data files yourself to get
 started.** If you have access to proprietary data, you have to setup a
 .netrc file with the correct login credentials (see `here
@@ -632,7 +636,7 @@ downloaded on `this website
 can also use the ``apogee.tools.download.modelAtmosphere`` function to
 download these. Currently, the atmospheres must be put into a
 ``apogeework/apogee/spectro/redux/speclib/kurucz_filled`` subdirectory
-of the overall ``$APOGEE_DATA`` data directory (see above); the
+of the overall ``$SDSS_LOCAL_SAS_MIRROR`` data directory (see above); the
 ``download.modelAtmosphere`` function automatically puts the model
 atmospheres in the correct location. The functions in
 ``apogee.modelatm`` will also automatically download the necessary
