@@ -56,9 +56,17 @@ MOOG from the source given on the MOOG `website
 <http://www.as.utexas.edu/~chris/moog.html>`__, or you can use
 `@andycasey <https://github.com/andycasey>`__'s `MOOG installer
 <https://github.com/andycasey/moog>`__ (updated to the July 2014
-release of MOOG in the `batch
-<https://github.com/jobovy/moog/tree/batch>`__ branch of my fork of
-Andy's code).
+release of MOOG in the `batch.2014jul
+<https://github.com/andycasey/moog/tree/batch.2014jul>`__ branch). You
+can install this by cloning the ``moog`` repository, checking out the ``batch.2014jul`` branch, and running the installation::
+
+    git clone https://github.com/andycasey/moog.git
+    cd moog
+    git checkout batch.2014jul
+    python setup.py install
+
+See the `MOOG installer <https://github.com/andycasey/moog>`__ webpage
+for more info on the installation and its issues.
 
 Turbospectrum v14.1 can be downloaded from Betrand Plez' `website
 <http://www.pages-perso-bertrand-plez.univ-montp2.fr/>`__. To use
@@ -741,9 +749,10 @@ also has to specify the microturbulence (``vmicro=``, or as part of
 To perform the synthesis we need a line list. This can be passed as
 the ``linelist=`` keyword. This can be set to a filename or just to
 the name of an APOGEE line list for APOGEE collaborators (linelists
-can be downloaded using ``apogee.tools.download.linelist``). Isotopic
-ratios can be set to either ``isotopes='solar'`` or
-``isotopes='arcturus'`` for typical dwarf or giant isotope ratios.
+can be downloaded using ``apogee.tools.download.linelist``; make sure
+to also download the ``stronglines.vac`` linelist). Isotopic ratios
+can be set to either ``isotopes='solar'`` or ``isotopes='arcturus'``
+for typical dwarf or giant isotope ratios.
 
 The LSF can be given as the ``lsf=`` keyword. This can be set to the
 output of ``apogee.spec.lsf.eval`` (best if it's a sparse version of
