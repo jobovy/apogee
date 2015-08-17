@@ -68,7 +68,7 @@ can install this by cloning the ``moog`` repository, checking out the ``batch.20
 See the `MOOG installer <https://github.com/andycasey/moog>`__ webpage
 for more info on the installation and its issues.
 
-Turbospectrum v14.1 can be downloaded from Betrand Plez' `website
+Turbospectrum v15.1 can be downloaded from Betrand Plez' `website
 <http://www.pages-perso-bertrand-plez.univ-montp2.fr/>`__. To use
 Turbospectrum with the ``apogee`` package, please define an
 environment variable $TURBODATA that points to Turbospectrum's DATA
