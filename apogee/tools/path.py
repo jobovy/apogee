@@ -199,7 +199,7 @@ def distPath(dr=None):
         return os.path.join(_APOGEE_DATA,
                             'distmagall-'+redux+'.fits')
 
-def rcsamplePath(dr=None):
+def rcsamplePath(dr=None,_old=False):
     """
     NAME:
        rcsamplePath
@@ -222,8 +222,13 @@ def rcsamplePath(dr=None):
         elif _APOGEE_REDUX == 'current': 
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
-    return os.path.join(_APOGEE_DATA,
-                        'apogee-rc-DR%s.fits' % dr)
+    if _old:
+        return os.path.join(_APOGEE_DATA,
+                            'apogee-rc-DR%s.fits' % dr)
+    else:
+        if dr == '11' or dr == '12':
+            return os.path.join(_APOGEE_DATA,'dr12','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
 
 def obslogPath(year=None):
     """

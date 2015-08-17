@@ -39,14 +39,10 @@ def allStar(dr=None):
         # mv to new place
         shutil.move(oldFilePath,filePath)
         return None
-    # Create the file path, hacked from aspcapStar path
-    aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
-    downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
-                                               _dr_string(dr)),
-                                  _base_url(dr=dr))
-    head, tail= os.path.split(downloadPath) #strips off filename
-    downloadPath, tail= os.path.split(head) #strips off location_id
-    downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
+    # Create the file path
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                _dr_string(dr)),
+                                   _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
@@ -74,14 +70,10 @@ def allVisit(dr=None):
         # mv to new place
         shutil.move(oldFilePath,filePath)
         return None
-    # Create the file path, hacked from aspcapStar path
-    aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
-    downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
-                                               _dr_string(dr)),
-                                  _base_url(dr=dr))
-    head, tail= os.path.split(downloadPath) #strips off filename
-    downloadPath, tail= os.path.split(head) #strips off location_id
-    downloadPath= os.path.join(downloadPath,os.path.basename(filePath))
+    # Create the file path
+    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                _dr_string(dr)),
+                                   _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
@@ -102,10 +94,21 @@ def rcsample(dr=None):
     # First make sure the file doesn't exist
     filePath= path.rcsamplePath(dr=dr)
     if os.path.exists(filePath): return None
+    # Check whether we can find it in its old place
+    oldFilePath= path.rcsamplePath(dr=dr,_old=True)
+    if os.path.exists(oldFilePath):
+        # mv to new place
+        shutil.move(oldFilePath,filePath)
+        return None
     # Create the file path
-    downloadPath=\
-        os.path.join(_base_url(dr=dr),
-                     'apogee/vac/apogee-rc/cat/apogee-rc-DR%s.fits' % dr)
+    if dr == '11': # special case, bc in DR12 SAS
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    _dr_string('12')),
+                                       _base_url(dr='12'))
+    else:
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    _dr_string(dr)),
+                                       _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=False)
     return None
 
