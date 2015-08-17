@@ -4,8 +4,8 @@
 #
 #   This file depends on various environment variables that should be set:
 #
-#             - APOGEE_DATA: top-level directory with APOGEE data
-#             - APOGEE_REDUX: APOGEE reduction version (e.g., v304 for DR10)
+#             - SDSS_LOCAL_SAS_MIRROR: top-level directory with data
+#             - RESULTS_VERS: APOGEE reduction version (e.g., v304 for DR10)
 #             - APOGEE_APOKASC_REDUX: APOKASC catalog version
 #
 #   contains:
@@ -28,8 +28,22 @@
 ##################################################################################
 import os, os.path
 import numpy
-_APOGEE_DATA= os.getenv('APOGEE_DATA')
-_APOGEE_REDUX= os.getenv('APOGEE_REDUX')
+import warnings
+_APOGEE_DATA= os.getenv('SDSS_LOCAL_SAS_MIRROR')
+if _APOGEE_DATA is None:
+    # Try old method
+    _APOGEE_DATA= os.getenv('APOGEE_DATA')
+    if _APOGEE_DATA is None:
+        raise RuntimeError("SDSS_LOCAL_SAS_MIRROR environment variable needs to be set to use the 'apogee' module")
+    else:
+        warnings.warn("APOGEE_DATA environment variable is deprecated in favor of SDSS_LOCAL_SAS_MIRROR; please update your environment",DeprecationWarning)
+_APOGEE_REDUX= os.getenv('RESULTS_VERS')
+if _APOGEE_REDUX is None:
+    _APOGEE_REDUX= os.getenv('APOGEE_REDUX')
+    if _APOGEE_REDUX is None:
+        raise RuntimeError("RESULTS_VERS environment variable needs to be set to use the 'apogee' module")
+    else:
+        warnings.warn("APOGEE_REDUX environment variable is deprecated in favor of RESULTS_VERS; please update your environment",DeprecationWarning)
 _APOGEE_ASPCAP_REDUX= os.getenv('APOGEE_ASPCAP_REDUX')
 _APOGEE_APOKASC_REDUX= os.getenv('APOGEE_APOKASC_REDUX')
 # Reductions
@@ -77,7 +91,7 @@ def apallPath(visit=False):
             return os.path.join(_APOGEE_DATA,
                                 'allStar-'+_APOGEE_ASPCAP_REDUX+'.fits')
 
-def allStarPath(dr=None):
+def allStarPath(dr=None,_old=False):
     """
     NAME:
        allStarPath
@@ -96,10 +110,22 @@ def allStarPath(dr=None):
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
-    return os.path.join(_APOGEE_DATA,
-                        'allStar-%s.fits' % redux)
+    if _old:
+        return os.path.join(_APOGEE_DATA,
+                            'allStar-%s.fits' % redux)
+    else:
+        specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+        if dr == '10':
+            return os.path.join(specReduxPath,'r3','s3','a3',
+                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == '12':
+            return os.path.join(specReduxPath,'r5','stars','l25_6d',
+                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == 'current':
+            return os.path.join(specReduxPath,'current','stars','l25_6d',
+                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
 
-def allVisitPath(dr=None):
+def allVisitPath(dr=None,_old=False):
     """
     NAME:
        allVisitPath
@@ -118,8 +144,11 @@ def allVisitPath(dr=None):
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
-    return os.path.join(_APOGEE_DATA,
-                        'allVisit-%s.fits' % redux)
+    if _old:
+        return os.path.join(_APOGEE_DATA,
+                            'allVisit-%s.fits' % redux)
+    else:
+        return allStarPath(dr=dr,_old=_old).replace('allStar','allVisit')
 
 def apokascPath():
     """
