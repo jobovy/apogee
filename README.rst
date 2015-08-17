@@ -113,8 +113,8 @@ apogeeField_DR12.fits, apogeePlate_DR12.fits, and
 apogeeObject_DR12-FIELDNAME.fits files (for DR10/DR11 there are
 similar directories).
 
-For the target selection code to work, the allStar-$APOGEE_REDUX.fits,
-allVisit-$APOGEE_REDUX.fits files need to be present, as well as the
+For the target selection code to work, the allStar-$RESULTS_VERS.fits,
+allVisit-$RESULTS_VERS.fits files need to be present, as well as the
 targeting files in the *drXX/* directories. The observation log
 obs-summary-year1+2.csv (for DR11) or obs-summary-year1+2+3.csv (for
 DR12) also needs to be present. These are available `here
@@ -130,10 +130,6 @@ Routines in the *apogee.tools.path* module keep track of all of the
 paths to the different files. A typical tree looks something like::
 
       $SDSS_LOCAL_SAS_MIRROR/
-	allStar-v603.fits
-	allVisit-v603.fits
-	apogee-rc-DR12.fits
-	...
 	dr12/
 		apogee/
 			spectro/
@@ -149,6 +145,8 @@ paths to the different files. A typical tree looks something like::
 							...
 						...
 					l25_6d/v603/
+						allStar-v603.fits
+						allVisit-v603.fits
 						4102/
 							aspcapStar-r5-v603-2M21353892+4229507.fits
 							...
@@ -160,12 +158,16 @@ paths to the different files. A typical tree looks something like::
 					apogeeObject_000+02.fits
 					...
 					apogeePlate.fits
+			vac/
+				apogee-rc/cat/
+					apogee-rc-DR12.fits
+					...
 	dr10/
 	   *similar to dr12/*
 
 **The apogee package will automatically attempt to download most of
 the data files, so provided you have setup SDSS_LOCAL_SAS_MIRROR and
-APOGEE_REDUX, you will not have to download data files yourself to get
+RESULTS_VERS, you will not have to download data files yourself to get
 started.** If you have access to proprietary data, you have to setup a
 .netrc file with the correct login credentials (see `here
 <https://trac.sdss3.org/wiki/Software/NetRc>`__). Please let me know
@@ -184,7 +186,7 @@ and apply cuts (in *apogee.tools.read*). For example::
    import apogee.tools.read as apread
    allStar= apread.allStar(rmcommissioning=True,main=False,ak=True, akvers='targ',adddist=False)
 
-will read the allStar file corresponding to the $APOGEE_REDUX version,
+will read the allStar file corresponding to the $RESULTS_VERS version,
 remove stars only observed on commissioning plates
 (*rmcommissioning=True*), only keep stars with a valid extinction
 estimate (*ak=True*), and use the original extinction estimate used to
