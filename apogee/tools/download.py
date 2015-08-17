@@ -27,11 +27,18 @@ def allStar(dr=None):
        (none; just downloads)
     HISTORY:
        2014-11-26 - Written - Bovy (IAS)
+       2015-08-17 - Adjusted for new path (mv old to new) - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
     filePath= path.allStarPath(dr=dr)
     if os.path.exists(filePath): return None
+    # Check whether we can find it in its old place
+    oldFilePath= path.allStarPath(dr=dr,_old=True)
+    if os.path.exists(oldFilePath):
+        # mv to new place
+        shutil.move(oldFilePath,filePath)
+        return None
     # Create the file path, hacked from aspcapStar path
     aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
     downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
@@ -55,11 +62,18 @@ def allVisit(dr=None):
        (none; just downloads)
     HISTORY:
        2014-11-26 - Written - Bovy (IAS)
+       2015-08-17 - Adjusted for new path (mv old to new) - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
     filePath= path.allVisitPath(dr=dr)
     if os.path.exists(filePath): return None
+    # Check whether we can find it in its old place
+    oldFilePath= path.allVisitPath(dr=dr,_old=True)
+    if os.path.exists(oldFilePath):
+        # mv to new place
+        shutil.move(oldFilePath,filePath)
+        return None
     # Create the file path, hacked from aspcapStar path
     aspPath= path.aspcapStarPath(4140,'dum',dr=dr)
     downloadPath= aspPath.replace(os.path.join(path._APOGEE_DATA,
