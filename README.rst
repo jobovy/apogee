@@ -74,7 +74,14 @@ Turbospectrum with the ``apogee`` package, please define an
 environment variable $TURBODATA that points to Turbospectrum's DATA
 directory and make sure that the *babsma_lu* and *bsyn_lu* commands
 are directly callable (by, for example, copying them to
-/usr/local/bin).
+/usr/local/bin). Here is an example installation::
+
+		 wget http://www.pages-perso-bertrand-plez.univ-montp2.fr/DATA/Turbospectrum-v15.1.tar.gz
+		 tar xvzf Turbospectrum-v15.1.tar.gz && cd EXPORT-15.1/exec-gf-v15.1
+		 make
+		 sudo cp babsma_lu /usr/local/bin && sudo chmod u+x /usr/local/bin/babsma_lu
+		 sudo cp bsyn_lu /usr/local/bin && sudo chmod u+x /usr/local/bin/bsyn_lu
+		 cd ../ && export TURBODATA=$PWD/DATA
 
 DEPENDENCIES
 =============
