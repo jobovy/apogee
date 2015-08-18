@@ -415,6 +415,8 @@ def weedout(**kwargs):
     else:
         linelistfilename= appath.linelistPath(linelist,
                                               dr=kwargs.get('dr',None))
+    if not os.path.exists(linelistfilename):
+        raise RuntimeError("Linelist %s not found; download linelist w/ apogee.tools.download.linelist (if you have access)" % linelistfilename)
     # Get the spectral synthesis limits
     wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
@@ -600,6 +602,8 @@ def moogsynth(*args,**kwargs):
     else:
         linelistfilename= appath.linelistPath(linelist,
                                               dr=kwargs.get('dr',None))
+    if not os.path.exists(linelistfilename):
+        raise RuntimeError("Linelist %s not found; download linelist w/ apogee.tools.download.linelist (if you have access)" % linelistfilename)
     # We will run in a subdirectory of the relevant model atmosphere
     tmpDir= tempfile.mkdtemp(dir=modeldirname)
     shutil.copy(linelistfilename,tmpDir)
@@ -625,7 +629,21 @@ def moogsynth(*args,**kwargs):
     stronglinesfilename= appath.linelistPath('stronglines.vac',
                                              dr=kwargs.get('dr',None))
     if not os.path.exists(stronglinesfilename):
-        download.linelist('stronglines.vac',dr=kwargs.get('dr',None))
+        try:
+            download.linelist('stronglines.vac',dr=kwargs.get('dr',None))
+        except:
+            raise RuntimeError("Linelist stronglines.vac not found or downloading failed; download linelist w/ apogee.tools.download.linelist (if you have access)")
+        finally:
+            if os.path.exists(os.path.join(tmpDir,'synth.par')):
+                os.remove(os.path.join(tmpDir,'synth.par'))
+            if os.path.exists(os.path.join(tmpDir,'std.out')):
+                os.remove(os.path.join(tmpDir,'std.out'))
+            if os.path.exists(os.path.join(tmpDir,
+                                           os.path.basename(linelistfilename))):
+                os.remove(os.path.join(tmpDir,os.path.basename(linelistfilename)))
+            if os.path.exists(os.path.join(tmpDir,'stronglines.vac')):
+                os.remove(os.path.join(tmpDir,'stronglines.vac'))
+            os.rmdir(tmpDir)
     shutil.copy(stronglinesfilename,tmpDir)
     # Now write the script file
     if len(args) == 0: #special case that there are *no* differences
