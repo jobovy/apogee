@@ -478,7 +478,9 @@ def turbosynth(*args,**kwargs):
                     linelistfilenames.append(atomlinelistfilename)
                     linelistfilenames.append(moleclinelistfilename)
     if linelist is None or len(linelistfilenames) == 1:
-       raise ValueError('linelist= must be set (see documentation)')
+        os.remove(modelfilename)
+        os.rmdir(tmpDir)
+        raise ValueError('linelist= must be set (see documentation) and given linelist must exist (either as absolute path or in the linelist directory)')
     # Link the Turbospectrum DATA directory
     os.symlink(os.getenv('TURBODATA'),os.path.join(tmpDir,'DATA'))
     # Cut the linelist to the desired wavelength range, if necessary,
