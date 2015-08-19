@@ -3,6 +3,7 @@
 ###############################################################################
 import os, os.path
 from functools import wraps
+import warnings
 import math
 import numpy
 from scipy import special, interpolate, sparse, ndimage
@@ -421,6 +422,9 @@ def pix2wave(pix,chip,fiber=300):
 def _load_precomp(dr=None,fiber='combo',sparse=True):
     """Load a precomputed LSF"""
     if dr is None: dr= appath._default_dr()
+    if dr is 'current':
+        warnings.warn("Preloaded LSFs for current DR not yet available, falling back on DR12 files")
+        dr= '12'
     fileDir= os.path.dirname(appath.apLSFPath('a',dr=dr))
     filePath= os.path.join(fileDir,'apogee-lsf-dr%s-%s.fits' % (dr,fiber))
     # Download the file if necessary
