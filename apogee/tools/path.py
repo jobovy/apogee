@@ -665,6 +665,9 @@ def apWavePath(chip,dr=None):
        2015-02-27 - Written - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
+    if dr is 'current':
+        warnings.warn("apWave files for current DR not yet available, falling back on DR12 files")
+        dr= '12'
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     if dr == '10':
         return os.path.join(specReduxPath,'r3','cal','wave',
