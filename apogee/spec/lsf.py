@@ -143,7 +143,7 @@ def eval(x,fiber='combo',sparse=False):
        evaluate the LSF for a given fiber
     INPUT:
        x - Array of X values for which to compute the LSF, in pixel offset relative to pixel centers; the LSF is calculated at the x offsets for each pixel center; x need to be 1/integer equally-spaced pixel offsets
-       fiber= ('combo') fiber number or 'combo' for an average LSF (using zero-based indexing)
+       fiber= ('combo') fiber number or 'combo' for an average LSF (uses the same one-based indexing as the APOGEE fibers [i.e., fibers range from 1 to 300])
        sparse= (False) if True, return a sparse representation that can be passed to apogee.spec.lsf.convolve for easy convolution
     OUTPUT:
        LSF(x|pixel center);
