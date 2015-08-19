@@ -76,7 +76,7 @@ def atomic_number(elem):
     try:
         return _ELEM_NUMBER_DICT[elem.lower()]
     except (NameError,KeyError):
-        return elements.__dict__[elem.lower().capitalize].number
+        return elements.__dict__[elem.lower().capitalize()].number
 
 def vac2air(wave,sdssweb=False):
     """
