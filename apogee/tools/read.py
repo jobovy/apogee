@@ -75,6 +75,8 @@ def specOnAspcapWavegrid(func):
 
 def allStar(rmcommissioning=True,
             main=False,
+            exclude_star_bad=False,
+            exclude_star_warn=False,
             ak=True,
             akvers='targ',
             rmnovisits=False,
@@ -90,6 +92,8 @@ def allStar(rmcommissioning=True,
     INPUT:
        rmcommissioning= (default: True) if True, only use data obtained after commissioning
        main= (default: False) if True, only select stars in the main survey
+       exclude_star_bad= (False) if True, remove stars with the STAR_BAD flag set in ASPCAPFLAG
+       exclude_star_warn= (False) if True, remove stars with the STAR_WARN flag set in ASPCAPFLAG
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
@@ -139,6 +143,10 @@ def allStar(rmcommissioning=True,
     if ak:
         data= data[True-numpy.isnan(data[aktag])]
         data= data[(data[aktag] > -50.)]
+    if exclude_star_bad:
+        data= data[(data['ASPCAPFLAG'] & 2**23) == 0]
+    if exclude_star_warn:
+        data= data[(data['ASPCAPFLAG'] & 2**7) == 0]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
