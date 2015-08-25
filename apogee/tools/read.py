@@ -227,7 +227,8 @@ def allVisit(rmcommissioning=True,
              ak=True,
              akvers='targ',
              plateInt=False,
-             plateS4=False):
+             plateS4=False,
+             raw=False):
     """
     NAME:
        allVisit
@@ -240,6 +241,7 @@ def allVisit(rmcommissioning=True,
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        plateInt= (False) if True, cast plate as an integer and give special plates -1
        plateS4= (False) if True, cast plate as four character string
+       raw= (False) if True, just return the raw file, read w/ fitsio
     OUTPUT:
        allVisit data
     HISTORY:
@@ -250,6 +252,7 @@ def allVisit(rmcommissioning=True,
         download.allVisit()
     #read allVisit file
     data= fitsio.read(path.allVisitPath())
+    if raw: return data
     #Some cuts
     if rmcommissioning:
         indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
