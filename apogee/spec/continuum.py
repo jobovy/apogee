@@ -31,12 +31,15 @@ def fit(spec,specerr,type='aspcap',
        2015-03-01 - ASPCAP-style fit written - Bovy (IAS)
     """
     # Parse input
-    if spec.shape[1] == 8575:
-        tspec= toAspcapGrid(spec)
-        tspecerr= toAspcapGrid(specerr)
+    if len(spec.shape) == 1:
+        tspec= numpy.reshape(spec,(1,len(spec)))
+        tspecerr= numpy.reshape(specerr,(1,len(specerr)))
     else:
         tspec= spec
         tspecerr= specerr
+    if tspec.shape[1] == 8575:
+        tspec= toAspcapGrid(tspec)
+        tspecerr= toAspcapGrid(tspecerr)
     if deg is None and type.lower() == 'aspcap': deg= 4
     elif deg is None: deg= 2
     # Fit each detector separately
@@ -53,7 +56,7 @@ def fit(spec,specerr,type='aspcap',
         green_pixels= cont_pixels[2920:5320]
         red_pixels= cont_pixels[5320:]
     # Loop through the data
-    for ii in range(spec.shape[0]):
+    for ii in range(tspec.shape[0]):
         # Blue
         if type.lower() == 'aspcap':
             cont[ii,:2920]= _fit_aspcap(bluewav,
@@ -93,8 +96,10 @@ def fit(spec,specerr,type='aspcap',
                                               tspecerr[ii,5320:],
                                               deg,
                                               red_pixels)
-    if spec.shape[1] == 8575:
+    if (len(spec.shape) == 1 and spec.shape[0] == 8575) \
+            or spec.shape[1] == 8575:
         cont= toApStarGrid(cont)
+    if len(spec.shape) == 1: cont= cont[0]
     return cont
 
 def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
