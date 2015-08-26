@@ -1,6 +1,7 @@
 ###############################################################################
 # apogee.spec.continuum: tools for dealing with the continuum
 ###############################################################################
+import copy
 import numpy
 from apogee.spec import cannon
 from apogee.tools import toAspcapGrid, toApStarGrid
@@ -32,10 +33,10 @@ def fit(spec,specerr,type='aspcap',
     """
     # Parse input
     if len(spec.shape) == 1:
-        tspec= numpy.reshape(spec,(1,len(spec)))
+        tspec= copy.copy(numpy.reshape(spec,(1,len(spec))))
         tspecerr= numpy.reshape(specerr,(1,len(specerr)))
     else:
-        tspec= spec
+        tspec= copy.copy(spec)
         tspecerr= specerr
     if tspec.shape[1] == 8575:
         tspec= toAspcapGrid(tspec)
