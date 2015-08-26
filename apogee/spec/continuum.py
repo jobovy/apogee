@@ -97,7 +97,7 @@ def fit(spec,specerr,type='aspcap',
                                               deg,
                                               red_pixels)
     if (len(spec.shape) == 1 and spec.shape[0] == 8575) \
-            or spec.shape[1] == 8575:
+            or (len(spec.shape) == 2 and spec.shape[1] == 8575):
         cont= toApStarGrid(cont)
     if len(spec.shape) == 1: cont= cont[0]
     return cont
