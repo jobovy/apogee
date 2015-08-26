@@ -33,10 +33,11 @@ def modelspecOnApStarWavegrid(func):
                 or (kwargs.get('ext',-1) == 234 \
                         and kwargs.get('apStarWavegrid',True)):
             if len(out.shape) == 2:
-                newOut= numpy.zeros((8575,out.shape[0]))+numpy.nan
+                newOut= numpy.zeros((8575,out.shape[0]),dtype=out.dtype)\
+                    +numpy.nan
                 out= out.T
             else:
-                newOut= numpy.zeros(8575)+numpy.nan              
+                newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
             newOut[322:3242]= out[:2920]
             newOut[3648:6048]= out[2920:5320]
             newOut[6412:8306]= out[5320:]
@@ -56,10 +57,12 @@ def specOnAspcapWavegrid(func):
             out, hdr= out
         if kwargs.get('aspcapWavegrid',False):
             if len(out.shape) == 2:
-                newOut= numpy.zeros((7214,out.shape[0]))+numpy.nan
+                newOut= numpy.zeros((7214,out.shape[0]),dtype=out.dtype)
+                if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
                 out= out.T
             else:
-                newOut= numpy.zeros(7214)+numpy.nan              
+                newOut= numpy.zeros(7214,dtype=out.dtype)
+                if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
             newOut[:2920]= out[322:3242]
             newOut[2920:5320]= out[3648:6048]
             newOut[5320:]= out[6412:8306]
