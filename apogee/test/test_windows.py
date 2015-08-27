@@ -30,6 +30,13 @@ def test_windows(options):
         else:
             linelist= options.linelist
         # set up a model atmosphere for the requested atmospheric parameters
+        if options.arcturus:
+            options.teff= 4286.
+            options.logg= 1.66
+            options.metals= -0.52
+            options.am= 0.4
+            options.cm= 0.09
+            options.vm= 1.7
         atm= atlas9.Atlas9Atmosphere(teff=options.teff,logg=options.logg,
                                      metals=options.metals,
                                      am=options.am,cm=options.cm)
@@ -102,7 +109,6 @@ def test_windows(options):
         splot.windows(1.+elem_synspec[elem][1]-baseline[0],elem,
                       color=colors[0],overplot=True, 
                       zorder=len(elems))
-
         elem_shown= [elem]
         # Run through the rest to figure out the order
         elemVar= numpy.zeros(len(elems))
@@ -165,6 +171,10 @@ def get_options():
                       help="Carbon enhancment to perform the test at")
     parser.add_option("--vm",dest='vm',default=2.,type='float',
                       help="Microturbulence to perform the test at")
+    # Option to use Arcturus
+    parser.add_option("--arcturus",action="store_true", 
+                      dest="arcturus",default=False,
+                      help="If set, use atmospheric parameters for Arcturus (but not the detailed abundances)")
     # Abundance change to consider
     parser.add_option("--deltaAbu",dest='deltaAbu',default=0.5,type='float',
                       help="Abundance change in dex to consider")
