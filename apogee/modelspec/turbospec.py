@@ -221,8 +221,10 @@ def windows(*args,**kwargs):
           vmicro= (2.) microturbulence (only used if the MOOG-formatted atmosphere is not found) (can also be part of fparam)
        MISCELLANEOUS:
           dr= return the path corresponding to this data release
+          raw= (False) if True, return the raw turbosynth output
     OUTPUT:
        spectra (nspec,nwave)
+       (wavelengths,cont-norm. spectrum, spectrum (nwave)) if raw == True
     HISTORY:
        2015-04-17 - Written - Bovy (IAS)
     """
@@ -230,6 +232,7 @@ def windows(*args,**kwargs):
     baseline= kwargs.pop('baseline',None)
     mwav= kwargs.pop('mwav',None)
     cflux= kwargs.pop('cflux',None)
+    raw= kwargs.pop('raw',False)
     # Check that we have the LSF and store the relevant keywords
     lsf= kwargs.pop('lsf','all')
     if isinstance(lsf,str):
@@ -343,6 +346,7 @@ def windows(*args,**kwargs):
             kwargs.pop('modelopac')
     # Now multiply each continuum-normalized spectrum with the continuum
     out*= numpy.tile(cflux,(nsynth,1))
+    if raw: return (mwav,out/numpy.tile(cflux,(nsynth,1)),out)
     # If the synthesis was done in air, convert wavelength array
     if kwargs.get('air',True):
         mwav= numpy.array([air2vac(w) for w in list(mwav)])
