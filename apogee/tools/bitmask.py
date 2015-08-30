@@ -48,8 +48,28 @@ APOGEE_TARGET2={1:"APOGEE_FLUX_STANDARD",
                 16:"APOGEE_KEPLER_COOLDWARF",
                 17:"APOGEE_MIRCLUSTER_STAR",
                 31:"APOGEE_CHECKED"}
+APOGEE_PIXMASK={0:"BADPIX",
+                1:"CRPIX",
+                2:"SATPIX",
+                3:"UNFIXABLE",
+                4:"BADDARK",
+                5:"BADFLAT",
+                6:"BADERR",
+                7:"NOSKY",
+                8:"LITTROW_GHOST",
+                9:"PERSIST_HIGH",
+                10:"PERSIST_MED",
+                11:"PERSIST_LOW",
+                12:"SIG_SKYLINE",
+                13:"SIG_TELLURIC",
+                14:"NOT_ENOUGH_PSF"}
 APOGEE_TARGET1_STR= dict((value, key) for key, value in APOGEE_TARGET1.iteritems())
 APOGEE_TARGET2_STR= dict((value, key) for key, value in APOGEE_TARGET2.iteritems())
+APOGEE_PIXMASK_STR= dict((value, key) for key, value in APOGEE_PIXMASK.iteritems())
+BADPIXMASK= 2**APOGEE_PIXMASK_STR["BADPIX"]+2**APOGEE_PIXMASK_STR["CRPIX"]\
+    +2**APOGEE_PIXMASK_STR["SATPIX"]+2**APOGEE_PIXMASK_STR["UNFIXABLE"]\
+    +2**APOGEE_PIXMASK_STR["BADDARK"]+2**APOGEE_PIXMASK_STR["BADFLAT"]\
+    +2**APOGEE_PIXMASK_STR["BADERR"]+2**APOGEE_PIXMASK_STR["NOSKY"]
 def apogee_target1_string(bit):
     """
     NAME:
@@ -170,3 +190,17 @@ def bitmask_to_binary(bits,width=32):
     """
     return ''.join([str((bits>>i)&1) for i in range(width-1,-1,-1)])
 
+def badpixmask():
+    """
+    NAME:
+       badpixmask
+    PURPOSE:
+       returns a mask for *all reasons that a pixel could be bad (BADPIX, CRPIX, etc.)
+    INPUT:
+       (none)
+    OUTPUT:
+       bitmask value for whether any of the bad-pixel flags are set in the APOGEE_PIXMASK bitmask
+    HISTORY:
+       2015-08-29 - Written - Bovy (UofT)
+    """
+    return BADPIXMASK
