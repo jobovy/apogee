@@ -106,6 +106,24 @@ def apogee_target2_string(bit):
     except KeyError:
         raise KeyError("bit %i not recognized as an apogee_target2 bit" % bit)
 
+def apogee_pixmask_string(bit):
+    """
+    NAME:
+       apogee_pixmask_string
+    PURPOSE:
+       return the string name of an APOGEE_PIXMASK bit
+    INPUT:
+       bit - the bit (integer between 0 and 31)
+    OUTPUT:
+       string name
+    HISTORY:
+       2014-08-19 - Written - Bovy (IAS)
+    """
+    try:
+        return APOGEE_PIXMASK[bit]
+    except KeyError:
+        raise KeyError("bit %i not recognized as an apogee_pixmask bit" % bit)
+
 def apogee_target1_int(bitname):
     """
     NAME:
@@ -141,6 +159,24 @@ def apogee_target2_int(bitname):
         return APOGEE_TARGET2_STR[bitname]
     except KeyError:
         raise KeyError("bit name %s not recognized as an apogee_target2 bit" % bitname)
+
+def apogee_pixmask_int(bitname):
+    """
+    NAME:
+       apogee_pixmask_int
+    PURPOSE:
+       return the bit of an APOGEE_PIXMASK string
+    INPUT:
+       bitname - name of the bit (like 'BADFLAT')
+    OUTPUT:
+       the bit (integer between 0 and 31)
+    HISTORY:
+       2015-01-14 - Written - Bovy (IAS)
+    """
+    try:
+        return APOGEE_PIXMASK_STR[bitname]
+    except KeyError:
+        raise KeyError("bit name %s not recognized as an apogee_pixmask bit" % bitname)
 
 def bits_set(bits):
     """
