@@ -295,6 +295,9 @@ def windows(*args,**kwargs):
         if not 'modelopac' in kwargs:
             rmModelopac= True
             kwargs['modelopac']= tempfile.mktemp('mopac')
+            # Make sure opacity is first calculated over the full wav. range
+            kwargs['babsma_wmin']= 15000.
+            kwargs['babsma_wmax']= 17000.
         elif 'modelopac' in kwargs and not isinstance(kwargs['modelopac'],str):
             raise ValueError('modelopac needs to be set to a filename')
         # Run synth for the whole wavelength range as a baseline
@@ -325,7 +328,7 @@ def windows(*args,**kwargs):
         # Run all windows
         for start, end in zip(sm,em):
             kwargs['wmin']= mwav[start]
-            kwargs['wmax']= mwav[end]
+            kwargs['wmax']= mwav[end]+0.001
             for ii in range(nsynth):
                 newargs= ()
                 for jj in range(len(args)):
@@ -385,6 +388,7 @@ def turbosynth(*args,**kwargs):
     SYNTHEIS KEYWORDS:
        isotopes= ('solar') use 'solar' or 'arcturus' isotope ratios; can also be a dictionary with isotope ratios (e.g., isotopes= {'6.012':'0.9375','6.013':'0.0625'})
        wmin, wmax, dw, width= (15000.000, 17000.000, 0.10000000) spectral synthesis limits and step of calculation (see MOOG)
+       babsma_wmin, babsma_wmax= (wmin,wmax)) allows opacity limits to be different (broader) than for the synthesis itself
        costheta= (1.) cosine of the viewing angle
     LINELIST KEYWORDS:
           air= (True) if True, perform the synthesis in air wavelengths (affects the default Hlinelist, nothing else; output is in air if air, vacuum otherwise); set to False at your own risk, as Turbospectrum expects the linelist in air wavelengths!)
@@ -408,6 +412,10 @@ def turbosynth(*args,**kwargs):
     wmin= kwargs.pop('wmin',_WMIN_DEFAULT)
     wmax= kwargs.pop('wmax',_WMAX_DEFAULT)
     dw= kwargs.pop('dw',_DW_DEFAULT)
+    babsma_wmin= kwargs.pop('babsma_wmin',wmin)
+    babsma_wmax= kwargs.pop('babsma_wmax',wmax)
+    if babsma_wmin > wmin or babsma_wmax < wmax:
+        raise ValueError("Opacity wavelength range must encompass the synthesis range")
     if int(numpy.ceil((wmax-wmin)/dw > 150000)):
         raise ValueError('Too many wavelengths for Turbospectrum synthesis, reduce the wavelength step dw (to, e.g., 0.016)')
     costheta= kwargs.pop('costheta',1.)
@@ -557,7 +565,7 @@ def turbosynth(*args,**kwargs):
         scriptfilename= os.path.join(tmpDir,'babsma.par')
         modelopacname= os.path.join(tmpDir,'mopac')
         _write_script(scriptfilename,
-                      wmin,wmax,dw,
+                      babsma_wmin,babsma_wmax,dw,
                       None,
                       modelfilename,
                       None,
