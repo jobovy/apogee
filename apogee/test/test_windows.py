@@ -106,12 +106,14 @@ def test_windows(options):
         elemWeights= apwindow.read(elem,dr=options.dr)
         elemWeights/= numpy.nansum(elemWeights)
         # Start with the element in question
-        splot.windows(1.+elem_synspec[elem][0]-baseline[0],pelem,
+        splot.windows(1.+options.amplify*(elem_synspec[elem][0]-baseline[0]),
+                      pelem,
                       color=colors[0],
                       yrange=[0.,1.4],
                       plot_weights=True,
                       zorder=len(elems))
-        splot.windows(1.+elem_synspec[elem][1]-baseline[0],pelem,
+        splot.windows(1.+options.amplify*(elem_synspec[elem][1]-baseline[0]),
+                      pelem,
                       color=colors[0],overplot=True, 
                       zorder=len(elems))
         elem_shown= [elem]
@@ -134,10 +136,12 @@ def test_windows(options):
                 jj+= 1
                 if jj >= len(colors): jj= len(colors)-1
                 elem_shown.append(altElem)
-                splot.windows(1.+elem_synspec[altElem][0]-baseline[0],pelem,
+                splot.windows(1.+options.amplify*(elem_synspec[altElem][0]-baseline[0]),
+                              pelem,
                               color=colors[jj],overplot=True,
                               zorder=len(elems)-jj)
-                splot.windows(1.+elem_synspec[altElem][1]-baseline[0],pelem,
+                splot.windows(1.+options.amplify*(elem_synspec[altElem][1]-baseline[0]),
+                              pelem,
                               color=colors[jj],overplot=True,
                               zorder=len(elems)-jj)
         t = pyplot.gca().transData
@@ -194,6 +198,10 @@ def get_options():
     parser.add_option("--varthreshold",dest='varthreshold',default=0.01,
                       type='float',
                       help="Threshold for minimal variation necessary for an element variation to be considered significant such that it will be plotted")
+    # Amplify the difference?
+    parser.add_option("--amplify",dest='amplify',default=1.,
+                      type='float',
+                      help="Multiply the difference from baseline by this factor")
     # Use MOOG instead of turbospectrum
     parser.add_option("--moog",action="store_true", 
                       dest="moog",default=False,
