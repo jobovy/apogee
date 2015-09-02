@@ -93,7 +93,12 @@ def test_windows(options):
     # Now run through the different elements again and plot windows for each
     # with elements that vary significantly
     colors= ['r','b','g','c','gold','m','orange']
-    for elem in elems:
+    plotelems= [elem if not elem in ['C','N','O','Fe'] else '%s1' % elem
+                for elem in elems]
+    plotelems.extend(['C2','N2','O2','Fe2'])
+    for pelem in plotelems:
+        if '1' in pelem or '2' in pelem: elem = pelem[:-1]
+        else: elem= pelem
         if not elem in elem_synspec: continue
         # Figure out which elements have significant variations in these 
         # windows and always plot the element that should vary
@@ -101,12 +106,12 @@ def test_windows(options):
         elemWeights= apwindow.read(elem,dr=options.dr)
         elemWeights/= numpy.nansum(elemWeights)
         # Start with the element in question
-        splot.windows(1.+elem_synspec[elem][0]-baseline[0],elem,
+        splot.windows(1.+elem_synspec[elem][0]-baseline[0],pelem,
                       color=colors[0],
                       yrange=[0.,1.4],
                       plot_weights=True,
                       zorder=len(elems))
-        splot.windows(1.+elem_synspec[elem][1]-baseline[0],elem,
+        splot.windows(1.+elem_synspec[elem][1]-baseline[0],pelem,
                       color=colors[0],overplot=True, 
                       zorder=len(elems))
         elem_shown= [elem]
@@ -129,10 +134,10 @@ def test_windows(options):
                 jj+= 1
                 if jj >= len(colors): jj= len(colors)-1
                 elem_shown.append(altElem)
-                splot.windows(1.+elem_synspec[altElem][0]-baseline[0],elem,
+                splot.windows(1.+elem_synspec[altElem][0]-baseline[0],pelem,
                               color=colors[jj],overplot=True,
                               zorder=len(elems)-jj)
-                splot.windows(1.+elem_synspec[altElem][1]-baseline[0],elem,
+                splot.windows(1.+elem_synspec[altElem][1]-baseline[0],pelem,
                               color=colors[jj],overplot=True,
                               zorder=len(elems)-jj)
         t = pyplot.gca().transData
@@ -150,7 +155,7 @@ def test_windows(options):
             t= transforms.offset_copy(text._transform,x=1.5*ex.width,
                                       units='dots')
         # Save
-        bovy_plot.bovy_end_print(options.plotfilename.replace('ELEM',elem))
+        bovy_plot.bovy_end_print(options.plotfilename.replace('ELEM',pelem))
     return None
 
 def get_options():
