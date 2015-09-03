@@ -147,13 +147,13 @@ def test_windows(options):
         t = pyplot.gca().transData
         fig= pyplot.gcf()
         for s,c in zip(elem_shown,colors[:jj+1]):
-            xc= 0.1
+            xc= 0.05
             if elem == 'K' or elem == 'Ce' or elem == 'Ge' or elem == 'Nd' \
                     or elem == 'Rb':
                 xc= apwindow.waveregions(elem,dr=options.dr,
                                          pad=3)[0][0]-15000.+1.5
             text = pyplot.text(xc,1.2," "+(r"$\mathrm{%s}$" % s)+" ",color=c,
-                               transform=t,size=16.)
+                               transform=t,size=16.,backgroundcolor='w')
             text.draw(fig.canvas.get_renderer())
             ex= text.get_window_extent()
             t= transforms.offset_copy(text._transform,x=1.5*ex.width,
