@@ -151,7 +151,7 @@ def test_windows(options):
             if elem == 'K' or elem == 'Ce' or elem == 'Ge' or elem == 'Nd' \
                     or elem == 'Rb':
                 xc= apwindow.waveregions(elem,dr=options.dr,
-                                         pad=3)[0][0]-15000.+1.5
+                                         pad=3)[0][0]-15000.+1.
             text = pyplot.text(xc,1.2," "+(r"$\mathrm{%s}$" % s)+" ",color=c,
                                transform=t,size=16.,backgroundcolor='w')
             text.draw(fig.canvas.get_renderer())
