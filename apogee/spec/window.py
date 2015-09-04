@@ -180,7 +180,7 @@ def total_dlambda(elem,pad=0):
     si,ei= waveregions(elem,asIndex=False,pad=pad)
     return numpy.sum(ei-si)
 
-def lines(elem):
+def lines(elem,asIndex=False):
     """
     NAME:
        lines
@@ -188,6 +188,7 @@ def lines(elem):
        return the location of peaks in the window weight ('lines') for a given element
     INPUT:
        elem - element
+       asIndx= (False) if yes, return the indices into an apStar-like wavelengthh grid rather than the wavelengths directly 
     OUTPUT:
        wavelengths of peaks in \AA
     HISTORY:
@@ -200,7 +201,10 @@ def lines(elem):
     # Find peaks
     indx= (numpy.roll(win,1) < win)*(numpy.roll(win,-1) < win)\
         *(win > 0.1)
-    return wavs[indx]
+    if asIndex:
+        return indx
+    else:
+        return wavs[indx]
 
 def equishwidth(elem,spec,specerr,refspec=None):
     """
