@@ -826,11 +826,16 @@ single full APOGEE wavelength spectrum to use as a baseline and then
 generating multiple synthetic spectra in the requested windows for
 which the baseline is used outside of the window. For most elements of
 interest this is very fast, because their lines only span a narrow
-wavelength range. The baseline can be pre-computed using
-``moog.moogsynth``, such that it can be re-used when varying different
-elements. One has to generate the baseline continuum, the continuum
-normalized spectrum, and the wavelength grid on which the synthesis is
-computed. For example::
+wavelength range: some quick testing seems to indicate that as long as
+the total wavelength region spanned by an element's is less than about
+80 Angstrom, using the ``windows`` function is faster than
+synthesizing the whole spectrum. The wavelength region spanned by an
+element's windows can be computed with
+``apogee.spec.window.total_dlambda``. The baseline can be pre-computed
+using ``moog.moogsynth``, such that it can be re-used when varying
+different elements. One has to generate the baseline continuum, the
+continuum normalized spectrum, and the wavelength grid on which the
+synthesis is computed. For example::
 
 	  # For the low-level moogsynth interface, we need to specify the atmosphere as a file
 	  atm_ng.writeto('tmp.mod') 
@@ -910,12 +915,17 @@ synthesizing a single full APOGEE wavelength spectrum to use as a
 baseline and then generating multiple synthetic spectra in the
 requested windows for which the baseline is used outside of the
 window. For most elements of interest this is very fast, because their
-lines only span a narrow wavelength range. The baseline can be
-pre-computed using ``turbospec.turbosynth``, such that it can be
-re-used when varying different elements. One has to generate the
-baseline continuum, the continuum normalized spectrum, the wavelength
-grid on which the synthesis is computed, but also the continuous
-opacity, which can be saved to a file by specifying the ``modelopac=``
+lines only span a narrow wavelength range: some quick testing seems to
+indicate that as long as the total wavelength region spanned by an
+element's is less than about 80 Angstrom, using the ``windows``
+function is faster than synthesizing the whole spectrum. The
+wavelength region spanned by an element's windows can be computed with
+``apogee.spec.window.total_dlambda``. The baseline can be pre-computed
+using ``turbospec.turbosynth``, such that it can be re-used when
+varying different elements. One has to generate the baseline
+continuum, the continuum normalized spectrum, the wavelength grid on
+which the synthesis is computed, but also the continuous opacity,
+which can be saved to a file by specifying the ``modelopac=``
 keyword. For example::
 
 	 baseline= apogee.modelspec.turbospec.turbosynth(modelatm=atm_ng,\
