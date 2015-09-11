@@ -827,8 +827,8 @@ generating multiple synthetic spectra in the requested windows for
 which the baseline is used outside of the window. For most elements of
 interest this is very fast, because their lines only span a narrow
 wavelength range: some quick testing seems to indicate that as long as
-the total wavelength region spanned by an element's is less than about
-80 Angstrom, using the ``windows`` function is faster than
+the total wavelength region spanned by an element's windows is less
+than about 80 Angstrom, using the ``windows`` function is faster than
 synthesizing the whole spectrum. The wavelength region spanned by an
 element's windows can be computed with
 ``apogee.spec.window.total_dlambda``. The baseline can be pre-computed
@@ -917,15 +917,15 @@ requested windows for which the baseline is used outside of the
 window. For most elements of interest this is very fast, because their
 lines only span a narrow wavelength range: some quick testing seems to
 indicate that as long as the total wavelength region spanned by an
-element's is less than about 80 Angstrom, using the ``windows``
-function is faster than synthesizing the whole spectrum. The
-wavelength region spanned by an element's windows can be computed with
-``apogee.spec.window.total_dlambda``. The baseline can be pre-computed
-using ``turbospec.turbosynth``, such that it can be re-used when
-varying different elements. One has to generate the baseline
-continuum, the continuum normalized spectrum, the wavelength grid on
-which the synthesis is computed, but also the continuous opacity,
-which can be saved to a file by specifying the ``modelopac=``
+element's windows is less than about 80 Angstrom, using the
+``windows`` function is faster than synthesizing the whole
+spectrum. The wavelength region spanned by an element's windows can be
+computed with ``apogee.spec.window.total_dlambda``. The baseline can
+be pre-computed using ``turbospec.turbosynth``, such that it can be
+re-used when varying different elements. One has to generate the
+baseline continuum, the continuum normalized spectrum, the wavelength
+grid on which the synthesis is computed, but also the continuous
+opacity, which can be saved to a file by specifying the ``modelopac=``
 keyword. For example::
 
 	 baseline= apogee.modelspec.turbospec.turbosynth(modelatm=atm_ng,\
@@ -1022,7 +1022,7 @@ To fit for the abundances of individual elements use
 ``ferre.elemfit``. By default this function replicates the standard
 ASPCAP fit: the grid dimension 'C', 'N', 'ALPHAFE', or 'METALS' is
 varied based on whether the particular element is 'C', 'N', an alpha
-element, or one of the remaining elements). For example, for the star
+element, or one of the remaining elements. For example, for the star
 above we can get the Mg abundance by doing (we use ``params`` from
 above as the baseline stellar-parameter fit)::
 
