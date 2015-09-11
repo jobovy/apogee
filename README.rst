@@ -1286,6 +1286,10 @@ with *rcmodel* being the equivalent of the more general
 <http://github.com/jobovy/isodist>`__ library with accompanying data
 files; see the *isodist* website for info on how to obtain this.
 
+The actual code used to generate the APOGEE-RC catalog from the
+general APOGEE catalog is included as `this script
+<https://github.com/jobovy/apogee/blob/master/apogee/samples/make_rcsample.py>`__.
+
 For example, we can load near-solar metallicity isochrones from the
 `PARSEC <http://stev.oapd.inaf.it/cgi-bin/cmd>`__ library for the RC
 using::
