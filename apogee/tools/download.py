@@ -37,6 +37,9 @@ def allStar(dr=None):
     oldFilePath= path.allStarPath(dr=dr,_old=True)
     if os.path.exists(oldFilePath):
         # mv to new place
+        try:
+            os.makedirs(os.path.dirname(filePath))
+        except OSError: pass
         shutil.move(oldFilePath,filePath)
         return None
     # Create the file path
@@ -68,6 +71,9 @@ def allVisit(dr=None):
     oldFilePath= path.allVisitPath(dr=dr,_old=True)
     if os.path.exists(oldFilePath):
         # mv to new place
+        try:
+            os.makedirs(os.path.dirname(filePath))
+        except OSError: pass
         shutil.move(oldFilePath,filePath)
         return None
     # Create the file path
@@ -98,6 +104,9 @@ def rcsample(dr=None):
     oldFilePath= path.rcsamplePath(dr=dr,_old=True)
     if os.path.exists(oldFilePath):
         # mv to new place
+        try:
+            os.makedirs(os.path.dirname(filePath))
+        except OSError: pass
         shutil.move(oldFilePath,filePath)
         return None
     # Create the file path
