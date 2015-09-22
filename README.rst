@@ -1126,6 +1126,9 @@ median-stacking routine and an inverse-variance stacking.
 APOGEE SELECTION FUNCTION
 ==========================
 
+Raw selection function
+^^^^^^^^^^^^^^^^^^^^^^^
+
 One of the main uses of this codebase is that it can determine the
 selection function---the fraction of objects in APOGEE's color and
 magnitude range(s) successfully observed spectroscopically. This code
@@ -1263,6 +1266,48 @@ example,::
 
 The array **statIndx** now is an boolean index array that identifies
 the stars that are in the statistical sample.
+
+Effective selection function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+As discussed in `Bovy, Rix, Schlafly et al. (2015)
+<http://arxiv.org/abs/1509.XXXXX>`__ and `Bovy, Rix, Green et
+al. (2015) <http://arxiv.org/abs/1509.XXXXX>`__, the selection
+function can be efficiently used when fitting the spatial (or
+phase-space) density profile of a stellar population through the use
+of the *effective selection function*. This function encapsulates the
+selection function itself, the three-dimensional extinction, and the
+photometric-distance relation used to turn the *H*-band dependent
+selection function *S(H,l,b,...)* (in APOGEE's case) into a selection
+function in terms of distance *S(D,l,b)*. The latter is much easier to
+use.
+
+The ``apogee`` package contains a class that implements the effective
+selection function for APOGEE. This functionality is included in
+``apogee.select.apogeeSelect.apogeeEffectiveSelect``. The effective
+selection function requires a three-dimensional extinction map (to
+apply extinction when going from distance to magnitude), which has to
+be provided as a ``mwdust.Dustmap3D`` object (see `mwdust
+<https://github.com/jobovy/mwdust>`__). The initialization further
+requires a raw APOGEE selection-function instance (see ``apo`` above)
+and a Monte Carlo sampling from the absolute *H* magnitude of the
+tracer (this can be a single value for a standard candle; the default
+is to use the red clump with *M_H = -1.49*)::
+
+   from apogee.select.apogeeSelect import apogeeEffectiveSelect
+   from mwdust import Green15
+   g15= Green15(filter='2MASS H')
+   apof= apogeeEffectiveSelect(apo,MH=-1.49,dmap3d=g15)
+
+We can then evaluate the effective selection function as follows::
+
+   apof(4240,[5.])
+   array([ 0.01028933])
+
+This returns the fraction of stars observed in the 4240 field
+(*030+00*) at 5 kpc from the Sun (this function is much more efficient
+for arrays). This function also takes the same ``MH=`` keyword that
+the initialization takes, so you can override the object-wide default.
 
 TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
 =====================================================
