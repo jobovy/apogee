@@ -48,7 +48,7 @@ _FEI_lines= [air2vac(l) for l in [15194.492,15207.526,15395.718,15490.339,
 _FEI_lines.append(16697.635) # one more from Shetrone
 # From Table 5
 _MGI_lines= [air2vac(l) for l in [15740.716,15748.9,15765.8,15879.5,
-                                  15886.2,15889.485,15954.477]]
+                                  15886.2,15954.477]]
 _ALI_lines= [air2vac(l) for l in [16718.957,16763.359]]
 _SII_lines= [air2vac(l) for l in [15361.161,15376.831,15833.602,15960.063,
                                   16060.009,16094.787,16215.670,16680.770,
@@ -147,6 +147,7 @@ def waveregions(*args,**kwargs):
           cleanZero= (True) replace <= zero entries with NaN
           labelID= A string ID that will be placed in the top-left corner
           labelTeff, labellogg, labelmetals, labelafe= parameter labels that will be placed in the top-right corner
+          noxlabel= (False) if True, don't label the x axis
           pyplot.plot args and kwargs
     OUTPUT:
        plot to output
@@ -161,6 +162,7 @@ def waveregions(*args,**kwargs):
     labelLines= kwargs.pop('labelLines',not 'overplot' in kwargs)
     cleanZero= kwargs.pop('cleanZero',True)
     noxticks= kwargs.pop('_noxticks',False)
+    noxlabel= kwargs.pop('noxlabel',False)
     noskipdiags= kwargs.pop('_noskipdiags',False)
     labelwav= kwargs.pop('_labelwav',False)
     plotw= kwargs.pop('_plotw',None)
@@ -221,10 +223,10 @@ def waveregions(*args,**kwargs):
     overplot= kwargs.pop('overplot',False)
     if not overplot:
         bovy_plot.bovy_print(fig_width=kwargs.pop('fig_width',8.4),
-                             fig_height=2.5,
-                             axes_labelsize=10,text_fontsize=9,
-                             legend_fontsize=9,
-                             xtick_labelsize=8,ytick_labelsize=8)
+                             fig_height=kwargs.pop('fig_height',2.5),
+                             axes_labelsize=16,text_fontsize=14,
+                             legend_fontsize=12,
+                             xtick_labelsize=12,ytick_labelsize=12)
         pyplot.figure()
     if overplot:
         yrange= numpy.array(pyplot.gca().get_ylim())
@@ -349,10 +351,10 @@ def waveregions(*args,**kwargs):
         thisax.tick_params(labelbottom='off')
         thisax.tick_params(bottom=False,which='both')
         thisax.tick_params(top=False,which='both')
-    if not overplot and not noxticks:
+    if not overplot and not noxticks and not noxlabel:
         thisax.set_xlabel(r'$\lambda-%i,000\,(\AA)$' % (int(_LAMBDASUB/1000.)),
                           labelpad=10-(nregions == 1)*10)
-    elif not overplot and noxticks:
+    elif not overplot and noxticks and not noxlabel:
         thisax.set_xlabel(r'$\lambda\,(\AA)$',
                           labelpad=10-(nregions == 1)*10)
     if not nregions == 1:
@@ -539,6 +541,8 @@ def highres(*args,**kwargs):
     KEYWORDS:
        color= () list of colors (1 or #spectra)
        ls= () list of linestyles (1 or #spectra)
+       xlabelLast= (False) if True, only apply the xlabel to the last panel
+       xlabelMiddle= (False) if True, only apply the xlabel to the middle panel (6th)
        other relevant apogee.spec.plot.waveregions keywords
     OUTPUT:
        iterator over panels
@@ -561,12 +565,21 @@ def highres(*args,**kwargs):
     if 'ls' in kwargs: lss= kwargs['ls']
     # Turn off fig_width, labelLines for 2nd spectrum and following
     fig_width= kwargs.pop('fig_width',None)
+    fig_height= kwargs.pop('fig_height',None)
     labelLines= kwargs.pop('labelLines',False)
+    # X label?
+    xlabelLast= kwargs.pop('xlabelLast',False)
+    xlabelMiddle= kwargs.pop('xlabelMiddle',False)
     for ii in range(len(startindxs)):
         kwargs['overplot']= False
         kwargs['fig_width']= fig_width
+        kwargs['fig_height']= fig_height
         if kwargs.get('fig_width') is None: kwargs.pop('fig_width')
+        if kwargs.get('fig_height') is None: kwargs.pop('fig_height')
         kwargs['labelLines']= labelLines
+        if (xlabelLast and ii == len(startindxs)-1) \
+                or (xlabelMiddle and ii == 5): kwargs['noxlabel']= False
+        else: kwargs['noxlabel']= True
         for jj in range(len(args)):
             if 'color' in kwargs:
                 kwargs['color']= colors[jj]
@@ -579,6 +592,7 @@ def highres(*args,**kwargs):
             if not kwargs.get('overplot'): kwargs['overplot']= True
             if kwargs.get('labelLines',True): kwargs['labelLines']= False
             kwargs.pop('fig_width',None)
+            kwargs.pop('fig_height',None)
         yield ii
 
 def highres2pdf(*args,**kwargs):
@@ -703,9 +717,10 @@ def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('co',wavemin,wavemax,thisax,lams,spec)
     _label_lines('cn',wavemin,wavemax,thisax,lams,spec)
     _label_lines('13co',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('hbrpi',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('hbrla',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('hbr',wavemin,wavemax,thisax,lams,spec)
+    if False:
+        _label_lines('hbrpi',wavemin,wavemax,thisax,lams,spec)
+        _label_lines('hbrla',wavemin,wavemax,thisax,lams,spec)
+        _label_lines('hbr',wavemin,wavemax,thisax,lams,spec)
     return None
 
 def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
@@ -771,7 +786,7 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                                     verticalalignment='top')
             elif elem == 'ca' and line > 16160. and line < 16162.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.55*ylevel,0.9*ylevel],'k:',zorder=0)
+                            [0.55*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB+2,
                                     0.5*ylevel,
                                     line_labels[elem.lower()],
@@ -780,7 +795,7 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                                     verticalalignment='top')
             elif elem == 'fe' and line > 16156. and line < 16158.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.45*ylevel,0.9*ylevel],'k:',zorder=1)
+                            [0.45*ylevel,0.95*ylevel],'k-',zorder=1)
                 bovy_plot.bovy_text(line-_LAMBDASUB,
                                     0.4*ylevel,
                                     line_labels[elem.lower()],
@@ -792,6 +807,15 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                             [0.6*ylevel,0.9*ylevel],'k-')
                 bovy_plot.bovy_text(line-_LAMBDASUB,
                                     0.55*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 's' and line > 15470. and line < 15480.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.25*ylevel,0.9*ylevel],'k-')
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.25*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
@@ -816,18 +840,54 @@ def _label_lines(elem,wavemin,wavemax,thisax,lams,spec):
                                     verticalalignment='top')
             elif elem == 'fe' and line > 15198. and line < 15199.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.6*ylevel,0.9*ylevel],'k:',zorder=0)
+                            [0.3*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB,
-                                    0.55*ylevel,
+                                    0.25*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'fe' and line > 15390. and line < 15410.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.4*ylevel,0.9*ylevel],'k-',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.35*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
                                     verticalalignment='top')
             elif elem == 'ti' and line > 15703. and line < 15704.:
                 thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
-                            [0.6*ylevel,0.9*ylevel],'k:',zorder=0)
+                            [0.6*ylevel,0.9*ylevel],'k-',zorder=0)
                 bovy_plot.bovy_text(line-_LAMBDASUB,
                                     0.55*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'mn' and line > 15260. and line < 15280.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.35*ylevel,0.9*ylevel],'k-',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.3*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'ni' and line > 15600. and line < 15620.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.35*ylevel,0.9*ylevel],'k-',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.3*ylevel,
+                                    line_labels[elem.lower()],
+                                    size=fontsize,bbox=bbox,
+                                    horizontalalignment='center',
+                                    verticalalignment='top')
+            elif elem == 'ni' and line > 16818. and line < 16822.:
+                thisax.plot([line-_LAMBDASUB,line-_LAMBDASUB],
+                            [0.45*ylevel,0.9*ylevel],'k-',zorder=0)
+                bovy_plot.bovy_text(line-_LAMBDASUB,
+                                    0.4*ylevel,
                                     line_labels[elem.lower()],
                                     size=fontsize,bbox=bbox,
                                     horizontalalignment='center',
