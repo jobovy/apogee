@@ -216,7 +216,10 @@ def waveregions(*args,**kwargs):
     else:
         tickStep= 10.**int(numpy.log10(numpy.sum(dx)/10.))
     dx/= numpy.sum(dx)
-    totdx= 0.85
+    if noxticks:
+        totdx= 0.825
+    else:
+        totdx= 0.85
     skipdx= kwargs.pop('skipdx',0.015)
     dx*= (totdx-(nregions-1)*skipdx)
     # Setup plot
@@ -244,9 +247,9 @@ def waveregions(*args,**kwargs):
     for ii in range(nregions):
         # Setup the axes
         if ii == 0:
-            left, bottom, width, height= 0.1, 0.125, dx[ii],0.8
+            left, bottom, width, height= 0.1+(0.85-totdx)*2., 0.125, dx[ii],0.8
         else:
-            left, bottom, width, height= 0.1+numpy.cumsum(dx)[ii-1]+skipdx*ii,\
+            left, bottom, width, height= 0.1+(0.85-totdx)*2.+numpy.cumsum(dx)[ii-1]+skipdx*ii,\
                 0.125, dx[ii], 0.8
         thisax= pyplot.axes([left,bottom,width,height])
         fig= pyplot.gcf()
@@ -338,7 +341,7 @@ def waveregions(*args,**kwargs):
                                 rotation='vertical',fontsize=10.)
     # Add the x-axis label
     if not nregions == 1:
-        thisax= pyplot.axes([0.1,0.125,0.85,0.8])
+        thisax= pyplot.axes([0.1+(0.85-totdx)*2.,0.125,totdx,0.8])
         pyplot.gcf().sca(thisax)
         thisax.set_ylim(yrange[0],yrange[1])
         thisax.spines['left'].set_visible(False)
@@ -356,11 +359,11 @@ def waveregions(*args,**kwargs):
                           labelpad=10-(nregions == 1)*10)
     elif not overplot and noxticks and not noxlabel:
         thisax.set_xlabel(r'$\lambda\,(\AA)$',
-                          labelpad=10-(nregions == 1)*10)
+                          labelpad=3-(nregions == 1)*3)
     if not nregions == 1:
         thisax.set_zorder(-1)
         # Start another axis object for later labeling
-        thisax= pyplot.axes([0.1,0.125,0.85,0.8])
+        thisax= pyplot.axes([0.1+(0.85-totdx)*2.,0.125,totdx,0.8])
         pyplot.gcf().sca(thisax)
         thisax.patch.set_facecolor('None')
         thisax.set_zorder(10)
