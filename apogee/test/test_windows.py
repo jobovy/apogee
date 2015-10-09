@@ -17,6 +17,9 @@ import apogee.modelspec.turbospec
 import apogee.modelspec.moog
 from apogee.modelatm import atlas9
 from apogee.tools import atomic_number
+import seaborn as sns
+sns.set_style("white")
+sns.set_style({"xtick.direction": "in","ytick.direction": "in"})
 def test_windows(options):
     elems= ['C','N','O','Na','Mg','Al','Si','S','K','Ca','Ti','V','Mn','Fe',
             'Ni','Ce','Co','Cr','Cu','Ge','Nd','P','Rb','Y']
@@ -92,7 +95,7 @@ def test_windows(options):
             elem_synspec= pickle.load(savefile)
     # Now run through the different elements again and plot windows for each
     # with elements that vary significantly
-    colors= ['r','b','g','c','gold','m','orange']
+    colors= sns.color_palette("colorblind")
     plotelems= [elem if not elem in ['C','N','O','Fe'] else '%s1' % elem
                 for elem in elems]
     plotelems.extend(['C2','N2','O2','Fe2'])
