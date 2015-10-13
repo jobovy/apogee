@@ -49,7 +49,7 @@ _FEI_lines.append(16697.635) # one more from Shetrone
 # From Table 5
 _MGI_lines= [air2vac(l) for l in [15740.716,15748.9,15765.8,15879.5,
                                   15886.2,15954.477]]
-_ALI_lines= [air2vac(l) for l in [16718.957,16763.359]]
+_ALI_lines= [air2vac(l) for l in [16718.957,16750.564286,16763.359]]
 _SII_lines= [air2vac(l) for l in [15361.161,15376.831,15833.602,15960.063,
                                   16060.009,16094.787,16215.670,16680.770,
                                   16828.159]]
@@ -57,21 +57,21 @@ _KI_lines= [air2vac(l) for l in [15163.067,15168.376]]
 _CAI_lines= [air2vac(l) for l in [16136.823,16150.763,16155.236,16157.364]]
 _TII_lines= [air2vac(l) for l in [15543.756,15602.842,15698.979,15715.573,
                                   16635.161]]
-_VI_lines= [air2vac(15924.)]
+_VI_lines= [air2vac(15925.)]
 _CRI_lines= [air2vac(l) for l in [15680.063,15860.214]]
-_MNI_lines= [air2vac(l) for l in [15159.,15217.,15262.]]
+_MNI_lines= [air2vac(l) for l in [15159.,15217.85,15262.4]]
 _COI_lines= [air2vac(16757.7)]
-_NII_lines= [air2vac(l) for l in [15605.680,15632.654,16584.439,16589.295,
+_NII_lines= [air2vac(l) for l in [15605.680,16584.439,16589.295,
                                   16673.711,16815.471,16818.760]]
 _CUI_lines= [air2vac(16005.7)]
 # From Katia Cunha
-_NAI_lines= [air2vac(16373.86),air2vac(16388.85)]
+_NAI_lines= [air2vac(16388.85)]
 # From Matthew Shetrone
 _SI_lines= [15406.540,15426.490,15474.043,15482.712]
-# From Table 4 in Smith et al. (2013)
+# From Table 4 in Smith et al. (2013), with a few tweaks
 _OH_lines= [air2vac(l) for l in [15279.5,15391.,15505.5,15570.5]]
 _CO_lines= [air2vac(l) for l in [15582.,15780.5,15988.,16189.5]]
-_CN_lines= [air2vac(l) for l in [15260.,15322.,15397.,15332.,15410.,
+_CN_lines= [air2vac(l) for l in [15260.,15321.,15397.,15332.,15410.8,
                                  15447.,15466.,15472.,15482.]]
 _13CO_lines= [air2vac(l) for l in [16122.5,16743.5]]
 #The hydrogen bracket series
@@ -144,6 +144,7 @@ def waveregions(*args,**kwargs):
           startindxs, endindxs= star and end index in the wavelength array of the various chunks
        Plotting-specific keywords
           labelLines= (True) label some lines
+          noMolecLines= (False) don't label the molecules
           cleanZero= (True) replace <= zero entries with NaN
           labelID= A string ID that will be placed in the top-left corner
           labelTeff, labellogg, labelmetals, labelafe= parameter labels that will be placed in the top-right corner
@@ -160,6 +161,7 @@ def waveregions(*args,**kwargs):
     # Grab non-pyplot.plot kwargs
     apStar= kwargs.pop('apStar',False)
     labelLines= kwargs.pop('labelLines',not 'overplot' in kwargs)
+    noMolecLines= kwargs.pop('noMolecLines',False)
     cleanZero= kwargs.pop('cleanZero',True)
     noxticks= kwargs.pop('_noxticks',False)
     noxlabel= kwargs.pop('noxlabel',False)
@@ -325,7 +327,7 @@ def waveregions(*args,**kwargs):
         # Label the lines
         if labelLines:
             _label_all_lines(args[0][startindx],args[0][endindx],
-                             thisax,args[0],args[1])
+                             thisax,args[0],args[1],noMolecLines)
         # Mark the lines
         if markLines:
            _mark_lines(markwav,args[0][startindx],args[0][endindx],
@@ -700,7 +702,7 @@ def _mark_lines(linewavs,wavemin,wavemax,thisax,lams,spec):
                     [ylevel-0.35*yspan,ylevel-0.1*yspan],'k-',zorder=0)
     return None
 
-def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
+def _label_all_lines(wavemin,wavemax,thisax,lams,spec,noMolecLines=False):
     _label_lines('fe',wavemin,wavemax,thisax,lams,spec)
     _label_lines('mg',wavemin,wavemax,thisax,lams,spec)
     _label_lines('si',wavemin,wavemax,thisax,lams,spec)
@@ -715,11 +717,12 @@ def _label_all_lines(wavemin,wavemax,thisax,lams,spec):
     _label_lines('s',wavemin,wavemax,thisax,lams,spec)
     _label_lines('v',wavemin,wavemax,thisax,lams,spec)
     _label_lines('cob',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('cu',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('oh',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('co',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('cn',wavemin,wavemax,thisax,lams,spec)
-    _label_lines('13co',wavemin,wavemax,thisax,lams,spec)
+    #_label_lines('cu',wavemin,wavemax,thisax,lams,spec)
+    if not noMolecLines:
+        _label_lines('oh',wavemin,wavemax,thisax,lams,spec)
+        _label_lines('co',wavemin,wavemax,thisax,lams,spec)
+        _label_lines('cn',wavemin,wavemax,thisax,lams,spec)
+        _label_lines('13co',wavemin,wavemax,thisax,lams,spec)
     if False:
         _label_lines('hbrpi',wavemin,wavemax,thisax,lams,spec)
         _label_lines('hbrla',wavemin,wavemax,thisax,lams,spec)
