@@ -665,15 +665,15 @@ def apWavePath(chip,dr=None):
        2015-02-27 - Written - Bovy (IAS)
     """
     if dr is None: dr= _default_dr()
-    if dr is 'current':
-        warnings.warn("apWave files for current DR not yet available, falling back on DR12 files")
-        dr= '12'
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     if dr == '10':
         return os.path.join(specReduxPath,'r3','cal','wave',
                             'apWave-%s-02420038.fits' % chip)
     elif dr == '12':
         return os.path.join(specReduxPath,'r5','cal','wave',
+                            'apWave-%s-02420038.fits' % chip)
+    elif dr == '13' or dr == 'current':
+        return os.path.join(specReduxPath,'r6','cal','wave',
                             'apWave-%s-02420038.fits' % chip)
     
 def apLSFPath(chip,dr=None):
@@ -698,6 +698,9 @@ def apLSFPath(chip,dr=None):
     elif dr == '12':
         return os.path.join(specReduxPath,'r5','cal','lsf',
                             'apLSF-%s-02490024.fits' % chip)
+    elif dr == '13' or dr == 'current':
+        return os.path.join(specReduxPath,'r6','cal','lsf',
+                            'apLSF-%s-05440020.fits' % chip)
     
 def apogeeSpectroReduxDirPath(dr=None):
     """
