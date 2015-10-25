@@ -353,9 +353,14 @@ def linelist(linelist,dr=None,spider=False):
     filePath= path.linelistPath(linelist,dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path    
-    downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
-                                                _dr_string(dr)),
-                                   _base_url(dr=dr))
+    if '201404080919' in filePath:
+        downloadPath= \
+            filePath.replace(os.path.dirname(filePath),
+                             'https://zenodo.org/record/32629/files')
+    else:
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    _dr_string(dr)),
+                                       _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True,spider=spider)
     return None
 
