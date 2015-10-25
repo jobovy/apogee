@@ -759,7 +759,12 @@ the name of an APOGEE line list for APOGEE collaborators (linelists
 can be downloaded using ``apogee.tools.download.linelist``; make sure
 to also download the ``stronglines.vac`` linelist). Isotopic ratios
 can be set to either ``isotopes='solar'`` or ``isotopes='arcturus'``
-for typical dwarf or giant isotope ratios.
+for typical dwarf or giant isotope ratios. The method for downloading
+MOOG linelists currently implemented here is only accessible to APOGEE
+collaboration members, although the DR12 linelist is publicly
+available; it has to be obtained independently from this code. A
+Turbospectrum version of the (corrected) DR12 linelist *can* be
+automatically downloaded by the code (see below).
 
 The LSF can be given as the ``lsf=`` keyword. This can be set to the
 output of ``apogee.spec.lsf.eval`` (best if it's a sparse version of
@@ -869,14 +874,18 @@ to a string. In the latter case, if the string filename does not exist
 the code will also look for linelists that start in
 *turboatoms.*/*turbomolec.* or end in *.atoms*/*.molec*. You will have
 to download the ``Hlinedata.vac`` linelist from the APOGEE linelist
-directory as well if you are working in vacuum (the default is to work
-in air wavelengths, which Turbospectrum expects; the vacuum Hlinedata
-can be obtained with
+directory as well if you are working in vacuum (the default and
+recommended manner is to work in air wavelengths, which Turbospectrum
+expects; the vacuum Hlinedata can be obtained with
 ``apogee.tools.download.linelist('Hlinedata.vac')``. When working in
 air wavelengths, the internal Turbospectrum Hlinedata will be used. To
 work in vacuum, specify ``air=False`` when running Turbospectrum
 syntheses. However, this is not recommended as Turbospectrum is
-designed to run in air wavelengths!
+designed to run in air wavelengths! When using the ``201404080919``
+linelist (see examples below), which is a corrected version of the
+DR12 linelist, it will be automatically downloaded from the `Zenodo
+<https://zenodo.org/record/32629#.Vi0XBBCrSfS>`__ location that
+contains this linelist.
 
 We repeat the calculations done above using MOOG with
 Turbospectrum here as an example::
@@ -886,7 +895,7 @@ Turbospectrum here as an example::
 	atm= atlas9.Atlas9Atmosphere(teff=4750.,logg=2.5,metals=-0.25,am=0.25,cm=0.25)
 	# The following takes a while ...
 	synspec= apogee.modelspec.turbospec.synth([26,-0.25,0.25],[22,-0.3],modelatm=atm,\
-		 linelist='turbospec.201312161124',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
+		 linelist='201404080919',lsf='all',cont='aspcap',vmacro=6.,isotopes='solar')
 	
 and we can again plot these::
 
@@ -901,7 +910,7 @@ higher up)::
 
 	  abu= [13,-1.,-0.75,-0.5,-0.25,0.,0.25,0.5,0.75,1.]
 	  synspec= apogee.modelspec.turbospec.windows('Al',abu,modelatm=atm_ng,\
-	  	   linelist='turbospec.201312161124')
+	  	   linelist='201404080919')
 
 and we can plot the aluminum windows::
 
@@ -929,7 +938,7 @@ opacity, which can be saved to a file by specifying the ``modelopac=``
 keyword. For example::
 
 	 baseline= apogee.modelspec.turbospec.turbosynth(modelatm=atm_ng,\
-	  	    linelist='turbospec.201312161124',\
+	  	    linelist='201404080919',\
 		    modelopac='mpac')
          mwav= baseline[0]
          cflux= baseline[2]/baseline[1]
