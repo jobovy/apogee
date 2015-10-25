@@ -948,7 +948,7 @@ then we can repeat the calculation above as::
 
      	  synspec= apogee.modelspec.turbospec.windows('Al',abu,\
 	              baseline=baseline,mwav=mwav,cflux=cflux,modelopac='mpac',\
-		      modelatm=atm_ng,linelist='turbospec.201312161124')
+		      modelatm=atm_ng,linelist='201404080919')
 
 which is indistinguishable from the plot above. Remember that you end
 up with a file that contains the continuous opacity, so you might want
