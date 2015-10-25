@@ -485,6 +485,16 @@ def turbosynth(*args,**kwargs):
                 moleclinelistfilename= appath.linelistPath(\
                     'turbomolec.%s' % linelist,
                     dr=kwargs.get('dr',None))
+                if not os.path.exists(atomlinelistfilename) \
+                        and '201404080919' in atomlinelistfilename \
+                        and kwargs.get('air',True):
+                    download.linelist(os.path.basename(atomlinelistfilename),
+                                      dr=kwargs.get('dr',None))
+                if not os.path.exists(moleclinelistfilename) \
+                        and '201404080919' in moleclinelistfilename \
+                        and kwargs.get('air',True):
+                    download.linelist(os.path.basename(moleclinelistfilename),
+                                      dr=kwargs.get('dr',None))
                 if os.path.exists(atomlinelistfilename) \
                         and os.path.exists(moleclinelistfilename):
                     linelistfilenames.append(atomlinelistfilename)
