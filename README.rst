@@ -18,7 +18,11 @@ CITING THIS CODE
 
 Please cite `Bovy (2016) <http://arxiv.org/abs/1510.06745>`__ when
 using this code. Appendix C of this paper has a brief overview of the
-code.
+code. When using the selection function, please cite `Bovy et
+al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__ and
+when using the effective selection function, please cite `Bovy et
+al. (2016a) <http://arxiv.org/abs/1509.06751>`__ and/or `Bovy et
+al. (2016b) <http://arxiv.org/abs/1509.05796>`__.
 
 INSTALLATION
 ============
