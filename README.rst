@@ -11,7 +11,14 @@ Tools for dealing with `SDSS-III <http://sdss3.org/>`__ `APOGEE
 AUTHOR
 ======
 
-Jo Bovy - bovy at ias dot edu
+Jo Bovy - bovy at astro dot utoronto dot ca
+
+CITING THIS CODE
+=================
+
+Please cite `Bovy (2016) <http://arxiv.org/abs/1510.06745>`__ when
+using this code. Appendix C of this paper has a brief overview of the
+code.
 
 INSTALLATION
 ============
@@ -885,7 +892,9 @@ designed to run in air wavelengths! When using the ``201404080919``
 linelist (see examples below), which is a corrected version of the
 DR12 linelist, it will be automatically downloaded from the `Zenodo
 <https://zenodo.org/record/32629#.Vi0XBBCrSfS>`__ location that
-contains this linelist.
+contains this linelist. See Appendix C of `this paper
+<http://arxiv.org/abs/1510.06745>`__ for more information on this
+linelist.
 
 We repeat the calculations done above using MOOG with
 Turbospectrum here as an example::
