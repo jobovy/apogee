@@ -50,6 +50,7 @@ _APOGEE_APOKASC_REDUX= os.getenv('APOGEE_APOKASC_REDUX')
 _DR10REDUX='v304'
 _DR11REDUX='v402'
 _DR12REDUX='v603'
+_DR13REDUX='l30d.1'
 _CURRENTREDUX='current'
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
@@ -120,6 +121,9 @@ def allStarPath(dr=None,_old=False):
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == '12':
             return os.path.join(specReduxPath,'r5','stars','l25_6d',
+                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == '13':
+            return os.path.join(specReduxPath,'r6','stars','l30d',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
             return os.path.join(specReduxPath,'current','stars','l25_6d',
@@ -775,6 +779,7 @@ def _default_dr():
     if _APOGEE_REDUX == _DR10REDUX: dr= '10'
     elif _APOGEE_REDUX == _DR11REDUX: dr= '11'
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
+    elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -784,6 +789,7 @@ def _redux_dr(dr=None):
     if dr == '10': return _DR10REDUX
     elif dr == '11': return _DR11REDUX
     elif dr == '12': return _DR12REDUX
+    elif dr == '13': return _DR13REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
