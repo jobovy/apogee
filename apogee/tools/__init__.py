@@ -19,7 +19,10 @@ else:
     _ELEM_SYMBOL= [index.strip().lower() for index in indexArrays['ELEM_SYMBOL'].flatten()]
     _ELEM_NUMBER_DICT= dict((elem,
                              elements.__dict__[elem.capitalize()].number)
-                            for elem in _ELEM_SYMBOL)
+                            for elem in _ELEM_SYMBOL 
+                            if elem != 'ci' and elem != 'tiii')
+    _ELEM_NUMBER_DICT['CI']= elements.__dict__['C'].number
+    _ELEM_NUMBER_DICT['TiII']= elements.__dict__['Ti'].number
 def paramIndx(param):
     """
     NAME:
