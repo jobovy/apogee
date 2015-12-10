@@ -95,8 +95,8 @@ def test_params_err():
 
 def test_elem_named():
     #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL 
-    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
-            'Ni','Fe','Al','K','Na','V','Mn']
+    from apogee.tools import _ELEM_SYMBOL
+    elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     ferreOverM= ['C','N','O','Mg','Si','S','Ca','Ti']
     for ii,elem in enumerate(elems):
         if elem == 'C' or elem == 'N' or elem == 'O': continue
@@ -110,8 +110,8 @@ def test_elem_named():
                 
 def test_elem_err_named_exclNaN():
     #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL , rm differences that are NaN
-    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
-            'Ni','Fe','Al','K','Na','V','Mn']
+    from apogee.tools import _ELEM_SYMBOL
+    elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     for ii,elem in enumerate(elems):
         errDiff= _DATA['ELEM_ERR'][:,elemIndx(elem)]\
             -_DATA[elem.upper()+'_H_ERR']
@@ -122,8 +122,8 @@ def test_elem_err_named_exclNaN():
 #@known_failure                
 def test_elem_err_named():
     #Test that the named tags for the elements correspond to the correct values in elem according to ELEM_SYMBOL
-    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
-            'Ni','Fe','Al','K','Na','V','Mn']
+    from apogee.tools import _ELEM_SYMBOL
+    elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     for ii,elem in enumerate(elems):
         errDiff= _DATA['ELEM_ERR'][:,elemIndx(elem)]\
             -_DATA[elem.upper()+'_H_ERR']
@@ -133,8 +133,8 @@ def test_elem_err_named():
 def test_elem_calib_outsiderange():
     #Test that the elem calibration does not extend outside of the calibration
     #temperature range
-    elems= ['C','N','O','Mg','Si','S','Ca','Ti',
-            'Ni','Fe','Al','K','Na','V','Mn']
+    from apogee.tools import _ELEM_SYMBOL
+    elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     TeffMin= 3800.
     TeffMax= 5250.
     for elem in elems:
