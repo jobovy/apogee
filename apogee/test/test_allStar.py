@@ -137,28 +137,35 @@ def test_elem_calib_outsiderange_giants():
     elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     TeffMin= 3800.
     TeffMax= 5250.
-    giants= numpy.core.defchararray.startswith(\
-        _DATA['ASPCAP_CLASS'],'Mg')\
-        +numpy.core.defchararray.startswith(\
-        _DATA['ASPCAP_CLASS'],'GKg')
+    giants= (_DATA['FPARAM'][:,paramIndx('logg')] < (2./1300.\
+                 *(_DATA['FPARAM'][:,paramIndx('teff')]-3500.)+2.))\
+                 *(_DATA['FPARAM'][:,paramIndx('logg')] < 4.)\
+                 *(_DATA['FPARAM'][:,paramIndx('teff')] < 7000.)
     for elem in elems:
         calibDiff= _DATA['FELEM'][:,elemIndx(elem)]\
             -_DATA['ELEM'][:,elemIndx(elem)]
         #Only consider good stars for this element
         indx= ((_DATA['ASPCAPFLAG'] & 2**23) == 0)\
             *(_DATA['FPARAM'][:,paramIndx('teff')] > -1000.)\
-            *(_DATA['FPARAM'][:,paramIndx('logg')] < 3.8)\
             *giants\
             *(_DATA['FELEM'][:,elemIndx(elem)] > -1000.)\
             *(_DATA['ELEM'][:,elemIndx(elem)] > -1000.)
-        loTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
-                                                         paramIndx('teff')]
-                                         -TeffMin))
-        hiTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
+        try:
+            loTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
+                                                             paramIndx('teff')]
+                                             -TeffMin))
+        except ValueError:
+            pass
+        else:
+            assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] < TeffMin]-calibDiff[indx][loTIndx]) < 10.**-3.), 'Calibration offset does not saturate below the minimum calibration temperature of %i for element %s' % (TeffMin,elem)
+        try:
+            hiTIndx= numpy.argmin(numpy.fabs(_DATA['FPARAM'][indx,
                                                          paramIndx('teff')]
                                          -TeffMax))
-        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] < TeffMin]-calibDiff[indx][loTIndx]) < 10.**-3.), 'Calibration offset does not saturate below the minimum calibration temperature of %i for element %s' % (TeffMin,elem)
-        assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] > TeffMax]-calibDiff[indx][hiTIndx]) < 10.**-2.), 'Calibration offset does not saturate above the maximum calibration temperature of %i for element %s' % (TeffMax,elem)
+        except ValueError:
+            pass
+        else:
+            assert numpy.all(numpy.fabs(calibDiff[indx][_DATA['FPARAM'][indx,paramIndx('teff')] > TeffMax]-calibDiff[indx][hiTIndx]) < 10.**-2.), 'Calibration offset does not saturate above the maximum calibration temperature of %i for element %s' % (TeffMax,elem)
     return None
 
 def test_elem_calib_outsiderange_dwarfs():
@@ -168,13 +175,17 @@ def test_elem_calib_outsiderange_dwarfs():
     elems= [e.capitalize() for e in _ELEM_SYMBOL if e != 'ci' and e != 'tiii']
     TeffMin= 3800.
     TeffMax= 7500.
+    dwarfs= (_DATA['FPARAM'][:,paramIndx('logg')] >= (2./1300.\
+                 *(_DATA['FPARAM'][:,paramIndx('teff')]-3500.)+2.))\
+                 +(_DATA['FPARAM'][:,paramIndx('logg')] >= 4.)\
+                 +(_DATA['FPARAM'][:,paramIndx('teff')] >= 7000.)
     for elem in elems:
         calibDiff= _DATA['FELEM'][:,elemIndx(elem)]\
             -_DATA['ELEM'][:,elemIndx(elem)]
         #Only consider good stars for this element
         indx= ((_DATA['ASPCAPFLAG'] & 2**23) == 0)\
             *(_DATA['FPARAM'][:,paramIndx('teff')] > -1000.)\
-            *(_DATA['FPARAM'][:,paramIndx('logg')] > 3.8)\
+            *dwarfs\
             *(_DATA['FELEM'][:,elemIndx(elem)] > -1000.)\
             *(_DATA['ELEM'][:,elemIndx(elem)] > -1000.)
         try:
