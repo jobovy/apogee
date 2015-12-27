@@ -1,5 +1,6 @@
 import sys
 import copy
+import tqdm
 import numpy
 from scipy import stats, special
 from galpy.util import bovy_plot, bovy_coords
@@ -389,7 +390,7 @@ class apogeeSelect:
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
-        for ii in range(len(specdata)):
+        for ii in tqdm.trange(len(specdata)):
             avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
