@@ -401,34 +401,40 @@ def obslog(year=None):
     obslogfilename= path.obslogPath(year=year)
     if not os.path.exists(obslogfilename):
         download.obslog(year=year)
-    obslogtxt= numpy.genfromtxt(obslogfilename,skiprows=2,delimiter='|',
-                                dtype=[('Fieldname','S14'),
-                                       ('LocID','int'),
-                                       ('ra','float'),
-                                       ('dec','float'),
-                                       ('Plate','int'),
-                                       ('A_ver','S14'),
-                                       ('DrilledHA','float'),
-                                       ('HDB','int'),
-                                       ('NObs_Plan','int'),
-                                       ('NObs_Done','int'),
-                                       ('NObs_Ver_Plan','int'),
-                                       ('NObs_Ver_Done','int'),
-                                       ('Total_SN','float'),
-                                       ('Red_SN','float'),
-                                       ('ManPriority','int'),
-                                       ('Priority','float'),
-                                       ('Time','float'),
-                                       ('Shared','int'),
-                                       ('Stars','int'),
-                                       ('At_APO','int'),
-                                       ('Reduction','int'),
-                                       ('ObsHistory','S50'),
-                                       ('UNKNOWN','S50'),
-                                       ('UNKNOWN1','int'),
-                                       ('UNKNOWN2','int'),
-                                       ('ReductionHistory','S50')],
-                                skip_footer=1)
+    genfromtxtKwargs= {'delimiter':'|',
+                       'dtype':[('Fieldname','S14'),
+                                ('LocID','int'),
+                                ('ra','float'),
+                                ('dec','float'),
+                                ('Plate','int'),
+                                ('A_ver','S14'),
+                                ('DrilledHA','float'),
+                                ('HDB','int'),
+                                ('NObs_Plan','int'),
+                                ('NObs_Done','int'),
+                                ('NObs_Ver_Plan','int'),
+                                ('NObs_Ver_Done','int'),
+                                ('Total_SN','float'),
+                                ('Red_SN','float'),
+                                ('ManPriority','int'),
+                                ('Priority','float'),
+                                ('Time','float'),
+                                ('Shared','int'),
+                                ('Stars','int'),
+                                ('At_APO','int'),
+                                ('Reduction','int'),
+                                ('ObsHistory','S50'),
+                                ('UNKNOWN','S50'),
+                                ('UNKNOWN1','int'),
+                                ('UNKNOWN2','int'),
+                                ('ReductionHistory','S50')],
+                       'skip_footer':1}
+    if int(numpy.__version__.split('.')[0]) < 1 \
+            or int(numpy.__version__.split('.')[1]) < 10:
+        genfromtxtKwargs['skiprows']= 2
+    else:
+        genfromtxtKwargs['skip_header']= 2
+    obslogtxt= numpy.genfromtxt(obslogfilename,**genfromtxtKwargs)
     return obslogtxt
 
 def apogeePlate(dr=None):
