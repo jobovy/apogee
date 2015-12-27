@@ -719,7 +719,7 @@ def remove_duplicates(data):
     sindx= numpy.argsort(m1)
     sm1= m1[sindx]
     dup= sm1[1:] == sm1[:-1]
-    for d in sm1[dup]:
+    for d in sm1[:-1][dup]:
         #Find the matches for just this duplicate
         nm1,nm2,nd12= h.match(data['RA'][d],data['DEC'][d],
                               data['RA'],data['DEC'],
