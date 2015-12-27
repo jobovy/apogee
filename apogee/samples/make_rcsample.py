@@ -59,13 +59,16 @@ def make_rcsample(parser):
                                            'SRC_H',
                                            'PM_SRC'])
     if not appath._APOGEE_REDUX.lower() == 'current' \
+            and not 'l30' in appath._APOGEE_REDUX \
             and int(appath._APOGEE_REDUX[1:]) < 500:
         data= esutil.numpy_util.remove_fields(data,
                                               ['ELEM'])
     #Select red-clump stars
     jk= data['J0']-data['K0']
     z= isodist.FEH2Z(data['METALS'],zsolar=0.017)
-    if appath._APOGEE_REDUX.lower() == 'current' \
+    if 'l30' in appath._APOGEE_REDUX:
+        logg= data['LOGG']
+    elif appath._APOGEE_REDUX.lower() == 'current' \
             or int(appath._APOGEE_REDUX[1:]) > 600:
         from apogee.tools import paramIndx
         if False:
