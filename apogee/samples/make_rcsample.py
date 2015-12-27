@@ -14,6 +14,7 @@ import sys
 import os, os.path
 from optparse import OptionParser
 import numpy
+import tqdm
 import fitsio
 import esutil
 from galpy.util import bovy_coords
@@ -153,10 +154,9 @@ def make_rcsample(parser):
                                       'PMRA_ERR','PMDEC_ERR','PMMATCH'])
         rad= u.Quantity(4./3600.,u.degree)
         v= Vizier(columns=['RAJ2000','DEJ2000','pmRA','pmDE','e_pmRA','e_pmDE'])
-        for ii in range(len(data)):
+        print("Getting pm data from UCAC-4 catalog")
+        for ii in tqdm.trange(len(data)):
             #if ii > 100: break
-            sys.stdout.write('\r'+"Getting pm data for point %i / %i" % (ii+1,len(data)))
-            sys.stdout.flush()
             pmdata.RA[ii]= data['RA'][ii]
             pmdata.DEC[ii]= data['DEC'][ii]
             co= coord.ICRS(ra=data['RA'][ii],
@@ -202,8 +202,6 @@ def make_rcsample(parser):
             pmdata.PMRA_ERR[ii]= float(tab[0]['e_pmRA'])
             pmdata.PMDEC_ERR[ii]= float(tab[0]['e_pmDE'])
             if numpy.isnan(float(tab[0]['pmRA'])): pmdata.PMMATCH[ii]= 0
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
         fitsio.write(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
         pmdata= fitsio.read(pmfile,1)
@@ -270,10 +268,9 @@ def make_rcsample(parser):
                                       'PMRA_ERR','PMDEC_ERR','PMMATCH'])
         rad= u.Quantity(4./3600.,u.degree)
         v= Vizier(columns=['RAJ2000','DEJ2000','pmRA','pmDE','e_pmRA','e_pmDE'])
-        for ii in range(len(data)):
+        print("Getting pm data from PPMXL catalog")
+        for ii in tqdm.trange(len(data)):
             #if ii > 100: break
-            sys.stdout.write('\r'+"Getting pm data for point %i / %i" % (ii+1,len(data)))
-            sys.stdout.flush()
             pmdata.RA[ii]= data['RA'][ii]
             pmdata.DEC[ii]= data['DEC'][ii]
             co= coord.ICRS(ra=data['RA'][ii],
@@ -317,8 +314,6 @@ def make_rcsample(parser):
                 pmdata.PMRA_ERR[ii]= float(tab[0]['e_pmRA'])
                 pmdata.PMDEC_ERR[ii]= float(tab[0]['e_pmDE'])
                 if numpy.isnan(float(tab[0]['pmRA'])): pmdata.PMMATCH[ii]= 0
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
         fitsio.write(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
         pmdata= fitsio.read(pmfile,1)
