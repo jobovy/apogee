@@ -144,7 +144,7 @@ allVisit-$RESULTS_VERS.fits files need to be present, as well as the
 targeting files in the *drXX/* directories. The observation log
 obs-summary-year1+2.csv (for DR11) or obs-summary-year1+2+3.csv (for
 DR12) also needs to be present. These are available `here
-<https://zenodo.org/record/17300>`__ and they will be automatically
+<https://zenodo.org/record/17300>`__ and they will be automagically
 downloaded by the code when they are needed.
 
 Files of individual spectra live in directories that mirror the SAS as
@@ -178,7 +178,7 @@ paths to the different files. A typical tree looks something like::
 							...
 						...
 			target/
-				apogee_dr12/
+				apogee_DR12/
 					apogeeDesign.fits
 					apogeeField.fits
 					apogeeObject_000+02.fits
