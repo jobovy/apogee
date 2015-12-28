@@ -171,8 +171,12 @@ def apokascPath():
        2012-01-02 - Written - Bovy (IAS)
        2012-09-10 - Edited for APOKASC - Bovy (IAS)
     """
-    return os.path.join(_APOGEE_DATA,
-                        'APOKASC_Catalog.'+_APOGEE_APOKASC_REDUX+'.fits')
+    if _APOGEE_APOKASC_REDUX[1] == '7':
+        return os.path.join(_APOGEE_DATA,
+                            'APOKASC_Catalog.'+_APOGEE_APOKASC_REDUX+'.fits')
+    else:
+        return os.path.join(_APOGEE_DATA,
+                            'APOKASC_cat_'+_APOGEE_APOKASC_REDUX+'.fits')
 
 def distPath(dr=None):
     """
