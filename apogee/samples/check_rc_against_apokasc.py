@@ -45,47 +45,8 @@ if __name__ == '__main__':
     print "%i / %i = %i%% APOKASC CLUMP stars are in the RC catalog" % (numpy.sum(rcclumpseismo),numpy.sum(clumpseismo),float(numpy.sum(rcclumpseismo))/numpy.sum(clumpseismo)*100.)
     print "%i / %i = %i%% APOKASC non-CLUMP stars are in the RC catalog" % (numpy.sum(rcnoclumpseismo),numpy.sum(noclumpseismo),float(numpy.sum(rcnoclumpseismo))/numpy.sum(noclumpseismo)*100.)
     print "%i / %i = %i%% APOKASC non-CLUMP stars out of all stars with evolutionary measurements are in the RC catalog" % (numpy.sum(rcnoclumpseismo),numpy.sum(rcnoclumpseismo)+numpy.sum(rcclumpseismo),float(numpy.sum(rcnoclumpseismo))/(numpy.sum(rcnoclumpseismo)+numpy.sum(rcclumpseismo))*100.)
-    bovy_plot.bovy_print()
     rcindx= data['RC'] == 1
-    bovy_plot.bovy_plot(data['METALS'][rcnoclumpseismo],
-                        data['ALPHAFE'][rcnoclumpseismo],
-                        'ro',
-                        xrange=[-1.,0.7],
-                        yrange=[-0.15,0.35],
-                        xlabel=r'$[\mathrm{Fe/H}]$',
-                        ylabel=r'$[\alpha/\mathrm{Fe}]$',
-                        zorder=1,ms=4.5,mec='none',
-                        onedhists=True,onedhistxnormed=True,
-                        onedhistynormed=True,onedhistec='r',bins=20)
-
-    bovy_plot.bovy_plot(data['METALS'][rcindx],data['ALPHAFE'][rcindx],
-                        'k.',overplot=True,zorder=0,
-                        onedhists=True,onedhistxnormed=True,
-                        onedhistynormed=True,onedhistec='k',bins=20)
-    bovy_plot.bovy_end_print('apokasc_rc_metalsafe.png')
     #Also look at where these lie in J-Ks vs. logg
-    bovy_plot.bovy_print()
-    bovy_plot.bovy_plot(data['J0'][rcnoclumpseismo]-data['K0'][rcnoclumpseismo],
-                        data['KASC_RG_LOGG_SCALE_2'][rcnoclumpseismo],
-                        'ro',
-                        xrange=[0.5,0.8],
-                        yrange=[3.5,1.],
-                        xlabel=r'$(J-K_s)_0\,(\mathrm{mag})$',
-                        ylabel=r'$\mathrm{Seismic}\ \log g$',
-                        zorder=2,ms=4.5,mec='none',
-                        onedhists=False,onedhistxnormed=True,
-                        onedhistynormed=True,onedhistec='r',bins=20)
-    bovy_plot.bovy_plot(data['J0'][rcclumpseismo]-data['K0'][rcclumpseismo],
-                        data['KASC_RG_LOGG_SCALE_2'][rcclumpseismo],
-                        'bo',mec='none',overplot=True,zorder=1,
-                        onedhists=False,onedhistxnormed=True,
-                        onedhistynormed=True,onedhistec='b',bins=20) 
-    bovy_plot.bovy_plot(data['J0'][rcindx]-data['K0'][rcindx],
-                        data['KASC_RG_LOGG_SCALE_2'][rcindx],
-                        'k.',overplot=True,zorder=0,
-                        onedhists=False,onedhistxnormed=True,
-                        onedhistynormed=True,onedhistec='k',bins=20) 
-    bovy_plot.bovy_end_print('apokasc_rc_loggjk.png')
     #Statistics using simple seismo logg cut
     clumplogg= (data['KASC_RG_LOGG_SCALE_2'] > 1.8)\
         *(data['KASC_RG_LOGG_SCALE_2'] < rcmodel.loggteffcut(data['TEFF'],
@@ -95,23 +56,6 @@ if __name__ == '__main__':
     rcnoclumplogg= (True-clumplogg)*(data['RC'] == 1)
     print "%i / %i = %i%% APOKASC logg non-clump stars are in the RC catalog" % (numpy.sum(rcnoclumplogg),numpy.sum(True-clumplogg),float(numpy.sum(rcnoclumplogg))/numpy.sum(True-clumplogg)*100.)
     print "%i / %i = %i%% APOKASC logg non-clump stars out of all stars are in the RC catalog" % (numpy.sum(rcnoclumplogg),numpy.sum(data['RC'] == 1),float(numpy.sum(rcnoclumplogg))/numpy.sum(data['RC'] == 1)*100.)
-    bovy_plot.bovy_print()
-    bovy_plot.bovy_plot(data['METALS'][rcnoclumplogg],
-                        data['ALPHAFE'][rcnoclumplogg],
-                        'ro',ms=4.5,
-                        xrange=[-1.,0.7],
-                        yrange=[-0.15,0.35],
-                        xlabel=r'$[\mathrm{Fe/H}]$',
-                        ylabel=r'$[\alpha/\mathrm{Fe}]$',onedhists=True,
-                        mec='none',
-                        onedhistxnormed=True,onedhistynormed=True,
-                        onedhistcolor='r',zorder=1,onedhistec='r',
-                        bins=30)
-    bovy_plot.bovy_plot(data['METALS'][rcindx],data['ALPHAFE'][rcindx],
-                        'k.',overplot=True,onedhists=True,
-                        onedhistxnormed=True,onedhistynormed=True,
-                        onedhistcolor='k',zorder=0,bins=30)
-    bovy_plot.bovy_end_print('apokasc_rclogg_metalsafe.png')
     bloggindx= (data['LOGG'] >= 1.8)*\
         (data['LOGG'] <= rcmodel.loggteffcut(data['TEFF'],data['METALS'],
                                               upper=True))
