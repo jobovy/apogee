@@ -173,6 +173,112 @@ def apStar(loc_id,apogee_id,dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
+def apogeePlate(dr=None):
+    """
+    NAME:
+       apogeePlate
+    PURPOSE:
+       download the apogeePlate file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-12-27 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apogeePlatePath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                               'apogee','target',os.path.basename(filePath))\
+                               .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
+def apogeeDesign(dr=None):
+    """
+    NAME:
+       apogeeDesign
+    PURPOSE:
+       download the apogeeDesign file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-12-27 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apogeeDesignPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                               'apogee','target',os.path.basename(filePath))\
+                               .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
+def apogeeField(dr=None):
+    """
+    NAME:
+       apogeeField
+    PURPOSE:
+       download the apogeeField file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-12-27 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apogeeFieldPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                               'apogee','target',os.path.basename(filePath))\
+                               .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
+def apogeeObject(field_name,dr=None):
+    """
+    NAME:
+       apogeeObject
+    PURPOSE:
+       download an apogeeObject file
+    INPUT:
+       field_name - name of the field
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2015-12-27 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.apogeeObjectPath(field_name,dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path    
+    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                               'apogee','target','apogeeObject',
+                               os.path.basename(filePath))\
+                               .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    _download_file(downloadPath,filePath,dr)
+    return None
+
 def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
               cfe=0.,nfe=0.,afe=0.,vmicro=2.,
               dr=None,rmHDU1=True,rmHDU2=True):
@@ -450,11 +556,13 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     interrupted= False
     file, tmp_savefilename= tempfile.mkstemp()
     os.close(file) #Easier this way
-    ntries= 0
+    ntries= 1
     while downloading:
         try:
             cmd= ['wget','%s' % downloadPath,
-                  '-O','%s' % tmp_savefilename]
+                  '-O','%s' % tmp_savefilename,
+                  '--read-timeout=10',
+                  '--tries=3']
             if not verbose: cmd.append('-q')
             if spider: cmd.append('--spider')
             subprocess.check_call(cmd)
@@ -462,19 +570,23 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
             downloading= False
             if interrupted:
                 raise KeyboardInterrupt
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
             if not downloading: #Assume KeyboardInterrupt
                 raise
             elif ntries > _MAX_NTRIES:
                 raise IOError('File %s does not appear to exist on the server ...' % (os.path.basename(filePath)))
-            sys.stdout.write('\r'+"KeyboardInterrupt ignored while downloading ...\r")
-            sys.stdout.flush()
+            elif not 'exit status 4' in str(e):
+                interrupted= True
             os.remove(tmp_savefilename)
-            interrupted= True
-            ntries+= 1
         finally:
             if os.path.exists(tmp_savefilename):
-                os.remove(tmp_savefilename)   
+                os.remove(tmp_savefilename)
+        # Try the mirror and the data both
+        if ntries % 2 == 1:
+            downloadPath= downloadPath.replace('data.sdss','mirror.sdss')
+        else:
+            downloadPath= downloadPath.replace('mirror.sdss','data.sdss')
+        ntries+= 1
     sys.stdout.write('\r'+_ERASESTR+'\r')
     sys.stdout.flush()        
     return None

@@ -450,7 +450,10 @@ def apogeePlate(dr=None):
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    return fitsio.read(path.apogeePlatePath(dr=dr))
+    filePath= path.apogeePlatePath(dr=dr)
+    if not os.path.exists(filePath):
+        download.apogeePlate(dr=dr)
+    return fitsio.read(filePath)
 
 def apogeeDesign(dr=None):
     """
@@ -465,7 +468,10 @@ def apogeeDesign(dr=None):
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    return fitsio.read(path.apogeeDesignPath(dr=dr))
+    filePath= path.apogeeDesignPath(dr=dr)
+    if not os.path.exists(filePath):
+        download.apogeeDesign(dr=dr)
+    return fitsio.read(filePath)
 
 def apogeeField(dr=None):
     """
@@ -480,7 +486,10 @@ def apogeeField(dr=None):
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    return fitsio.read(path.apogeeFieldPath(dr=dr))
+    filePath= path.apogeeFieldPath(dr=dr)
+    if not os.path.exists(filePath):
+        download.apogeeField(dr=dr)
+    return fitsio.read(filePath)
 
 def apogeeObject(field_name,dr=None,
                  ak=True,
@@ -500,7 +509,10 @@ def apogeeObject(field_name,dr=None,
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    data= fitsio.read(path.apogeeObjectPath(field_name,dr=dr))
+    filePath= path.apogeeObjectPath(field_name,dr=dr)
+    if not os.path.exists(filePath):
+        download.apogeeObject(field_name,dr=dr)
+    data= fitsio.read(filePath)
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
     elif akvers.lower() == 'wise':
