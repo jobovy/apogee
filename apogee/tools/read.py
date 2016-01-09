@@ -39,9 +39,14 @@ def modelspecOnApStarWavegrid(func):
                 out= out.T
             else:
                 newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
-            newOut[322:3242]= out[:2920]
-            newOut[3648:6048]= out[2920:5320]
-            newOut[6412:8306]= out[5320:]
+            if len(out) == 7214:
+                newOut[322:3242]= out[:2920]
+                newOut[3648:6048]= out[2920:5320]
+                newOut[6412:8306]= out[5320:]
+            else:
+                newOut[246:3274]= out[:3028]
+                newOut[3585:6080]= out[3028:5523]
+                newOut[6344:8335]= out[5523:]
             if len(out.shape) == 2:
                 out= newOut.T
             else:
