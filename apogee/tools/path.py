@@ -50,7 +50,7 @@ _APOGEE_APOKASC_REDUX= os.getenv('APOGEE_APOKASC_REDUX')
 _DR10REDUX='v304'
 _DR11REDUX='v402'
 _DR12REDUX='v603'
-_DR13REDUX='l30d.1'
+_DR13REDUX='l30e.1'
 _CURRENTREDUX='current'
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
@@ -123,7 +123,7 @@ def allStarPath(dr=None,_old=False):
             return os.path.join(specReduxPath,'r5','stars','l25_6d',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == '13':
-            return os.path.join(specReduxPath,'r6','stars','l30d',
+            return os.path.join(specReduxPath,'r6','stars','l30e',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
             return os.path.join(specReduxPath,'current','stars','l25_6d',
