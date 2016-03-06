@@ -1,7 +1,7 @@
 #
 # Catalog creation history:
 #
-# catalog creation requires one to set the APOGEE_REDUX environment variable to the correct reduction
+# catalog creation requires one to set the RESULTS_VERS environment variable to the correct reduction
 #
 # DR11 catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-DR11.fits --addl-logg-cut --rmdups'
 # rmdups was added after the fact because this option changed
@@ -10,7 +10,6 @@
 #
 # current catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-current.fits --addl-logg-cut --rmdups --nostat --nopm'
 #
-import sys
 import os, os.path
 from optparse import OptionParser
 import numpy
