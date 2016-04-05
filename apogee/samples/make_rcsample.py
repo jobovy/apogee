@@ -12,6 +12,9 @@
 #
 import os, os.path
 from optparse import OptionParser
+import csv
+import tempfile
+import subprocess
 import numpy
 import tqdm
 import fitsio
@@ -123,6 +126,56 @@ def make_rcsample(parser):
     data['RC_GALZ']= Z
     #Save
     fitsio.write(savefilename,data,clobber=True)
+    # Add Tycho-2 matches
+    if options.tyc2:
+        data= esutil.numpy_util.add_fields(data,[('TYC2MATCH',numpy.int32),
+                                                 ('TYC1',numpy.int32),
+                                                 ('TYC2',numpy.int32),
+                                                 ('TYC3',numpy.int32)])
+        data['TYC2MATCH']= 0
+        data['TYC1']= -1
+        data['TYC2']= -1
+        data['TYC3']= -1
+        # Write positions
+        posfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        resultfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        print posfilename, resultfilename
+        with open(posfilename,'w') as csvfile:
+            wr= csv.writer(csvfile,delimiter=',',quoting=csv.QUOTE_MINIMAL)
+            wr.writerow(['RA','DEC'])
+            for ii in range(len(data)):
+                wr.writerow([data[ii]['RA'],data[ii]['DEC']])
+        # Send to CDS for matching
+        result= open(resultfilename,'w')
+        try:
+            subprocess.check_call(['curl',
+                                   '-X','POST',
+                                   '-F','request=xmatch',
+                                   '-F','distMaxArcsec=2',
+                                   '-F','RESPONSEFORMAT=csv',
+                                   '-F','cat1=@%s' % os.path.basename(posfilename),
+                                   '-F','colRA1=RA',
+                                   '-F','colDec1=DEC',
+                                   '-F','cat2=vizier:Tycho2',
+                                   'http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync'],
+                                  stdout=result)
+        except subprocess.CalledProcessError:
+            os.remove(posfilename)
+            if os.path.exists(resultfilename):
+                result.close()
+                os.remove(resultfilename)
+        result.close()
+        # Directly match on input RA
+        ma= numpy.loadtxt(resultfilename,delimiter=',',skiprows=1,
+                          usecols=(1,2,7,8,9))
+        iis= numpy.arange(len(data))
+        mai= [iis[data['RA'] == ma[ii,0]][0] for ii in range(len(ma))]
+        data['TYC2MATCH'][mai]= 1
+        data['TYC1'][mai]= ma[:,2]
+        data['TYC2'][mai]= ma[:,3]
+        data['TYC3'][mai]= ma[:,4]
+        os.remove(posfilename)
+        os.remove(resultfilename)
     if not options.nostat:
         #Determine statistical sample and add flag
         apo= apogee.select.apogeeSelect()
@@ -413,6 +466,9 @@ def get_options():
     parser.add_option("--addl-logg-cut",action="store_true", dest="loggcut",
                       default=False,
                       help="If set, apply the ADDL_LOGG_CUT to the sample")
+    parser.add_option("--tyc2",action="store_true", dest="tyc2",
+                      default=False,
+                      help="If set, add matches to Tycho-2 catalog")
     return parser
 
 if __name__ == '__main__':
