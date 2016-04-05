@@ -425,8 +425,6 @@ class apogeeSelect:
                          or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
                          or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
                 statIndx[ii]= True
-        #self._specdata_plateIncomplete= plateIncomplete
-        del self._apogeeDesign
         return statIndx*apread.mainIndx(specdata)
                      
     def plot_selfunc_xy(self,cohort='all',
