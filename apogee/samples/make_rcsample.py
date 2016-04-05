@@ -8,6 +8,8 @@
 #
 # DR12 catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-DR12.fits --addl-logg-cut --rmdups'
 #
+# DR13 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR13.fits --rmdups --tyc2'
+#
 # current catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-current.fits --addl-logg-cut --rmdups --nostat --nopm'
 #
 import os, os.path
