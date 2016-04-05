@@ -1242,7 +1242,7 @@ class apogeeSelect:
         if year is None:
             if appath._APOGEE_REDUX == 'v402': year= 2
             elif appath._APOGEE_REDUX == 'v603' \
-                    or appath._APOGEE_REDUX == 'l30d.1': year= 3
+                    or appath._APOGEE_REDUX == 'l30e.2': year= 3
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         self._year= year
         origobslog= apread.obslog(year=self._year)
