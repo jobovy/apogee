@@ -139,7 +139,6 @@ def make_rcsample(parser):
         # Write positions
         posfilename= tempfile.mktemp('.csv',dir=os.getcwd())
         resultfilename= tempfile.mktemp('.csv',dir=os.getcwd())
-        print posfilename, resultfilename
         with open(posfilename,'w') as csvfile:
             wr= csv.writer(csvfile,delimiter=',',quoting=csv.QUOTE_MINIMAL)
             wr.writerow(['RA','DEC'])
