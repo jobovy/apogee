@@ -195,11 +195,7 @@ def make_rcsample(parser):
     if options.nopm:
         fitsio.write(savefilename,data,clobber=True)       
         return None
-    #Get proper motions
-    from astroquery.vizier import Vizier
-    import astroquery
-    from astropy import units as u
-    import astropy.coordinates as coord
+    #Get proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms.fits'
     if os.path.exists(pmfile):
         pmdata= fitsio.read(pmfile,1)
@@ -208,59 +204,61 @@ def make_rcsample(parser):
                                formats=['f8','f8','f8','f8','f8','f8','i4'],
                                names=['RA','DEC','PMRA','PMDEC',
                                       'PMRA_ERR','PMDEC_ERR','PMMATCH'])
-        rad= u.Quantity(4./3600.,u.degree)
-        v= Vizier(columns=['RAJ2000','DEJ2000','pmRA','pmDE','e_pmRA','e_pmDE'])
-        print("Getting pm data from UCAC-4 catalog")
-        for ii in tqdm.trange(len(data)):
-            #if ii > 100: break
-            pmdata.RA[ii]= data['RA'][ii]
-            pmdata.DEC[ii]= data['DEC'][ii]
-            co= coord.ICRS(ra=data['RA'][ii],
-                           dec=data['DEC'][ii],
-                           unit=(u.degree, u.degree))
-            trying= True
-            while trying:
-                try:
-                    tab= v.query_region(co,rad,catalog='I/322') #UCAC-4 catalog
-                except astroquery.exceptions.TimeoutError:
-                    pass
-                else:
-                    trying= False
-            if len(tab) == 0:
-                pmdata.PMMATCH[ii]= 0
-                print "Didn't find a match for %i ..." % ii
-                continue
-            else:
-                pmdata.PMMATCH[ii]= len(tab)
-                if len(tab[0]['pmRA']) > 1:
-                    print "Found more than 1 match for %i ..." % ii
-            try:
-                pmdata.PMRA[ii]= float(tab[0]['pmRA'])
-            except TypeError:
-                jj= 1
-                while len(tab[0]['pmRA']) > 1 and jj < 4: 
-                    trad= u.Quantity((4.-jj)/3600.,u.degree)
-                    trying= True
-                    while trying:
-                        try:
-                            tab= v.query_region(co,trad,catalog='I/322') #UCAC-4 catalog
-                        except astroquery.exceptions.TimeoutError:
-                            pass
-                        else:
-                            trying= False
-                    jj+= 1
-                if len(tab) == 0:
-                    pmdata.PMMATCH[ii]= 0
-                    print "Didn't find a unambiguous match for %i ..." % ii
-                    continue               
-                pmdata.PMRA[ii]= float(tab[0]['pmRA'])
-            pmdata.PMDEC[ii]= float(tab[0]['pmDE'])
-            pmdata.PMRA_ERR[ii]= float(tab[0]['e_pmRA'])
-            pmdata.PMDEC_ERR[ii]= float(tab[0]['e_pmDE'])
-            if numpy.isnan(float(tab[0]['pmRA'])): pmdata.PMMATCH[ii]= 0
+        # Write positions, again ...
+        posfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        resultfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        with open(posfilename,'w') as csvfile:
+            wr= csv.writer(csvfile,delimiter=',',quoting=csv.QUOTE_MINIMAL)
+            wr.writerow(['RA','DEC'])
+            for ii in range(len(data)):
+                wr.writerow([data[ii]['RA'],data[ii]['DEC']])
+        # Send to CDS for matching
+        result= open(resultfilename,'w')
+        try:
+            subprocess.check_call(['curl',
+                                   '-X','POST',
+                                   '-F','request=xmatch',
+                                   '-F','distMaxArcsec=4',
+                                   '-F','RESPONSEFORMAT=csv',
+                                   '-F','cat1=@%s' % os.path.basename(posfilename),
+                                   '-F','colRA1=RA',
+                                   '-F','colDec1=DEC',
+                                   '-F','cat2=vizier:UCAC4',
+                                   'http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync'],
+                                  stdout=result)
+        except subprocess.CalledProcessError:
+            os.remove(posfilename)
+            if os.path.exists(resultfilename):
+                result.close()
+                os.remove(resultfilename)
+        result.close()
+        # Match back and only keep the closest one
+        ma= numpy.loadtxt(resultfilename,delimiter=',',skiprows=1,
+                          converters={15: lambda s: float(s.strip() or -9999),
+                                      16: lambda s: float(s.strip() or -9999),
+                                      17: lambda s: float(s.strip() or -9999),
+                                      18: lambda s: float(s.strip() or -9999)},
+                          usecols=(4,5,15,16,17,18))
+        h=esutil.htm.HTM()
+        m1,m2,d12 = h.match(data['RA'],data['DEC'],
+                            ma[:,0],ma[:,1],4./3600.,maxmatch=1)
+        pmdata['PMMATCH']= 0
+        pmdata['RA']= data['RA']
+        pmdata['DEC']= data['DEC']
+        pmdata['PMMATCH'][m1]= 1
+        pmdata['PMRA'][m1]= ma[m2,2]
+        pmdata['PMDEC'][m1]= ma[m2,3]
+        pmdata['PMRA_ERR'][m1]= ma[m2,4]
+        pmdata['PMDEC_ERR'][m1]= ma[m2,5]
+        pmdata['PMMATCH'][(pmdata['PMRA'] == -9999) \
+                          +(pmdata['PMDEC'] == -9999) \
+                          +(pmdata['PMRA_ERR'] == -9999) \
+                          +(pmdata['PMDEC_ERR'] == -9999)]= 0
         fitsio.write(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
         pmdata= fitsio.read(pmfile,1)
+        os.remove(posfilename)
+        os.remove(resultfilename)
     #Match proper motions
     try: #These already exist currently, but may not always exist
         data= esutil.numpy_util.remove_fields(data,['PMRA','PMDEC'])
@@ -313,7 +311,7 @@ def make_rcsample(parser):
     data['GALVR'][True-pmindx]= -9999.99
     data['GALVT'][True-pmindx]= -9999.99
     data['GALVZ'][True-pmindx]= -9999.99
-    #Get proper motions
+    #Get PPMXL proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms_ppmxl.fits'
     if os.path.exists(pmfile):
         pmdata= fitsio.read(pmfile,1)
@@ -322,57 +320,61 @@ def make_rcsample(parser):
                                formats=['f8','f8','f8','f8','f8','f8','i4'],
                                names=['RA','DEC','PMRA','PMDEC',
                                       'PMRA_ERR','PMDEC_ERR','PMMATCH'])
-        rad= u.Quantity(4./3600.,u.degree)
-        v= Vizier(columns=['RAJ2000','DEJ2000','pmRA','pmDE','e_pmRA','e_pmDE'])
-        print("Getting pm data from PPMXL catalog")
-        for ii in tqdm.trange(len(data)):
-            #if ii > 100: break
-            pmdata.RA[ii]= data['RA'][ii]
-            pmdata.DEC[ii]= data['DEC'][ii]
-            co= coord.ICRS(ra=data['RA'][ii],
-                           dec=data['DEC'][ii],
-                           unit=(u.degree, u.degree))
-            trying= True
-            while trying:
-                try:
-                    tab= v.query_region(co,rad,catalog='I/317') #PPMXL catalog
-                except astroquery.exceptions.TimeoutError:
-                    pass
-                else:
-                    trying= False
-            if len(tab) == 0:
-                pmdata.PMMATCH[ii]= 0
-                print "Didn't find a match for %i ..." % ii
-                continue
-            else:
-                pmdata.PMMATCH[ii]= len(tab)
-                if len(tab[0]['pmRA']) > 1:
-                    pass
-                    #print "Found more than 1 match for %i ..." % ii
-            try:
-                pmdata.PMRA[ii]= float(tab[0]['pmRA'])
-            except TypeError:
-                #Find nearest
-                cosdists= numpy.zeros(len(tab[0]['pmRA']))
-                for jj in range(len(tab[0]['pmRA'])):
-                    cosdists[jj]= cos_sphere_dist(tab[0]['RAJ2000'][jj],
-                                                  tab[0]['DEJ2000'][jj],
-                                                  data['RA'][ii],
-                                                  data['DEC'][ii])
-                closest= numpy.argmax(cosdists)
-                pmdata.PMRA[ii]= float(tab[0]['pmRA'][closest])
-                pmdata.PMDEC[ii]= float(tab[0]['pmDE'][closest])
-                pmdata.PMRA_ERR[ii]= float(tab[0]['e_pmRA'][closest])
-                pmdata.PMDEC_ERR[ii]= float(tab[0]['e_pmDE'][closest])
-                if numpy.isnan(float(tab[0]['pmRA'][closest])): pmdata.PMMATCH[ii]= 0
-            else:
-                pmdata.PMDEC[ii]= float(tab[0]['pmDE'])
-                pmdata.PMRA_ERR[ii]= float(tab[0]['e_pmRA'])
-                pmdata.PMDEC_ERR[ii]= float(tab[0]['e_pmDE'])
-                if numpy.isnan(float(tab[0]['pmRA'])): pmdata.PMMATCH[ii]= 0
+        # Write positions, again ...
+        posfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        resultfilename= tempfile.mktemp('.csv',dir=os.getcwd())
+        with open(posfilename,'w') as csvfile:
+            wr= csv.writer(csvfile,delimiter=',',quoting=csv.QUOTE_MINIMAL)
+            wr.writerow(['RA','DEC'])
+            for ii in range(len(data)):
+                wr.writerow([data[ii]['RA'],data[ii]['DEC']])
+        # Send to CDS for matching
+        result= open(resultfilename,'w')
+        try:
+            subprocess.check_call(['curl',
+                                   '-X','POST',
+                                   '-F','request=xmatch',
+                                   '-F','distMaxArcsec=4',
+                                   '-F','RESPONSEFORMAT=csv',
+                                   '-F','cat1=@%s' % os.path.basename(posfilename),
+                                   '-F','colRA1=RA',
+                                   '-F','colDec1=DEC',
+                                   '-F','cat2=vizier:PPMXL',
+                                   'http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync'],
+                                  stdout=result)
+        except subprocess.CalledProcessError:
+            os.remove(posfilename)
+            if os.path.exists(resultfilename):
+                result.close()
+                os.remove(resultfilename)
+        result.close()
+        # Match back and only keep the closest one
+        ma= numpy.loadtxt(resultfilename,delimiter=',',skiprows=1,
+                          converters={15: lambda s: float(s.strip() or -9999),
+                                      16: lambda s: float(s.strip() or -9999),
+                                      17: lambda s: float(s.strip() or -9999),
+                                      18: lambda s: float(s.strip() or -9999)},
+                          usecols=(4,5,15,16,19,20))
+        h=esutil.htm.HTM()
+        m1,m2,d12 = h.match(data['RA'],data['DEC'],
+                            ma[:,0],ma[:,1],4./3600.,maxmatch=1)
+        pmdata['PMMATCH']= 0
+        pmdata['RA']= data['RA']
+        pmdata['DEC']= data['DEC']
+        pmdata['PMMATCH'][m1]= 1
+        pmdata['PMRA'][m1]= ma[m2,2]
+        pmdata['PMDEC'][m1]= ma[m2,3]
+        pmdata['PMRA_ERR'][m1]= ma[m2,4]
+        pmdata['PMDEC_ERR'][m1]= ma[m2,5]
+        pmdata['PMMATCH'][(pmdata['PMRA'] == -9999) \
+                          +(pmdata['PMDEC'] == -9999) \
+                          +(pmdata['PMRA_ERR'] == -9999) \
+                          +(pmdata['PMDEC_ERR'] == -9999)]= 0
         fitsio.write(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
         pmdata= fitsio.read(pmfile,1)
+        os.remove(posfilename)
+        os.remove(resultfilename)
     #Match proper motions to ppmxl
     data= esutil.numpy_util.add_fields(data,[('PMRA_PPMXL', numpy.float),
                                              ('PMDEC_PPMXL', numpy.float),
