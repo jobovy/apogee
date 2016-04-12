@@ -227,6 +227,7 @@ def rcsamplePath(dr=None,_old=False):
     if dr is None:
         if _APOGEE_REDUX == 'v402': dr= '11'
         elif _APOGEE_REDUX == 'v603': dr= '12'
+        elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'current': 
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
@@ -236,6 +237,9 @@ def rcsamplePath(dr=None,_old=False):
     else:
         if dr == '11' or dr == '12':
             return os.path.join(_APOGEE_DATA,'dr12','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
+        elif dr == '13':
+            return os.path.join(_APOGEE_DATA,'dr13','apogee','vac','apogee-rc',
                                 'cat','apogee-rc-DR%s.fits' % dr)
 
 def obslogPath(year=None):
