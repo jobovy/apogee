@@ -12,6 +12,7 @@ import numpy
 from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
+_DR13_URL= 'http://data.sdss.org/sas/dr13'
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
@@ -594,6 +595,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
 def _base_url(dr,rc=False):
     if dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
+    elif dr == '13': return _DR13_URL
     else: return _PROPRIETARY_URL
 
 def _dr_string(dr):
