@@ -395,7 +395,7 @@ class apogeeSelect:
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
-                print "Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            
+                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
                 avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
@@ -418,7 +418,7 @@ class apogeeSelect:
             else:
                 tcohort= '???'
                 plateIncomplete+= 1
-#                print "Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate
+#                print("Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate)
             locIndx= specdata['LOCATION_ID'][ii] == self._locations
             if cohortnum > 0 and tcohort != '???' and \
                     ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
@@ -984,8 +984,8 @@ class apogeeSelect:
         """
         photr,specr,fn1,fn2= self._location_Hcdfs(location,cohort)
         if numpy.all(numpy.isnan(photr)):
-            print "Location %i has no spectroscopic data in the statistical sample ..." % location
-            print "Returning ..."
+            print("Location %i has no spectroscopic data in the statistical sample ..." % location)
+            print("Returning ...")
             return None           
         if xrange is None: xrange= [numpy.amin([numpy.amin(photr),numpy.amin(specr)])-0.1,
                                     numpy.amax([numpy.amax(photr),numpy.amax(specr)])+0.1]
@@ -1117,7 +1117,7 @@ class apogeeSelect:
                 indx=(jko >= 0.5)*(jko < 0.8)
             else:
                 indx= jko >= 0.5
-            #print field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
+            #print(field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
             tapogeeObject= tapogeeObject[indx]
             #Cut to relevant magnitude range
             if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
@@ -1135,10 +1135,10 @@ class apogeeSelect:
                 thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             else: #this avoids a warning
                 thmin= numpy.nan
-            #print numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax
+            #print(numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax)
             indx= (tapogeeObject['H'] >= thmin)\
                 *(tapogeeObject['H'] <= thmax)
-            #print numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx))
+            #print(numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
             tapogeeObject= tapogeeObject[indx]
             photdata['%i' % self._locations[ii]]= tapogeeObject
         sys.stdout.write('\r'+_ERASESTR+'\r')

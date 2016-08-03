@@ -66,7 +66,7 @@ def test_windows(options):
             elemPath= apwindow.path(elem,dr=options.dr)
             if not os.path.exists(elemPath): continue
             # Simulate deltaAbu up and down
-            print "Working on %s" % (elem.capitalize())
+            print("Working on %s" % (elem.capitalize()))
             abu= [atomic_number(elem),-options.deltaAbu,options.deltaAbu]
             if options.moog:
                 synspec= \

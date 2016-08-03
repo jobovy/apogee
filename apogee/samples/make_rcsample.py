@@ -36,7 +36,7 @@ def make_rcsample(parser):
         #Create savefilename if not given
         savefilename= os.path.join(appath._APOGEE_DATA,
                                    'rcsample_'+appath._APOGEE_REDUX+'.fits')
-        print "Saving to %s ..." % savefilename
+        print("Saving to %s ..." % savefilename)
     #Read the base-sample
     data= apread.allStar(adddist=_ADDHAYDENDIST,rmdups=options.rmdups)
     #Remove a bunch of fields that we do not want to keep
@@ -128,7 +128,7 @@ def make_rcsample(parser):
     data['ADDL_LOGG_CUT']= ((data['TEFF']-4800.)/1000.+2.75) > data['LOGG']
     if options.loggcut:
         data= data[data['ADDL_LOGG_CUT'] == 1]
-    print "Making catalog of %i objects ..." % len(data)
+    print("Making catalog of %i objects ..." % len(data))
     #Add distances
     data= esutil.numpy_util.add_fields(data,[('RC_DIST', float),
                                              ('RC_DM', float),

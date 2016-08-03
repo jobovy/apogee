@@ -53,9 +53,11 @@ if _INSTALL_FERRE:
 
 if _INSTALL_FERRE:
     # Download the code
-    _FERRE_FILE= 'ferre_4.5.6.tar.gz'
-    _FERRE_URL= 'http://leda.as.utexas.edu/ferre/%s' % _FERRE_FILE
-    print '\033[1m'+"Downloading and installing FERRE from %s ..." % _FERRE_URL +'\033[0m'
+    #_FERRE_FILE= 'ferre_4.5.6.tar.gz'
+    _FERRE_FILE= 'ferre_4.6.6.tar.gz'
+    #_FERRE_URL= 'http://leda.as.utexas.edu/ferre/%s' % _FERRE_FILE
+    _FERRE_URL= 'http://www.as.utexas.edu/~hebe/ferre/%s' % _FERRE_FILE
+    print('\033[1m'+"Downloading and installing FERRE from %s ..." % _FERRE_URL +'\033[0m')
     # Create temporary directory
     tmpdir= tempfile.mkdtemp(dir='./')
     os.mkdir(os.path.join(tmpdir,'ferre'))
@@ -63,13 +65,13 @@ if _INSTALL_FERRE:
         subprocess.check_call(['wget',_FERRE_URL,'-O',
                                os.path.join(tmpdir,'ferre',_FERRE_FILE)])
     except subprocess.CalledProcessError:
-        print '\033[1m'+"Downloading FERRE from %s failed ..." % _FERRE_URL +'\033[0m'
+        print('\033[1m'+"Downloading FERRE from %s failed ..." % _FERRE_URL +'\033[0m')
     # Unpack and install
     os.chdir(os.path.join(tmpdir,'ferre'))
     try:
         subprocess.check_call(['tar','xvzf',_FERRE_FILE])
     except subprocess.CalledProcessError:
-        print '\033[1m'+"Untarring/gunzipping FERRE failed ..." % _FERRE_URL +'\033[0m'
+        print('\033[1m'+"Untarring/gunzipping FERRE failed ..." % _FERRE_URL +'\033[0m')
     os.chdir('src')
     # Change flen in share.f90
     with open("tmp.f90", "w") as fout:
@@ -90,7 +92,7 @@ if _INSTALL_FERRE:
         else:
             subprocess.check_call(['make'])
     except subprocess.CalledProcessError:
-        print '\033[1m'+"Compiling FERRE failed ..." % _FERRE_URL +'\033[0m'
+        print('\033[1m'+"Compiling FERRE failed ..." % _FERRE_URL +'\033[0m')
     os.rename('a.out','../../../ferre')
     os.rename('ascii2bin','../../../ascii2bin')
     # Remove everything
@@ -98,7 +100,7 @@ if _INSTALL_FERRE:
     try:
         subprocess.check_call(['rm','-rf',tmpdir])
     except subprocess.CalledProcessError:
-        print '\033[1m'+"Removing FERRE temporary files failed ..." % _FERRE_URL +'\033[0m'
+        print('\033[1m'+"Removing FERRE temporary files failed ..." % _FERRE_URL +'\033[0m')
     shutil.copy('ferre',get_setuptools_script_dir())
     shutil.copy('ascii2bin',get_setuptools_script_dir())
 
