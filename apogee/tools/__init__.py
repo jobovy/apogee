@@ -1,8 +1,8 @@
 import os.path
 import numpy
 from scipy import optimize
-import path as appath
-import download as download
+from . import path as appath
+from . import download as download
 import fitsio
 from periodictable import elements
 try:

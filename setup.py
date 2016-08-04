@@ -127,7 +127,10 @@ setup(name='apogee',
                     'apogee/modelspec':['scripts/makemoogmodel.awk'],},
       dependency_links = ['https://github.com/jobovy/galpy/tarball/master#egg=galpy',
                           'https://github.com/jobovy/isodist/tarball/master#egg=isodist'],
+#      install_requires=['numpy','scipy','matplotlib',
+#                        'fitsio','esutil','galpy',
+#                        'isodist','periodictable','tqdm']
       install_requires=['numpy','scipy','matplotlib',
-                        'fitsio','esutil','galpy',
+                        'fitsio','galpy',
                         'isodist','periodictable','tqdm']
       )
