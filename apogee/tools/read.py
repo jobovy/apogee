@@ -19,8 +19,13 @@ from functools import wraps
 import os
 import sys
 import copy
+import warnings
 import numpy
-import esutil
+try:
+    import esutil
+    _ESUTIL_LOADED= True
+except ImportError:
+    _ESUTIL_LOADED= False
 import fitsio
 import tqdm
 from apogee.tools import path, paramIndx, download
@@ -159,17 +164,20 @@ def allStar(rmcommissioning=True,
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
-    data= esutil.numpy_util.add_fields(data,[('J0', float),
-                                             ('H0', float),
-                                             ('K0', float)])
-    data['J0']= data['J']-aj
-    data['H0']= data['H']-ah
-    data['K0']= data['K']-data[aktag]
-    data['J0'][(data[aktag] <= -50.)]= -9999.9999
-    data['H0'][(data[aktag] <= -50.)]= -9999.9999
-    data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    if _ESUTIL_LOADED:
+        data= esutil.numpy_util.add_fields(data,[('J0', float),
+                                                 ('H0', float),
+                                                 ('K0', float)])
+        data['J0']= data['J']-aj
+        data['H0']= data['H']-ah
+        data['K0']= data['K']-data[aktag]
+        data['J0'][(data[aktag] <= -50.)]= -9999.9999
+        data['H0'][(data[aktag] <= -50.)]= -9999.9999
+        data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    else:
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     #Add distances
-    if adddist:
+    if adddist and _ESUTIL_LOADED:
         dist= fitsio.read(path.distPath(),1)
         h=esutil.htm.HTM()
         m1,m2,d12 = h.match(dist['RA'],dist['DEC'],
@@ -223,9 +231,11 @@ def allStar(rmcommissioning=True,
             data['BPG_DIST1_MEAN']= dist['BPG_dist1_mean']
             data['HAYDEN_DIST_PEAK']= 10.**(dist['HAYDEN_distmod_PEAK']/5.-2.)
             data['SCHULTHEIS_DIST']= dist['SCHULTHEIS_dist']
-    if path._APOGEE_REDUX.lower() == 'current' \
-            or 'l30' in path._APOGEE_REDUX.lower() \
-            or int(path._APOGEE_REDUX[1:]) > 600:
+    elif adddist:
+        warnings.warn("Distances not added because matching requires the uninstalled esutil module",RuntimeWarning)
+    if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
+                               or 'l30' in path._APOGEE_REDUX.lower() \
+                               or int(path._APOGEE_REDUX[1:]) > 600):
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
@@ -301,15 +311,18 @@ def allVisit(rmcommissioning=True,
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
-    data= esutil.numpy_util.add_fields(data,[('J0', float),
-                                             ('H0', float),
-                                             ('K0', float)])
-    data['J0']= data['J']-aj
-    data['H0']= data['H']-ah
-    data['K0']= data['K']-data[aktag]
-    data['J0'][(data[aktag] <= -50.)]= -9999.9999
-    data['H0'][(data[aktag] <= -50.)]= -9999.9999
-    data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    if _ESUTIL_LOADED:
+        data= esutil.numpy_util.add_fields(data,[('J0', float),
+                                                 ('H0', float),
+                                                 ('K0', float)])
+        data['J0']= data['J']-aj
+        data['H0']= data['H']-ah
+        data['K0']= data['K']-data[aktag]
+        data['J0'][(data[aktag] <= -50.)]= -9999.9999
+        data['H0'][(data[aktag] <= -50.)]= -9999.9999
+        data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    else:
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
     return data
         
 def apokasc(rmcommissioning=True,
@@ -327,6 +340,8 @@ def apokasc(rmcommissioning=True,
     HISTORY:
        2013-10-01 - Written - Bovy (IAS)
     """
+    if not _ESUTIL_LOADED:
+        raise ImportError("apogee.tools.read.apokasc function requires the esutil module for catalog matching")
     #read allStar file
     data= allStar(rmcommissioning=rmcommissioning,main=main,adddist=False,
                   rmdups=False)
@@ -528,15 +543,18 @@ def apogeeObject(field_name,dr=None,
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
-    data= esutil.numpy_util.add_fields(data,[('J0', float),
-                                             ('H0', float),
-                                             ('K0', float)])
-    data['J0']= data['J']-aj
-    data['H0']= data['H']-ah
-    data['K0']= data['K']-data[aktag]
-    data['J0'][(data[aktag] <= -50.)]= -9999.9999
-    data['H0'][(data[aktag] <= -50.)]= -9999.9999
-    data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    if _ESUTIL_LOADED:   
+        data= esutil.numpy_util.add_fields(data,[('J0', float),
+                                                 ('H0', float),
+                                                 ('K0', float)])
+        data['J0']= data['J']-aj
+        data['H0']= data['H']-ah
+        data['K0']= data['K']-data[aktag]
+        data['J0'][(data[aktag] <= -50.)]= -9999.9999
+        data['H0'][(data[aktag] <= -50.)]= -9999.9999
+        data['K0'][(data[aktag] <= -50.)]= -9999.9999
+    else:
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
     return data
 
 @specOnAspcapWavegrid
@@ -733,6 +751,8 @@ def remove_duplicates(data):
     HISTORY:
        2014-06-23 - Written - Bovy (IAS)
     """
+    if not _ESUTIL_LOADED:
+        raise ImportError("apogee.tools.read.remove_duplicates function requires the esutil module for catalog matching")
     tdata= copy.copy(data)
     #Match the data against itself
     h=esutil.htm.HTM()

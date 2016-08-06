@@ -96,17 +96,28 @@ are directly callable (by, for example, copying them to
 		 sudo cp bsyn_lu /usr/local/bin && sudo chmod u+x /usr/local/bin/bsyn_lu
 		 cd ../ && export TURBODATA=$PWD/DATA
 
-DEPENDENCIES
-=============
+DEPENDENCIES AND PYTHON VERSIONS
+=================================
 
 This package requires `NumPy <http://numpy.scipy.org/>`__, `Scipy
 <http://www.scipy.org/>`__, `Matplotlib
 <http://matplotlib.sourceforge.net/>`__, `fitsio
 <http://github.com/esheldon/fitsio>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
-<http://github.com/jobovy/galpy>`__,  `isodist
+<http://github.com/jobovy/galpy>`__, `isodist
 <http://github.com/jobovy/isodist>`__, and `periodictable
-<https://pypi.python.org/pypi/periodictable>`__.
+<https://pypi.python.org/pypi/periodictable>`__. Because `esutil
+<http://code.google.com/p/esutil/>`__ does not currently support
+python 3, it is not listed as a dependency in the ``setup.py`` file
+and must be installed separately; if ``esutil`` is not installed, some
+functionality in ``apogee.tools.read`` is lost for which warnings are
+issued.
+
+The ``apogee`` package should work both in python 2 and 3 (thanks to
+`@mrawls <https://github.com/mrawls>`__ for adding python 3
+compatibility). Please open an `issue
+<https://github.com/jobovy/apogee/issues>`__ if you find a part of the
+code that does not support python 3.
 
 DATA FILES AND ENVIRONMENT VARIABLES
 =====================================

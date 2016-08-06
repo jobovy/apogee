@@ -127,12 +127,7 @@ setup(name='apogee',
                     'apogee/modelspec':['scripts/makemoogmodel.awk'],},
       dependency_links = ['https://github.com/jobovy/galpy/tarball/master#egg=galpy',
                           'https://github.com/jobovy/isodist/tarball/master#egg=isodist'],
-#     NOTE: esutil is not python3 compatible and install will fail
       install_requires=['numpy','scipy','matplotlib',
-                        'fitsio','esutil','galpy',
+                        'fitsio','galpy',
                         'isodist','periodictable','tqdm']
-#      OPTION TO INSTALL WITHOUT esutil (functionality of apogee will be limited)
-#      install_requires=['numpy','scipy','matplotlib',
-#                        'fitsio','galpy',
-#                        'isodist','periodictable','tqdm']
       )
