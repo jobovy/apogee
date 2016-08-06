@@ -37,6 +37,8 @@ or
 
 ``python setup.py install --prefix=/some/directory/``
 
+NOTE: at the moment, apogee only supports python2 due to the `esutil` dependency.
+
 Installing FERRE
 ^^^^^^^^^^^^^^^^^
 
@@ -117,6 +119,10 @@ VARIABLES**)
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
 * **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13)
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
+
+In order to use this code, you will need to set these environment variables
+on your machine with commands like `export SDSS_LOCAL_SAS_MIRROR="/desired/path/to/SDSS/data"`
+which can be saved in `~/.bashrc` or a similar file.
 
 **NEW**: Data files mirror the SDSS SAS as much as possible
 (previously, many data files lived in the $SDSS_LOCAL_SAS_MIRROR
