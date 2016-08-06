@@ -116,7 +116,7 @@ issued.
 The ``apogee`` package should work both in python 2 and 3 (thanks to
 `@mrawls <https://github.com/mrawls>`__ for adding python 3
 compatibility). Please open an `issue
-<https://github.com/jobovy/apogee/issues`__ if you find a part of the
+<https://github.com/jobovy/apogee/issues>`__ if you find a part of the
 code that does not support python 3.
 
 DATA FILES AND ENVIRONMENT VARIABLES
