@@ -37,7 +37,6 @@ or
 
 ``python setup.py install --prefix=/some/directory/``
 
-NOTE: at the moment, apogee only supports python2 due to the `esutil` dependency.
 
 Installing FERRE
 ^^^^^^^^^^^^^^^^^
