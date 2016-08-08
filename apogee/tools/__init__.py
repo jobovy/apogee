@@ -40,7 +40,7 @@ def paramIndx(param):
     if param.lower() == 'alpha': return _PARAM_SYMBOL.index('o mg si s ca ti')
     else: 
         try:
-            return _PARAM_SYMBOL.index(param.lower().decode("utf-8"))
+            return _PARAM_SYMBOL.index(param.lower())
         except ValueError:
             raise KeyError("Stellar parameter %s not recognized" % param)
 

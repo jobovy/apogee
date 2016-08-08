@@ -141,8 +141,8 @@ def allStar(rmcommissioning=True,
             sys.stdout.flush()
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
-        indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
+        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
         data= data[True-indx]
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
@@ -275,8 +275,8 @@ def allVisit(rmcommissioning=True,
     if raw: return data
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
-        indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
+        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
         data= data[True-indx]
     if main:
         indx= mainIndx(data)
@@ -771,8 +771,8 @@ def remove_duplicates(data):
                               2./3600.,maxmatch=0, #all matches
                               htmrev2=htmrev2,minid=minid,maxid=maxid)
         #If some matches are commissioning data or have bad ak, rm from consideration
-        comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
-        comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
+        comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+        comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
         goodak= (True-numpy.isnan(data['AK_TARG'][nm2]))\
             *(data['AK_TARG'][nm2] > -50.)
         hisnr= numpy.argmax(data['SNR'][nm2]*(True-comindx)*goodak) #effect. make com zero SNR
