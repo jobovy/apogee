@@ -426,8 +426,20 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
             return os.path.join(specReduxPath,'r5','stars','l25_6d',
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))    
+    elif dr == '13':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r6','stars','l30e',
+                                _redux_dr(dr=dr),loc_id.strip(),
+                                'aspcapStar-r6-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id.strip()))
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r6','stars','l30e',
+                                _redux_dr(dr=dr),'%i' % loc_id,
+                                'aspcapStar-r6-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
-    
     elif dr == 'current':
         if isinstance(loc_id,str): #1m
             return os.path.join(specReduxPath,'current','stars','l25_6d',
@@ -476,7 +488,17 @@ def apStarPath(loc_id,apogee_id,dr=None):
             return os.path.join(specReduxPath,'r5','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r5-%s.fits' % apogee_id)
-
+    elif dr == '13':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r6','stars','apo1m',
+                                loc_id.strip(),
+                                'apStar-r6-%s.fits' % apogee_id.strip())
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r6','stars','apo25m',
+                                '%i' % loc_id,
+                                'apStar-r6-%s.fits' % apogee_id)
     elif dr == 'current':
         if isinstance(loc_id,str): #1m
             return os.path.join(specReduxPath,'current','stars','apo1m',
