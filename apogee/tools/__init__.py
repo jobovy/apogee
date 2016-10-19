@@ -1,6 +1,6 @@
 import os.path
 import numpy
-from scipy import optimize
+from scipy import optimize, interpolate
 from . import path as appath
 from . import download as download
 import fitsio
@@ -23,6 +23,19 @@ else:
                             if elem != 'ci' and elem != 'tiii')
     _ELEM_NUMBER_DICT['CI']= elements.__dict__['C'].number
     _ELEM_NUMBER_DICT['TiII']= elements.__dict__['Ti'].number
+
+# Detector limits used in pix2wv and wv2pix
+apStarBlu_lo = 322
+apStarBlu_hi = 3242
+apStarGre_lo = 3648
+apStarGre_hi = 6048
+apStarRed_lo = 6412
+apStarRed_hi = 8306
+aspcapBlu_start = 0
+aspcapGre_start = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
+aspcapRed_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
+aspcapTotal = apStarRed_hi-apStarRed_lo+aspcapRed_start
+
 def paramIndx(param):
     """
     NAME:
@@ -174,3 +187,145 @@ def toApStarGrid(spec):
         return out[0]
     else:
         return out
+
+totalpix = 8575 # total pixels on the apstar grid
+wv0 = 10**4.179 # starting wavelength
+wvs = numpy.zeros(totalpix) # create empty array for wavelengths
+# Assign all wavelengths
+wvs[0] = wv0
+for i in range(1,totalpix):
+    wvs[i] = 10**(6e-6 + numpy.log10(wvs[i-1]))
+wvs = wvs[::-1]
+pixels = numpy.arange(0,totalpix)
+aspcapwvs = toAspcapGrid(wvs)
+apStar_pixel_interp = interpolate.interp1d(wvs,pixels,kind='linear',
+                                           bounds_error=False)
+
+def pix2wv(pix,apStarWavegrid=False):
+    """
+    NAME:
+       pix2wv
+    PURPOSE:
+       convert pixel to wavelength
+    INPUT:
+       pix - pixel (int), range of pixels (tuple) or list of pixels (list/numpy array)
+             float input will be converted to integers
+       apStarWavegrid = (False) uses aspcapStarWavegrid by default
+    OUTPUT:
+       wavelength(s) in Angstroms corresponding to input pixel(s)
+    HISTORY:
+       2016-10-18 - Written - Price-Jones
+    """
+    # choose wavelength array to source from
+    if apStarWavegrid:
+        wvlist = wvs
+        maxpix = totalpix
+    elif not apStarWavegrid:
+        wvlist = aspcapwvs
+        maxpix = aspcapTotal
+    # Check input cases
+    if isinstance(pix,float):
+        pix = int(pix)
+    if isinstance(pix,int):
+        if pix >= 0 and pix < maxpix:
+            return wvlist[pix]
+        else:
+            print 'pixel outside allowed pixel range'
+            return numpy.nan
+    elif isinstance(pix,tuple):
+        if pix[0] >= 0 and pix[1] < maxpix:
+            return wvlist[int(pix[0]):int(pix[1]):int(pix[2])]
+        else:
+            print 'pixel outside allowed pixel range'
+            return numpy.nan
+    elif isinstance(pix,(list,numpy.ndarray)):
+        wavelengths = numpy.zeros(len(pix))
+        for p in range(len(pix)):
+            if pix[p] >= 0 and pix[p] < maxpix:
+                wavelengths[p] = wvlist[int(pix[p])]
+            else:
+                print 'pixel outside allowed pixel range'
+                wavelength[p] = numpy.nan
+        return wavelengths
+    # If input not recognized inform the user
+    elif not isinstance(wv,(int,float,tuple,list,numpy.ndarray)):
+        print 'unrecognized pixel input'
+        return None
+
+def wv2pix(wv,apStarWavegrid=False):
+    """
+    NAME:
+       wv2pix
+    PURPOSE:
+       convert wavelength to pixel using interpolated function
+    INPUT:
+       wv - wavelength (int), range of wavelengths (tuple) or list of wavelengths
+            (list/numpy array) in Angstroms
+       apStarWavegrid = (False) uses aspcapStarWavegrid by default
+    OUTPUT:
+       array of pixel(s) corresponding to input wavelength(s)
+       nan - indicates input wavelength(s) outside the range
+       None - indicates input wavelength type not recognized
+       0 - indicates the wavelength can be found but is outside the bounds of the a
+           spcapStarWavegrid
+    HISTORY:
+       2016-10-18 - Written - Price-Jones
+    """
+    # Check input cases
+    if isinstance(wv,(int,float)):
+        if wv >= wvs[-1] and wv <= wvs[0]:
+            pixels = apStar_pixel_interp(wv)
+        else:
+            print 'wavelength outside wavelength range'
+            return numpy.nan 
+    elif isinstance(wv,tuple):
+        if wv[0] >= wvs[-1] and wv[1] <= wvs[0]:
+            wvlist = numpy.arange(wv[0],wv[1],wv[2])
+            pixels = apStar_pixel_interp(wvlist)
+        else:
+            print 'range bounds lie outside wavelength range'
+            return numpy.nan       
+    elif isinstance(wv,(list,numpy.ndarray)):
+        pixels = numpy.zeros(len(wv))
+        allinside=True
+        for w in range(len(wv)):
+            if wv[w] >= wvs[-1] and wv[w] <= wvs[0]:
+                pixels[w] = apStar_pixel_interp(wv[w])
+            else:
+                allinside=False
+                pixels[w] = numpy.nan
+        if not allinside:
+            print 'some wavelengths outside wavelength range'
+    # If input not recognized inform the user
+    elif not isinstance(wv,(int,float,tuple,list,numpy.ndarray)):
+        print 'unrecognized wavelength input'
+        return None
+
+    if apStarWavegrid:
+        return pixels.astype(int)
+
+    # If on aspcapStarWavegrid, convert appropriately    
+    elif not apStarWavegrid:        
+        # find where pixel list matches detectors
+        blue = numpy.where((pixels >= apStarBlu_lo) & (pixels < apStarBlu_hi))
+        green = numpy.where((pixels >= apStarGre_lo) & (pixels < apStarGre_hi))
+        red = numpy.where((pixels >= apStarRed_lo) & (pixels < apStarRed_hi))
+        # find where pixel list does not match detectors
+        if pixels.size > 1:
+            nomatch = (numpy.array([i for i in range(len(pixels)) if i not in blue[0] and i not in green[0] and i not in red[0]]),)
+             # adjust pixel values to match aspcap wavegrid
+            pixels[blue] -= (apStarBlu_lo-aspcapBlu_start)
+            pixels[green] -= (apStarGre_lo-aspcapGre_start)
+            pixels[red] -= (apStarRed_lo-aspcapRed_start)
+        # Case of single wavelength
+        elif pixels.size == 1:
+            if blue[0].size==1:
+                pixels -= (apStarBlu_lo-aspcapBlu_start)
+            elif green[0].size==1:
+                pixels -= (apStarGre_lo-aspcapGre_start)
+            elif red[0].size==1:
+                pixels -= (apStarRed_lo-aspcapRed_start)
+            elif blue[0].size==0 and green[0].size==0 and red[0].size==0:
+                nomatch = ([0],)
+                pixels = 0
+        return numpy.floor(pixels).astype(int)
