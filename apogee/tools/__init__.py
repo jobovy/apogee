@@ -26,16 +26,16 @@ else:
     _ELEM_NUMBER_DICT['TiII']= elements.__dict__['Ti'].number
 
 # Detector limits used in pix2wv and wv2pix
-apStarRed_lo = 322
-apStarRed_hi = 3242
+apStarBlu_lo = 322
+apStarBlu_hi = 3242
 apStarGre_lo = 3648
 apStarGre_hi = 6048
-apStarBlu_lo = 6412
-apStarBlu_hi = 8306
-aspcapRed_start = 0
-aspcapGre_start = apStarRed_hi-apStarRed_lo+aspcapRed_start
-aspcapBlu_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
-aspcapTotal = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
+apStarRed_lo = 6412
+apStarRed_hi = 8306
+aspcapBlu_start = 0
+aspcapGre_start = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
+aspcapRed_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
+aspcapTotal = apStarRed_hi-apStarRed_lo+aspcapRed_start
 
 def paramIndx(param):
     """
