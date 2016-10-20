@@ -37,6 +37,16 @@ aspcapGre_start = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
 aspcapRed_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
 aspcapTotal = apStarRed_hi-apStarRed_lo+aspcapRed_start
 
+# Wavegrid parameters used in apStarWavegrid and pix2wv
+_LOG10LAMBDA0= 4.179 
+_DLOG10LAMBDA= 6.*10.**-6.
+_NLAMBDA= 8575
+
+def apStarWavegrid():
+    return 10.**numpy.arange(_LOG10LAMBDA0,
+                             _LOG10LAMBDA0+_NLAMBDA*_DLOG10LAMBDA,
+                             _DLOG10LAMBDA)
+
 def paramIndx(param):
     """
     NAME:
@@ -189,15 +199,9 @@ def toApStarGrid(spec):
     else:
         return out
 
-totalpix = 8575 # total pixels on the apstar grid
-wv0 = 10**4.179 # starting wavelength
-wvs = numpy.zeros(totalpix) # create empty array for wavelengths
-# Assign all wavelengths
-wvs[0] = wv0
-for i in range(1,totalpix):
-    wvs[i] = 10**(6e-6 + numpy.log10(wvs[i-1]))
-pixels = numpy.arange(0,totalpix)
+wvs = apStarWavegrid()
 aspcapwvs = toAspcapGrid(wvs)
+pixels = numpy.arange(0,_NLAMBDA)
 apStar_pixel_interp = interpolate.interp1d(wvs,pixels,kind='linear',
                                            bounds_error=False)
 
@@ -219,7 +223,7 @@ def pix2wv(pix,apStarWavegrid=False):
     # choose wavelength array to source from
     if apStarWavegrid:
         wvlist = wvs
-        maxpix = totalpix
+        maxpix = _NLAMBDA
     elif not apStarWavegrid:
         wvlist = aspcapwvs
         maxpix = aspcapTotal
@@ -239,13 +243,15 @@ def pix2wv(pix,apStarWavegrid=False):
             warnings.warn("pixel bounds outside allowed pixel range",RuntimeWarning)
             return numpy.nan
     elif isinstance(pix,(list,numpy.ndarray)):
+        if isinstance(pix,list):
+          pix = numpy.array(pix)
         wavelengths = numpy.zeros(len(pix))
-        for p in range(len(pix)):
-            if pix[p] >= 0 and pix[p] < maxpix:
-                wavelengths[p] = wvlist[int(pix[p])]
-            else:
-                warnings.warn("pixel outside allowed pixel range",RuntimeWarning)
-                wavelength[p] = numpy.nan
+        valid = (pix>=0) & (pix<maxpix)
+        invalid = (pix<0) | (pix>maxpix)
+        wavelengths[valid] = wvlist[pix[valid].astype(int)]
+        wavelengths[invalid] = numpy.nan
+        if sum(invalid)!=0:
+            warnings.warn("pixel outside allowed pixel range",RuntimeWarning)
         return wavelengths
     # If input not recognized inform the user
     elif not isinstance(wv,(int,float,tuple,list,numpy.ndarray)):
@@ -286,15 +292,14 @@ def wv2pix(wv,apStarWavegrid=False):
             warnings.warn("wavelength bounds outside allowed wavelength range",RuntimeWarning)
             return numpy.nan       
     elif isinstance(wv,(list,numpy.ndarray)):
+        if isinstance(wv,list):
+          wv = numpy.array(wv)
         pixels = numpy.zeros(len(wv))
-        allinside=True
-        for w in range(len(wv)):
-            if wv[w] >= wvs[0] and wv[w] <= wvs[-1]:
-                pixels[w] = apStar_pixel_interp(wv[w])
-            else:
-                allinside=False
-                pixels[w] = numpy.nan
-        if not allinside:
+        valid = (wv>=wvs[0]) & (wv<wvs[-1])
+        invalid = (wv<wvs[0]) | (wv>wvs[-1])
+        pixels[valid] = apStar_pixel_interp(wv[valid])
+        pixels[invalid] = numpy.nan
+        if sum(invalid)!=0:
             warnings.warn("wavelength outside allowed wavelength range",RuntimeWarning)
     # If input not recognized inform the user
     elif not isinstance(wv,(int,float,tuple,list,numpy.ndarray)):
