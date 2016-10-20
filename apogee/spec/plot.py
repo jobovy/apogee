@@ -10,10 +10,8 @@ from matplotlib.ticker import NullFormatter
 from matplotlib.backends.backend_pdf import PdfPages
 import apogee.spec.window as apwindow
 import apogee.tools.read as apread
-from apogee.tools import air2vac, atomic_number
-_LOG10LAMBDA0= 4.179 
-_DLOG10LAMBDA= 6.*10.**-6.
-_NLAMBDA= 8575
+from apogee.tools import air2vac, atomic_number,apStarWavegrid
+
 _LAMBDASUB= 15000
 _STARTENDSKIP= 30
 # Good, clean Lines, mainly from Smith et al. (2013)
@@ -80,11 +78,6 @@ _HBRLA_lines= [15704.960]
 _HBR_lines= [15004.970,15043.157,15086.906,15137.367,15264.717,
              15345.992,15443.148,15560.708,15884.888,16113.721,
              16411.681,16811.117]
-
-def apStarWavegrid():
-    return 10.**numpy.arange(_LOG10LAMBDA0,
-                             _LOG10LAMBDA0+_NLAMBDA*_DLOG10LAMBDA,
-                             _DLOG10LAMBDA)
 
 def specPlotInputDecorator(func):
     """Decorator to parse input to spectral plotting"""
