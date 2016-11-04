@@ -24,6 +24,7 @@ import numpy
 try:
     import esutil
     _ESUTIL_LOADED= True
+    _ESUTIL_VERSION= [int(v) for v in esutil.__version__.split('.')]
 except ImportError:
     _ESUTIL_LOADED= False
 import fitsio
@@ -755,21 +756,30 @@ def remove_duplicates(data):
         raise ImportError("apogee.tools.read.remove_duplicates function requires the esutil module for catalog matching")
     tdata= copy.copy(data)
     #Match the data against itself
-    h=esutil.htm.HTM()
-    htmrev2,minid,maxid = h.match_prepare(data['RA'],data['DEC'])
-    m1,m2,d12 = h.match(data['RA'],data['DEC'],
-                        data['RA'],data['DEC'],
-                        2./3600.,maxmatch=0, #all matches
-                        htmrev2=htmrev2,minid=minid,maxid=maxid)
+    if _ESUTIL_VERSION[1] >= 5 and _ESUTIL_VERSION >= 3:
+        h= esutil.htm.Matcher(10,data['RA'],data['DEC'])
+        m1,m2,d12 = h.match(data['RA'],data['DEC'],
+                            2./3600.,maxmatch=0) #all matches
+    else:
+        h=esutil.htm.HTM()
+        htmrev2,minid,maxid = h.match_prepare(data['RA'],data['DEC'])
+        m1,m2,d12 = h.match(data['RA'],data['DEC'],
+                            data['RA'],data['DEC'],
+                            2./3600.,maxmatch=0, #all matches
+                            htmrev2=htmrev2,minid=minid,maxid=maxid)
     sindx= numpy.argsort(m1)
     sm1= m1[sindx]
     dup= sm1[1:] == sm1[:-1]
     for d in tqdm.tqdm(sm1[:-1][dup]):
         #Find the matches for just this duplicate
-        nm1,nm2,nd12= h.match(data['RA'][d],data['DEC'][d],
-                              data['RA'],data['DEC'],
-                              2./3600.,maxmatch=0, #all matches
-                              htmrev2=htmrev2,minid=minid,maxid=maxid)
+        if _ESUTIL_VERSION[1] >= 5 and _ESUTIL_VERSION >= 3:
+            nm1,nm2,nd12= h.match(data['RA'][d],data['DEC'][d],
+                                  2./3600.,maxmatch=0) #all matches
+        else:
+            nm1,nm2,nd12= h.match(data['RA'][d],data['DEC'][d],
+                                  data['RA'],data['DEC'],
+                                  2./3600.,maxmatch=0, #all matches
+                                  htmrev2=htmrev2,minid=minid,maxid=maxid)
         #If some matches are commissioning data or have bad ak, rm from consideration
         comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
         comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
