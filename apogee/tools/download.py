@@ -385,8 +385,9 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
                                     stdin=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     cwd=os.path.dirname(filePath))
-                p.stdin.write(os.path.basename(filePath)+'\n')
-                p.stdin.write('unf\n')
+                p.stdin.write((os.path.basename(filePath)+'\n')\
+                                  .encode('utf-8'))
+                p.stdin.write(b'unf\n')
                 stdout, stderr= p.communicate()
             except subprocess.CalledProcessError:
                 print("Conversion of %s to binary failed ..." % (os.path.basename(filePath)))
