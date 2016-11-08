@@ -473,8 +473,8 @@ def weedout(**kwargs):
                             stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-        p.stdin.write('weedout.par\n')
-        p.stdin.write('%g\n' % keepratio)
+        p.stdin.write(b'weedout.par\n')
+        p.stdin.write(b'%g\n' % keepratio)
         stdout, stderr= p.communicate()
     except subprocess.CalledProcessError:
         print("Running weedout failed ...")
@@ -702,7 +702,7 @@ def moogsynth(*args,**kwargs):
                             stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE)
-        p.stdin.write('synth.par\n')
+        p.stdin.write(b'synth.par\n')
         stdout, stderr= p.communicate()
     except subprocess.CalledProcessError:
         print("Running synth failed ...")

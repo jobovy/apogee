@@ -128,7 +128,7 @@ class Interpolator:
         # Build parameter string
         paramStr= self._paramStr(teff,logg,metals,am,nm,cm,vm=None)
         try:
-            self._proc.stdin.write(paramStr+'\n')
+            self._proc.stdin.write((paramStr+'\n').encode('utf-8'))
         except subprocess.CalledProcessError:
             raise Exception("Running FERRE Interpolator instance in directory %s failed ..." % dir)
         out= numpy.loadtxt(StringIO(self._proc.stderr.readline()))
