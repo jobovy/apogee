@@ -1,1 +1,1 @@
-from isomodel import *
+from apogee.samples.isomodel import isomodel

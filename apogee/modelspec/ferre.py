@@ -4,7 +4,10 @@
 import os, os.path
 import copy
 import subprocess
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import numpy
 from functools import wraps
 import tempfile
