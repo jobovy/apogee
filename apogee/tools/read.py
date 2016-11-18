@@ -611,6 +611,38 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True,aspcapWavegrid=False):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
+def apVisit(loc_id, apogee_id, mjd5, fiberid, ext=1, dr=None, header=True):
+    """
+    NAME: apVisit
+    PURPOSE: Read a series of apVisit files for a given star
+    INPUT:
+       loc_id - location ID (field for 1m targets)
+       apogee_id - APOGEE ID of the star
+       mjd5 - 5-digit MJD
+       fiberid - 3-digit fiber ID
+       ext= (1) extension to load
+       header= (True) if True, also return the header
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT: 
+       header=False:
+            1D array with apVisit fluxes (ext=1)
+            1D array with apVisit flux errors (ext=2)
+            corresponding wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
+            go here to learn about other extensions:
+            https://data.sdss.org/datamodel/files/APOGEE_REDUX/APRED_VERS/TELESCOPE/PLATE_ID/MJD5/apVisit.html
+       header=True:
+            (3D array with three portions of whichever extension you specified, header)
+    HISTORY: 2016-11 - Meredith Rawls
+       TODO: automatically find all apVisit files for a given apogee_id and download them
+    """
+    filePath = path.apVisitPath(loc_id, apogee_id, mjd5, fiberid, dr=dr)
+    if not os.path.exists(filePath):
+        download.apVisit(loc_id, apogee_id, mjd5, fiberid, dr=dr)
+    data = fitsio.read(filePath, ext, header=header)
+    if header == False:
+        data = data.flatten()
+    return data
+
 @modelspecOnApStarWavegrid
 def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
               cfe=0.,nfe=0.,afe=0.,vmicro=2.,

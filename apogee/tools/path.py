@@ -511,6 +511,53 @@ def apStarPath(loc_id,apogee_id,dr=None):
                                 '%i' % loc_id,
                                 'apStar-current-%s.fits' % apogee_id)
 
+def apVisitPath(loc_id, apogee_id, mjd5, fiberid, dr=None):
+    """
+    NAME: apVisitPath
+    PURPOSE: returns the path of the apVisit file
+    INPUT:
+       loc_id - location ID (field for 1m targets)
+       apogee_id - APOGEE ID of the star
+       mjd5 - 5-digit MJD
+       fiberid - 3-digit fiber ID
+       dr= return the path corresponding to this data release
+    OUTPUT: path string
+    HISTORY: 2016-11 - Meredith Rawls
+       TODO: automatically find all apVisit files for a given apogee_id and download them
+    """
+    if dr is None: dr = _default_dr()
+    specReduxPath = apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '10':
+        return os.path.join(specReduxPath, 'r3', 's3', '%i' % loc_id, '%i' % mjd5,
+                            'apVisit-s3-%s-%s-%s.fits' % (loc_id, mjd5, fiberid))
+    elif dr == '12':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath, 'r5', 'apo1m', loc_id.strip(), mjd5.strip(),
+                                'apVisit-r5-%s-%s-%s.fits' % (loc_id, mjd5.strip(), fiberid.strip()))
+        elif loc_id == 1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath, 'r5', 'apo25m', '%i' % loc_id, '%i' % mjd5,
+                                'apVisit-r5-%s-%s-%s.fits' % (loc_id, mjd5, fiberid))
+    elif dr == '13':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath, 'r6', 'apo1m', loc_id.strip(), mjd5.strip(),
+                                'apVisit-r6-%s-%s-%s.fits' % (loc_id.strip(), mjd5.strip(), fiberid.strip()))
+        elif loc_id == 1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath, 'r6', 'apo25m', '%i' % loc_id, '%i' % mjd5,
+                                'apVisit-r6-%s-%s-%s.fits' % (loc_id, mjd5, fiberid))
+    elif dr == 'current':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath, 'current', 'apo1m', loc_id.strip(), '%i' % mjd5,
+                                'apVisit-current-%s-%s-%s.fits' % (loc_id.strip(), mjd5.strip(), fiberid.strip()))
+        elif loc_id == 1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath, 'current', 'apo25m', '%i' % loc_id, '%i' % mjd5,
+                                'apVisit-current-%s-%s-%s.fits' % (loc_id, mjd5, fiberid))
+
 def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
                   cfe=0.,nfe=0.,afe=0.,vmicro=2.,
                   dr=None):

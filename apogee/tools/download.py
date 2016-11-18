@@ -174,6 +174,32 @@ def apStar(loc_id,apogee_id,dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
+def apVisit(loc_id, apogee_id, mjd5, fiberid, dr=None):
+    """
+    NAME: apVisit
+    PURPOSE: download a single apVisit file
+    INPUT:
+       loc_id - location ID
+       apogee_id - APOGEE ID of the star
+       mjd5 - 5-digit MJD
+       fiberid - 3-digit fiber ID
+       dr = return the path corresponding to this data release (general default)
+    OUTPUT: (none; just downloads)
+    HISTORY: 2016-11 - Meredith Rawls
+       TODO: automatically find all apVisit files for a given apogee_id and download them
+    """
+    if dr is None:
+        dr = path._default_dr()
+    # First make sure the file doesn't exist
+    filePath = path.apVisitPath(loc_id, apogee_id, mjd5, fiberid, dr=dr)
+    if os.path.exists(filePath):
+        return None
+    # Create the file path    
+    downloadPath = filePath.replace(os.path.join(path._APOGEE_DATA, _dr_string(dr)), 
+                                      _base_url(dr=dr))
+    _download_file(downloadPath, filePath, dr)
+    return None
+
 def apogeePlate(dr=None):
     """
     NAME:
