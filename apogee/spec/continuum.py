@@ -103,6 +103,44 @@ def fit(spec,specerr,type='aspcap',
     if len(spec.shape) == 1: cont= cont[0]
     return cont
 
+def fitApvisit(spec, specerr, wave, deg=4, niter=10, usigma=3., lsigma=0.1, cont_pixels=None):
+    """
+    Continuum fitting routine for apVisit spectra (one spectrum at a time; aspcap method only)
+    INPUT:
+       spec - single spectrum to fit
+       specerr - error on the spectrum; assume no covariances
+       wave - wavelength grid corresponding to spec and specerr; must have length 12288
+       ASPCAP keywords:
+          deg = (4) degree of the polynomial
+          niter = (10) number of sigma-clipping iterations to perform
+          usigma, lsigma = (3., 0.1) upper and lower sigmas for sigma clipping
+    OUTPUT:
+       continuum
+    Added by Meredith Rawls, 2016-11
+       TODO: -Generalize to work for wavelength grid of any length
+             -Allow multiple apVisits to be continuum-normalized at once, like the regular 'fit'
+    """
+    # Parse the input
+    tspec = copy.copy(spec)
+    tspecerr = specerr
+    if len(wave) != 12288:
+        raise ValueError('Length of apVisit wavelength array is not 12288; cannot proceed.')
+    if wave[1] < wave[0]: # not sorted by increasing wavelength; fix it
+        wave = numpy.flipud(wave)
+        tspec = numpy.flipud(tspec)
+        tspecerr = numpy.flipud(tspecerr)
+    cont = numpy.empty_like(tspec)
+    bluewav = wave[0:4096]
+    greenwav = wave[4096:8192]
+    redwav = wave[8192::]
+    # Blue
+    cont[0:4096] = _fit_aspcap(bluewav, tspec[0:4096], tspecerr[0:4096], deg, niter, usigma, lsigma)
+    # Green
+    cont[4096:8192] = _fit_aspcap(greenwav, tspec[4096:8192], tspecerr[4096:8192], deg, niter, usigma, lsigma)
+    # Red
+    cont[8192::] = _fit_aspcap(redwav, tspec[8192::], tspecerr[8192::], deg, niter, usigma, lsigma)
+    return cont
+
 def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
     """Fit the continuum with an iterative upper/lower rejection"""
     # Initial fit
