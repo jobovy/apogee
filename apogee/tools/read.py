@@ -611,15 +611,14 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True,aspcapWavegrid=False):
     data= fitsio.read(filePath,ext,header=header)
     return data
 
-def apVisit(loc_id, apogee_id, mjd5, fiberid, ext=1, dr=None, header=True):
+def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
     """
     NAME: apVisit
-    PURPOSE: Read a series of apVisit files for a given star
+    PURPOSE: Read a single apVisit file for a given location, MJD, and fiber
     INPUT:
-       loc_id - location ID (field for 1m targets)
-       apogee_id - APOGEE ID of the star
-       mjd5 - 5-digit MJD
-       fiberid - 3-digit fiber ID
+       loc_id = 4-digit location ID (field for 1m targets)
+       mjd = 5-digit MJD
+       fiberid = 3-digit fiber ID
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
@@ -633,14 +632,15 @@ def apVisit(loc_id, apogee_id, mjd5, fiberid, ext=1, dr=None, header=True):
        header=True:
             (3D array with three portions of whichever extension you specified, header)
     HISTORY: 2016-11 - Meredith Rawls
-       TODO: automatically find all apVisit files for a given apogee_id and download them
+       TODO: automatically find all apVisit files for a given apogee ID and download them
     """
-    filePath = path.apVisitPath(loc_id, apogee_id, mjd5, fiberid, dr=dr)
+    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
     if not os.path.exists(filePath):
-        download.apVisit(loc_id, apogee_id, mjd5, fiberid, dr=dr)
+        download.apVisit(loc_id, mjd, fiberid, dr=dr)
     data = fitsio.read(filePath, ext, header=header)
-    if header == False:
+    if header == False: # stitch three chips together in increasing wavelength order
         data = data.flatten()
+        data = numpy.flipud(data)
     return data
 
 @modelspecOnApStarWavegrid
