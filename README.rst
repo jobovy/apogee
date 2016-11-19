@@ -288,12 +288,12 @@ to read the various targeting-related files (see above). These are
 We can also read individual apVisit files, provided the location ID, MJD, and fiber are known.
 Otherwise, it functions similarly to how you would read in an apStar file. If you are interested
 in a particular target and don't know the location ID, MJD and fiber *a priori*, 
-`this website <http://dr12.sdss3.org/basicIRSpectra/>` can be of great use. 
+ `this website <http://dr12.sdss3.org/basicIRSpectra>`__ can be of great use. 
 Simply enter the apogee ID into the right-hand side and select the "Visits" tab from the search results page.
 
 It is recommended to set `header=False` when reading in apVisit files if you want a 1D flux array.
 Note that apVisit data is *not* on the standard apogee wavelength grid, and `ext=4` must be used to
-retrieve the wavelength data that corresponds with the fluxes.
+retrieve the wavelength data that corresponds with the fluxes. An example::
 
     import apogee.tools.read as apread
     # the three arguments are location ID, MJD, and fiber ID
@@ -303,7 +303,7 @@ retrieve the wavelength data that corresponds with the fluxes.
     header = apread.apVisit(7439, 56763, 207, ext=1, header=True)[1]
     
 Note that reading in flux or wavelength information simultaneously with the header will yield a dataset
-that is not sorted by increasing flux order, and is separated into three arrays for the blue/green/red chips.
+that is not sorted by increasing flux order, and is separated into three arrays for the blue/green/red chips::
 
     weird_format_spec = apread.apVisit(7439, 56763, 207, ext=1, header=True)[0]
     weird_format_wave = apread.apVisit(7439, 56763, 207, ext=4, header=True)[0]
@@ -311,7 +311,7 @@ that is not sorted by increasing flux order, and is separated into three arrays 
 If you wish to continuum normalize an apVisit spectrum, you can! The procedure is slightly different
 from normalizing a series of apStar spectra (see the section on "The APOGEE LSF and continuum normalization"
 below if you are working with apStar files). Most notably, `continuum.fitApvisit` takes only one spectrum
-at a time.
+at a time::
 
     from apogee.spec import continuum
     cont = continuum.fitApvisit(spec, specerr, wave)
@@ -319,7 +319,7 @@ at a time.
 
 Use regular matplotlib commands to view the result rather than the specialized plotting tools in this 
 module, because the latter is built with an underlying assumption of the standard apStar wavelength grid.
-For example,
+For example::
 
     import matplotlib.pyplot as plt
     plt.plot(wave, spec)
