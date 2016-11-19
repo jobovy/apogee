@@ -287,8 +287,8 @@ to read the various targeting-related files (see above). These are
 
 We can also read individual apVisit files, provided the location ID, MJD, and fiber are known.
 Otherwise, it functions similarly to how you would read in an apStar file. If you are interested
-in a particular target and don't know the location ID, MJD and fiber *a priori*, 
- `this website <http://dr12.sdss3.org/basicIRSpectra>`__ can be of great use. 
+in a particular target and don't know the location ID, MJD and fiber *a priori*, `this website 
+<http://dr12.sdss3.org/basicIRSpectra>`__ can be of great use. 
 Simply enter the apogee ID into the right-hand side and select the "Visits" tab from the search results page.
 
 It is recommended to set `header=False` when reading in apVisit files if you want a 1D flux array.
