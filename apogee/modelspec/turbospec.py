@@ -602,7 +602,7 @@ def turbosynth(*args,**kwargs):
                                 stderr=stderr)
             with open(os.path.join(tmpDir,'babsma.par'),'r') as parfile:
                 for line in parfile:
-                    p.stdin.write(line)
+                    p.stdin.write(line.encode('utf-8'))
             stdout, stderr= p.communicate()
         except subprocess.CalledProcessError:
             for linelistfilename in linelistfilenames:
@@ -655,7 +655,7 @@ def turbosynth(*args,**kwargs):
                             stderr=stderr)
         with open(os.path.join(tmpDir,'bsyn.par'),'r') as parfile:
             for line in parfile:
-                p.stdin.write(line)
+                p.stdin.write(line.encode('utf-8'))
         stdout, stderr= p.communicate()
     except subprocess.CalledProcessError:
         raise RuntimeError("Running bsyn_lu failed ...")

@@ -100,7 +100,8 @@ DEPENDENCIES AND PYTHON VERSIONS
 
 This package requires `NumPy <http://numpy.scipy.org/>`__, `Scipy
 <http://www.scipy.org/>`__, `Matplotlib
-<http://matplotlib.sourceforge.net/>`__, `fitsio
+<http://matplotlib.sourceforge.net/>`__, `tqdm
+<http://github.com/tqdm/tqdm>`__, `fitsio
 <http://github.com/esheldon/fitsio>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
 <http://github.com/jobovy/galpy>`__, `isodist

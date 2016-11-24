@@ -829,12 +829,19 @@ _modelAtmKurucz_fehgrid= numpy.array([-5.,-4.5,-4.,-3.5,-3.,-2.75,-2.5,
                                        -2.25,-2.,-1.75,-1.5,-1.25,-1.,
                                        -0.75,-0.5,-0.25,0.,0.25,0.5,
                                        1.,1.5]) 
+def _py2_round(fl):
+    # Bad ... always round 0.5 up, like in python 2 (not 3!)
+    if fl % 1  >= 0.5:
+        return numpy.ceil(fl)
+    else:
+        return numpy.floor(fl)
+
 def _modelAtmKurucz_metalsString(metals):
     metalsp= _modelAtmKurucz_fehgrid[numpy.argmin(numpy.fabs(_modelAtmKurucz_fehgrid-metals))]
     if metalsp >= 0.:
-        metalsstr= 'mp%i%i' % (int(metalsp),int(round((metalsp % 1)*10.)))
+        metalsstr= 'mp%i%i' % (int(metalsp),int(_py2_round((metalsp % 1)*10.)))
     else:
-        metalsstr= 'mm%i%i' % (int(-metalsp),int(round((-metalsp % 1)*10.)))
+        metalsstr= 'mm%i%i' % (int(-metalsp),int(_py2_round((-metalsp % 1)*10.)))
     return metalsstr
 
 # [C/Fe]
@@ -850,9 +857,9 @@ def _modelAtmKurucz_cfeString(cfe,metals):
         tgrid= _modelAtmKurucz_cfegrid_midm
     cfep= tgrid[numpy.argmin(numpy.fabs(tgrid-cfe))]
     if cfep >= 0.:
-        cfestr= 'cp%i%i' % (int(cfep),int(round((cfep % 1)*10.)))
+        cfestr= 'cp%i%i' % (int(cfep),int(_py2_round((cfep % 1)*10.)))
     else:
-        cfestr= 'cm%i%i' % (int(-cfep),int(round((-cfep % 1)*10.)))
+        cfestr= 'cm%i%i' % (int(-cfep),int(_py2_round((-cfep % 1)*10.)))
     return cfestr
 
 # [alpha/Fe]
@@ -868,9 +875,9 @@ def _modelAtmKurucz_afeString(afe,metals):
         tgrid= _modelAtmKurucz_afegrid_midm
     afep= tgrid[numpy.argmin(numpy.fabs(tgrid-afe))]
     if afep >= 0.:
-        afestr= 'op%i%i' % (int(afep),int(round((afep % 1)*10.)))
+        afestr= 'op%i%i' % (int(afep),int(_py2_round((afep % 1)*10.)))
     else:
-        afestr= 'om%i%i' % (int(-afep),int(round((-afep % 1)*10.)))
+        afestr= 'om%i%i' % (int(-afep),int(_py2_round((-afep % 1)*10.)))
     return afestr
 
 # Teff
@@ -909,6 +916,6 @@ def _modelAtmKurucz_loggString(logg,teff):
     else:
         tgrid= _modelAtmKurucz_logggrid_O
     loggp= tgrid[numpy.argmin(numpy.fabs(tgrid-logg))]
-    return 'g%i%i' % (int(loggp),int(round((loggp % 1)*10.)))
+    return 'g%i%i' % (int(loggp),int(_py2_round((loggp % 1)*10.)))
 
 
