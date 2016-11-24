@@ -98,7 +98,8 @@ def allStar(rmcommissioning=True,
             adddist=False,
             distredux=None,
             rmdups=False,
-            raw=False):
+            raw=False
+            dr=None):
     """
     NAME:
        allStar
@@ -116,20 +117,22 @@ def allStar(rmcommissioning=True,
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
+       dr = (None) data release
     OUTPUT:
        allStar data
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
+       2016-11-23 - Modified - Price-Jones (UofT)
     """
-    filePath= path.allStarPath()
+    filePath= path.allStarPath(dr=dr)
     if not os.path.exists(filePath):
         download.allStar()
     #read allStar file
-    data= fitsio.read(path.allStarPath())
+    data= fitsio.read(filePath)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath().replace('.fits','-nodups.fits')
+        dupsFilename= filePath.replace('.fits','-nodups.fits')
         if os.path.exists(dupsFilename):
             data= fitsio.read(dupsFilename)
         else:
