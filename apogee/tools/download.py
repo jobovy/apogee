@@ -544,7 +544,7 @@ def obslog(year=None):
     _download_file(downloadPath,filePath,None)
     return None
 
-def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
+def _download_file(downloadPath,filePath,dr,verbose=False,spider=False,readable=False):
     sys.stdout.write('\r'+"Downloading file %s ...\r" \
                          % (os.path.basename(filePath)))
     sys.stdout.flush()
@@ -569,6 +569,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
             subprocess.check_call(cmd)
             if not spider: shutil.move(tmp_savefilename,filePath)
             downloading= False
+            os.chmod(filePath,0644)
             if interrupted:
                 raise KeyboardInterrupt
         except subprocess.CalledProcessError as e:
