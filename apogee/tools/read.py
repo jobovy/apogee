@@ -98,7 +98,7 @@ def allStar(rmcommissioning=True,
             adddist=False,
             distredux=None,
             rmdups=False,
-            raw=False
+            raw=False,
             dr=None):
     """
     NAME:
@@ -252,7 +252,7 @@ def allVisit(rmcommissioning=True,
              akvers='targ',
              plateInt=False,
              plateS4=False,
-             raw=False
+             raw=False,
              dr=None):
     """
     NAME:
