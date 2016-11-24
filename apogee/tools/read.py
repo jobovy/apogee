@@ -252,7 +252,8 @@ def allVisit(rmcommissioning=True,
              akvers='targ',
              plateInt=False,
              plateS4=False,
-             raw=False):
+             raw=False
+             dr=None):
     """
     NAME:
        allVisit
@@ -270,12 +271,13 @@ def allVisit(rmcommissioning=True,
        allVisit data
     HISTORY:
        2013-11-07 - Written - Bovy (IAS)
+       2016-11-23 - Modified - Price-Jones (UofT)
     """
-    filePath= path.allVisitPath()
+    filePath= path.allVisitPath(dr=dr)
     if not os.path.exists(filePath):
         download.allVisit()
     #read allVisit file
-    data= fitsio.read(path.allVisitPath())
+    data= fitsio.read(path.allVisitPath(dr=dr))
     if raw: return data
     #Some cuts
     if rmcommissioning:
