@@ -513,19 +513,26 @@ def apStarPath(loc_id,apogee_id,dr=None):
 
 def apVisitPath(loc_id, mjd, fiberid, dr=None):
     """
-    NAME: apVisitPath
-    PURPOSE: returns the path of the apVisit file
+    NAME:
+       apVisitPath
+    PURPOSE:
+       returns the path of the apVisit file
     INPUT:
        loc_id = 4-digit location ID (field for 1m targets)
        mjd = 5-digit MJD
        fiberid = 3-digit fiber ID
        dr = return the path corresponding to this data release (general default)
-    OUTPUT: path string
-    HISTORY: 2016-11 - Meredith Rawls
-       TODO: automatically find all apVisit files for a given apogee ID and download them
+    OUTPUT:
+       path string
+    HISTORY:
+       2016-11 - Meredith Rawls
+       2016-11-29 - Bovy (UofT) - Edited inputs
+    TODO: 
+       automatically find all apVisit files for a given apogee ID and download them
     """
     mjd = str(mjd).strip()
-    fiberid = str(fiberid).strip()
+    if not isinstance(fiberid,str):
+        fiberid= '%03i' % fiberid
     if dr is None:
         dr = _default_dr()
     specReduxPath = apogeeSpectroReduxDirPath(dr=dr)
