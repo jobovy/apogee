@@ -1,0 +1,61 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8]{inputenc}
+
+\usepackage{booktabs, supertabular}
+\usepackage{array} 
+\newcolumntype{C}[1]{>{\flushleft}p{#1}} 
+%opening
+\title{IMU and MARG}
+\author{Franziska Peter}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+It follows an overview on papers combinig IMU and MARG in gait analyisis/ pedestrian dead reckoning. The following questions shall be answered where possible:
+\begin{itemize}
+ \item[-] In which plane does the optimization $\vec m\, \rightarrow \,\mathrm{yaw}$ take place? When only the yaw of magnetic field is considered, will the correction of the yaw of the sensor lead to a vector in the joint plane (linearly dependent?)? 
+ 
+\item[-] Why optimize at all - use exact $\hat q$! (??)
+
+\item[-] What are the different papers correcting with MARG: inclination, attitude or both?
+
+\item[-] Is there some cheap trick to not give the MARG too much power and still benefit from the extra knowledge? 
+
+\item[-] And in general: Which coordinates are most useful for optimizations like $\min (T_{\mathrm{\tiny trafo}}\vec m_{E}-\vec m_{S})$? (especially looking at the 'which plane problem')
+\end{itemize}
+\end{abstract}
+
+\section{Kalman Based Algorithms}
+
+\begin{supertabular}{C{1.8cm}C{3.5cm}C{9cm}} 
+\hline
+Author & Methods Included & Comment \tabularnewline
+\hline
+Ahmadi 2007& only MARG + Acc, Quaternions, EKF  & no usage of gyroscopes, MARG is not used as bias compensation but as only reference for the yaw :( \tabularnewline
+Zampella 2012& DCM, EKF, UKF, ZUPT, ZARU, MARU & MARU update during stance, (soft condiotions on stance/swing), {\footnotesize\begin{enumerate}
+                                                                                                            \item \textit{change in magnetic heading:} ZUPT, project magnetic field to horizontal plane (roll and pitch needed) $\rightarrow$ magnetic yaw  $\rightarrow$ UKF observation \& its mean are changed; 'static' condition on usage of MARU
+                                                                                                            \item \textit{magnetic rotation:} during stance $\rightarrow$ change in magnetic field due to turn rate bias and random noise in the magnetometers (magn. disturbance is assumed to be constant) -rand. noise is discarded, UKF; magn.-field-dependent condition on usage of MARU
+                                                                                                            \item \textit{magnetic rotation first oder approxion:} like 2., but with EKF
+                                                                                                           \end{enumerate}}%
+ \tabularnewline
+Marins 2001& Quaternions, KF, EKF & {\footnotesize\begin{enumerate}
+                                              \item MSE (min squared error): measured body frame values and known earth frame values are used to optimize quaternion trafo earth $\rightarrow$ body (equiv. Magdwick) by Gauss or Gauss-Newton
+                                              \item now use this quaternion in a EKF, with output equations = identity functions $\rightarrow$ easy filter
+                                             \end{enumerate}}%
+ \tabularnewline
+Sabatini 2006&  &  \tabularnewline
+Magdwick 2011&  &  \tabularnewline
+\hline
+\end{supertabular}
+\section{Other Algorithms}
+\begin{tabular}{C{1.8cm}C{3.5cm}C{9cm}} 
+\hline
+Author & Methods Included & Comment \tabularnewline
+\hline
+Gros/Diehl 2012& reference needed, e.g. GPS &  is only concerned with the Attitude, no MARG included\tabularnewline
+Mahony 2008 &  & \tabularnewline
+\hline
+\end{tabular}
+\end{document}
