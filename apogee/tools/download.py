@@ -601,7 +601,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
             if not downloading: #Assume KeyboardInterrupt
                 raise
             elif ntries > _MAX_NTRIES:
-                raise IOError('File %s does not appear to exist on the server ...' % (os.path.basename(filePath)))
+                raise IOError('File %s does not appear to exist on the server (as %s) ...' % (os.path.basename(filePath),downloadPath))
             elif not 'exit status 4' in str(e):
                 interrupted= True
             os.remove(tmp_savefilename)
