@@ -24,7 +24,8 @@ import numpy
 try:
     import esutil
     _ESUTIL_LOADED= True
-    _ESUTIL_VERSION= [int(v[0]) for v in esutil.__version__.split('.')]
+    _ESUTIL_VERSION= [int(v.split('rc')[0])
+                      for v in esutil.__version__.split('.')]
 except ImportError:
     _ESUTIL_LOADED= False
 import fitsio
