@@ -89,6 +89,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
     dmaskp= numpy.roll(mask,-1)-mask
     dmaskn= numpy.roll(mask,1)-mask
     # Calculate the distance between adjacent windows and combine them if close
+    from apogee.tools import _DLOG10LAMBDA
     import apogee.spec.plot as splot
     l10wavs= numpy.log10(splot.apStarWavegrid())
     indices= numpy.arange(len(l10wavs))
@@ -101,8 +102,8 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
         if asIndex:
             startindxs= [si-pad for si in startindxs]
             endindxs= [ei+pad for ei in endindxs]
-        startl10lams-= pad*splot._DLOG10LAMBDA
-        endl10lams+= pad*splot._DLOG10LAMBDA
+        startl10lams-= pad*_DLOG10LAMBDA
+        endl10lams+= pad*_DLOG10LAMBDA
     # Check that each window is at least _MINWIDTH wide
     width= 10.**endl10lams-10.**startl10lams
     for ii in range(len(startl10lams)):
@@ -111,7 +112,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
                 dindx= int(numpy.ceil((_MINWIDTH-width[ii])/2.\
                                           /(10.**startl10lams[ii]\
                                                 +10.**endl10lams[ii])/2.\
-                                          /numpy.log(10.)/splot._DLOG10LAMBDA))
+                                          /numpy.log(10.)/_DLOG10LAMBDA))
                 startindxs[ii]-= dindx
                 endindxs[ii]+= dindx                   
             startl10lams[ii]= numpy.log10(10.**startl10lams[ii]\
@@ -124,7 +125,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
     newStartl10lams, newEndl10lams= [startl10lams[0]], [endl10lams[0]]
     winIndx= 0
     for ii in range(len(startl10lams)-1):
-        if diff[ii] < 10.*splot._DLOG10LAMBDA:
+        if diff[ii] < 10.*_DLOG10LAMBDA:
             if asIndex:
                 newEndindxs[winIndx]= endindxs[ii+1]
             newEndl10lams[winIndx]= endl10lams[ii+1]
