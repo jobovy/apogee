@@ -24,7 +24,8 @@ import numpy
 try:
     import esutil
     _ESUTIL_LOADED= True
-    _ESUTIL_VERSION= [int(v) for v in esutil.__version__.split('.')]
+    _ESUTIL_VERSION= [int(v.split('rc')[0])
+                      for v in esutil.__version__.split('.')]
 except ImportError:
     _ESUTIL_LOADED= False
 import fitsio
@@ -614,6 +615,38 @@ def apStar(loc_id,apogee_id,ext=1,dr=None,header=True,aspcapWavegrid=False):
     if not os.path.exists(filePath):
         download.apStar(loc_id,apogee_id,dr=dr)
     data= fitsio.read(filePath,ext,header=header)
+    return data
+
+def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
+    """
+    NAME: apVisit
+    PURPOSE: Read a single apVisit file for a given location, MJD, and fiber
+    INPUT:
+       loc_id = 4-digit location ID (field for 1m targets)
+       mjd = 5-digit MJD
+       fiberid = 3-digit fiber ID
+       ext= (1) extension to load
+       header= (True) if True, also return the header
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT: 
+       header=False:
+            1D array with apVisit fluxes (ext=1)
+            1D array with apVisit flux errors (ext=2)
+            corresponding wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
+            go here to learn about other extensions:
+            https://data.sdss.org/datamodel/files/APOGEE_REDUX/APRED_VERS/TELESCOPE/PLATE_ID/MJD5/apVisit.html
+       header=True:
+            (3D array with three portions of whichever extension you specified, header)
+    HISTORY: 2016-11 - Meredith Rawls
+       TODO: automatically find all apVisit files for a given apogee ID and download them
+    """
+    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
+    if not os.path.exists(filePath):
+        download.apVisit(loc_id, mjd, fiberid, dr=dr)
+    data = fitsio.read(filePath, ext, header=header)
+    if header == False: # stitch three chips together in increasing wavelength order
+        data = data.flatten()
+        data = numpy.flipud(data)
     return data
 
 @modelspecOnApStarWavegrid

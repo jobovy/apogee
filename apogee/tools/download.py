@@ -174,6 +174,31 @@ def apStar(loc_id,apogee_id,dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
+def apVisit(loc_id, mjd, fiberid, dr=None):
+    """
+    NAME: apVisit
+    PURPOSE: download a single apVisit file
+    INPUT:
+       loc_id = 4-digit location ID (field for 1m targets)
+       mjd = 5-digit MJD
+       fiberid = 3-digit fiber ID
+       dr = return the path corresponding to this data release (general default)
+    OUTPUT: (none; just downloads)
+    HISTORY: 2016-11 - Meredith Rawls
+       TODO: automatically find all apVisit files for a given apogee ID and download them
+    """
+    if dr is None:
+        dr = path._default_dr()
+    # First make sure the file doesn't exist
+    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
+    if os.path.exists(filePath):
+        return None
+    # Create the file path    
+    downloadPath = filePath.replace(os.path.join(path._APOGEE_DATA, _dr_string(dr)), 
+                                      _base_url(dr=dr))
+    _download_file(downloadPath, filePath, dr)
+    return None
+
 def apogeePlate(dr=None):
     """
     NAME:
@@ -577,7 +602,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False,readable=
             if not downloading: #Assume KeyboardInterrupt
                 raise
             elif ntries > _MAX_NTRIES:
-                raise IOError('File %s does not appear to exist on the server ...' % (os.path.basename(filePath)))
+                raise IOError('File %s does not appear to exist on the server (as %s) ...' % (os.path.basename(filePath),downloadPath))
             elif not 'exit status 4' in str(e):
                 interrupted= True
             os.remove(tmp_savefilename)
