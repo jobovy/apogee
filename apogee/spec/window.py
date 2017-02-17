@@ -7,6 +7,7 @@ from apogee.tools.read import modelspecOnApStarWavegrid
 from apogee.tools import toAspcapGrid
 from apogee.tools.path import _default_dr
 from apogee.tools.download import _dr_string
+from apogee.tools import apStarWavegrid, _NLAMBDA, _DLOG10LAMBDA
 _MINWIDTH= 3.5 #minimum width of a window in \AA
 
 def path(elem,dr=None):
@@ -89,8 +90,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
     dmaskp= numpy.roll(mask,-1)-mask
     dmaskn= numpy.roll(mask,1)-mask
     # Calculate the distance between adjacent windows and combine them if close
-    import apogee.spec.plot as splot
-    l10wavs= numpy.log10(splot.apStarWavegrid())
+    l10wavs= numpy.log10(apStarWavegrid())
     indices= numpy.arange(len(l10wavs))
     if asIndex:
         startindxs= indices[dmaskp == 1.]
@@ -101,8 +101,8 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
         if asIndex:
             startindxs= [si-pad for si in startindxs]
             endindxs= [ei+pad for ei in endindxs]
-        startl10lams-= pad*splot._DLOG10LAMBDA
-        endl10lams+= pad*splot._DLOG10LAMBDA
+        startl10lams-= pad*_DLOG10LAMBDA
+        endl10lams+= pad*_DLOG10LAMBDA
     # Check that each window is at least _MINWIDTH wide
     width= 10.**endl10lams-10.**startl10lams
     for ii in range(len(startl10lams)):
@@ -111,7 +111,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
                 dindx= int(numpy.ceil((_MINWIDTH-width[ii])/2.\
                                           /(10.**startl10lams[ii]\
                                                 +10.**endl10lams[ii])/2.\
-                                          /numpy.log(10.)/splot._DLOG10LAMBDA))
+                                          /numpy.log(10.)/_DLOG10LAMBDA))
                 startindxs[ii]-= dindx
                 endindxs[ii]+= dindx                   
             startl10lams[ii]= numpy.log10(10.**startl10lams[ii]\
@@ -124,7 +124,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
     newStartl10lams, newEndl10lams= [startl10lams[0]], [endl10lams[0]]
     winIndx= 0
     for ii in range(len(startl10lams)-1):
-        if diff[ii] < 10.*splot._DLOG10LAMBDA:
+        if diff[ii] < 10.*_DLOG10LAMBDA:
             if asIndex:
                 newEndindxs[winIndx]= endindxs[ii+1]
             newEndl10lams[winIndx]= endl10lams[ii+1]
@@ -156,8 +156,7 @@ def tophat(elem,dr=None,apStarWavegrid=True):
     HISTORY:
        2015-01-26 - Written - Bovy (IAS@KITP)
     """
-    import apogee.spec.plot as splot
-    out= numpy.zeros(splot._NLAMBDA,dtype='bool')
+    out= numpy.zeros(_NLAMBDA,dtype='bool')
     for si,ei in zip(*waveregions(elem,asIndex=True,dr=dr)):
         out[si+1:ei]= True
     if not apStarWavegrid: return toAspcapGrid(out)
@@ -196,8 +195,7 @@ def lines(elem,asIndex=False):
     """
     # Load the window
     win= read(elem,apStarWavegrid=True)
-    import apogee.spec.plot as splot
-    wavs= splot.apStarWavegrid()
+    wavs= apStarWavegrid()
     # Find peaks
     indx= (numpy.roll(win,1) < win)*(numpy.roll(win,-1) < win)\
         *(win > 0.1)
@@ -235,8 +233,7 @@ def equishwidth(elem,spec,specerr,refspec=None):
     # Read windows
     win= read(elem,apStarWavegrid=True)
     startindxs, endindxs= waveregions(elem,asIndex=True,pad=0)
-    import apogee.spec.plot as splot
-    lams= splot.apStarWavegrid()
+    lams= apStarWavegrid()
     startlams= lams[startindxs]
     endlams= lams[endindxs]
     outval= 0.
