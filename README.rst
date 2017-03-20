@@ -98,9 +98,9 @@ are directly callable (by, for example, copying them to
 DEPENDENCIES AND PYTHON VERSIONS
 =================================
 
-This package requires `NumPy <http://numpy.scipy.org/>`__, `Scipy
-<http://www.scipy.org/>`__, `Matplotlib
-<http://matplotlib.sourceforge.net/>`__, `tqdm
+This package requires the Python packages `NumPy
+<http://numpy.scipy.org/>`__, `Scipy <http://www.scipy.org/>`__,
+`Matplotlib <http://matplotlib.sourceforge.net/>`__, `tqdm
 <http://github.com/tqdm/tqdm>`__, `fitsio
 <http://github.com/esheldon/fitsio>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
@@ -118,6 +118,9 @@ The ``apogee`` package should work both in python 2 and 3 (thanks to
 compatibility). Please open an `issue
 <https://github.com/jobovy/apogee/issues>`__ if you find a part of the
 code that does not support python 3.
+
+To use the download functionalities (see below), you also need to have
+``wget`` installed on your system.
 
 DATA FILES AND ENVIRONMENT VARIABLES
 =====================================
