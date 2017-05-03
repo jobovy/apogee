@@ -339,7 +339,7 @@ def make_rcsample(parser):
     data['GALVR'][True-pmindx]= -9999.99
     data['GALVT'][True-pmindx]= -9999.99
     data['GALVZ'][True-pmindx]= -9999.99
-    #Get PPMXL proper motions, in a somewhat roundabout way
+    #Get HSOY proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms_ppmxl.fits'
     if os.path.exists(pmfile):
         pmdata= fitsio.read(pmfile,1)
@@ -367,7 +367,7 @@ def make_rcsample(parser):
                                    '-F','cat1=@%s' % os.path.basename(posfilename),
                                    '-F','colRA1=RA',
                                    '-F','colDec1=DEC',
-                                   '-F','cat2=vizier:PPMXL',
+                                   '-F','cat2=vizier:I/339/hsoy',
                                    'http://cdsxmatch.u-strasbg.fr/xmatch/api/v1/sync'],
                                   stdout=result)
         except subprocess.CalledProcessError:
@@ -404,34 +404,34 @@ def make_rcsample(parser):
         os.remove(posfilename)
         os.remove(resultfilename)
     #Match proper motions to ppmxl
-    data= esutil.numpy_util.add_fields(data,[('PMRA_PPMXL', numpy.float),
-                                             ('PMDEC_PPMXL', numpy.float),
-                                             ('PMRA_ERR_PPMXL', numpy.float),
-                                             ('PMDEC_ERR_PPMXL', numpy.float),
-                                             ('PMMATCH_PPMXL',numpy.int32)])
-    data['PMMATCH_PPMXL']= 0
+    data= esutil.numpy_util.add_fields(data,[('PMRA_HSOY', numpy.float),
+                                             ('PMDEC_HSOY', numpy.float),
+                                             ('PMRA_ERR_HSOY', numpy.float),
+                                             ('PMDEC_ERR_HSOY', numpy.float),
+                                             ('PMMATCH_HSOY',numpy.int32)])
+    data['PMMATCH_HSOY']= 0
     h=esutil.htm.HTM()
     m1,m2,d12 = h.match(pmdata['RA'],pmdata['DEC'],
                         data['RA'],data['DEC'],
                         2./3600.,maxmatch=1)
-    data['PMRA_PPMXL'][m2]= pmdata['PMRA'][m1]
-    data['PMDEC_PPMXL'][m2]= pmdata['PMDEC'][m1]
-    data['PMRA_ERR_PPMXL'][m2]= pmdata['PMRA_ERR'][m1]
-    data['PMDEC_ERR_PPMXL'][m2]= pmdata['PMDEC_ERR'][m1]
-    data['PMMATCH_PPMXL'][m2]= pmdata['PMMATCH'][m1].astype(numpy.int32)
-    pmindx= data['PMMATCH_PPMXL'] == 1
-    data['PMRA_PPMXL'][True-pmindx]= -9999.99
-    data['PMDEC_PPMXL'][True-pmindx]= -9999.99
-    data['PMRA_ERR_PPMXL'][True-pmindx]= -9999.99
-    data['PMDEC_ERR_PPMXL'][True-pmindx]= -9999.99
+    data['PMRA_HSOY'][m2]= pmdata['PMRA'][m1]
+    data['PMDEC_HSOY'][m2]= pmdata['PMDEC'][m1]
+    data['PMRA_ERR_HSOY'][m2]= pmdata['PMRA_ERR'][m1]
+    data['PMDEC_ERR_HSOY'][m2]= pmdata['PMDEC_ERR'][m1]
+    data['PMMATCH_HSOY'][m2]= pmdata['PMMATCH'][m1].astype(numpy.int32)
+    pmindx= data['PMMATCH_HSOY'] == 1
+    data['PMRA_HSOY'][True-pmindx]= -9999.99
+    data['PMDEC_HSOY'][True-pmindx]= -9999.99
+    data['PMRA_ERR_HSOY'][True-pmindx]= -9999.99
+    data['PMDEC_ERR_HSOY'][True-pmindx]= -9999.99
     #Calculate Galactocentric velocities
-    data= esutil.numpy_util.add_fields(data,[('GALVR_PPMXL', numpy.float),
-                                             ('GALVT_PPMXL', numpy.float),
-                                             ('GALVZ_PPMXL', numpy.float)])
+    data= esutil.numpy_util.add_fields(data,[('GALVR_HSOY', numpy.float),
+                                             ('GALVT_HSOY', numpy.float),
+                                             ('GALVZ_HSOY', numpy.float)])
     lb= bovy_coords.radec_to_lb(data['RA'],data['DEC'],degree=True)
     XYZ= bovy_coords.lbd_to_XYZ(lb[:,0],lb[:,1],data['RC_DIST'],degree=True)
-    pmllpmbb= bovy_coords.pmrapmdec_to_pmllpmbb(data['PMRA_PPMXL'],
-                                                data['PMDEC_PPMXL'],
+    pmllpmbb= bovy_coords.pmrapmdec_to_pmllpmbb(data['PMRA_HSOY'],
+                                                data['PMDEC_HSOY'],
                                                 data['RA'],data['DEC'],
                                                 degree=True)
     vxvyvz= bovy_coords.vrpmllpmbb_to_vxvyvz(data['VHELIO_AVG'],
@@ -446,12 +446,12 @@ def make_rcsample(parser):
                                                 XYZ[:,1],
                                                 XYZ[:,2]+0.025,
                                                 vsun=[-11.1,30.24*8.,7.25])#Assumes proper motion of Sgr A* and R0=8 kpc, zo= 25 pc
-    data['GALVR_PPMXL']= vR
-    data['GALVT_PPMXL']= vT
-    data['GALVZ_PPMXL']= vZ
-    data['GALVR_PPMXL'][True-pmindx]= -9999.99
-    data['GALVT_PPMXL'][True-pmindx]= -9999.99
-    data['GALVZ_PPMXL'][True-pmindx]= -9999.99
+    data['GALVR_HSOY']= vR
+    data['GALVT_HSOY']= vT
+    data['GALVZ_HSOY']= vZ
+    data['GALVR_HSOY'][True-pmindx]= -9999.99
+    data['GALVT_HSOY'][True-pmindx]= -9999.99
+    data['GALVZ_HSOY'][True-pmindx]= -9999.99
     #Save
     fitsio.write(savefilename,data,clobber=True)
     return None
