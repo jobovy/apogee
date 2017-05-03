@@ -51,6 +51,7 @@ _DR10REDUX='v304'
 _DR11REDUX='v402'
 _DR12REDUX='v603'
 _DR13REDUX='l30e.2'
+_DR14REDUX='l31c.2'
 _CURRENTREDUX='current'
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
@@ -124,6 +125,9 @@ def allStarPath(dr=None,_old=False):
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == '13':
             return os.path.join(specReduxPath,'r6','stars','l30e',
+                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == '14':
+            return os.path.join(specReduxPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
             return os.path.join(specReduxPath,'current','stars','l25_6d',
@@ -228,6 +232,7 @@ def rcsamplePath(dr=None,_old=False):
         if _APOGEE_REDUX == 'v402': dr= '11'
         elif _APOGEE_REDUX == 'v603': dr= '12'
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
+        elif _APOGEE_REDUX == 'l31c.2': dr= '14'
         elif _APOGEE_REDUX == 'current': 
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
@@ -240,6 +245,9 @@ def rcsamplePath(dr=None,_old=False):
                                 'cat','apogee-rc-DR%s.fits' % dr)
         elif dr == '13':
             return os.path.join(_APOGEE_DATA,'dr13','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
+        elif dr == '14':
+            return os.path.join(_APOGEE_DATA,'dr14','apogee','vac','apogee-rc',
                                 'cat','apogee-rc-DR%s.fits' % dr)
 
 def obslogPath(year=None):
@@ -440,6 +448,19 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r6-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
+    elif dr == '14':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r8','stars','l31c',
+                                _redux_dr(dr=dr),loc_id.strip(),
+                                'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id.strip()))
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r8','stars','l31c',
+                                _redux_dr(dr=dr),'%i' % loc_id,
+                                'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))
     elif dr == 'current':
         if isinstance(loc_id,str): #1m
             return os.path.join(specReduxPath,'current','stars','l25_6d',
@@ -499,6 +520,17 @@ def apStarPath(loc_id,apogee_id,dr=None):
             return os.path.join(specReduxPath,'r6','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r6-%s.fits' % apogee_id)
+    elif dr == '14':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r8','stars','apo1m',
+                                loc_id.strip(),
+                                'apStar-r8-%s.fits' % apogee_id.strip())
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r8','stars','apo25m',
+                                '%i' % loc_id,
+                                'apStar-r8-%s.fits' % apogee_id)
     elif dr == 'current':
         if isinstance(loc_id,str): #1m
             return os.path.join(specReduxPath,'current','stars','apo1m',
@@ -559,6 +591,16 @@ def apVisitPath(loc_id, mjd, fiberid, dr=None):
             loc_id = str(loc_id).strip()
             return os.path.join(specReduxPath, 'r6', 'apo25m', loc_id, mjd,
                                 'apVisit-r6-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+    elif dr == '14':
+        if isinstance(loc_id, str): #1m
+            return os.path.join(specReduxPath, 'r8', 'apo1m', loc_id, mjd,
+                                'apVisit-r8-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        elif loc_id == 1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            loc_id = str(loc_id).strip()
+            return os.path.join(specReduxPath, 'r8', 'apo25m', loc_id, mjd,
+                                'apVisit-r8-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
     elif dr == 'current':
         if isinstance(loc_id, str): #1m
             return os.path.join(specReduxPath, 'current', 'apo1m', loc_id, mjd,
@@ -869,6 +911,7 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR11REDUX: dr= '11'
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
+    elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -879,6 +922,7 @@ def _redux_dr(dr=None):
     elif dr == '11': return _DR11REDUX
     elif dr == '12': return _DR12REDUX
     elif dr == '13': return _DR13REDUX
+    elif dr == '14': return _DR14REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
