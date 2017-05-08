@@ -10,6 +10,8 @@
 #
 # DR13 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR13.fits --rmdups --tyc2'
 #
+# DR14 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR14.fits --rmdups --addl-logg-cut --nostat'
+#
 # current catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-current.fits --addl-logg-cut --rmdups --nostat --nopm'
 #
 import os, os.path
@@ -18,7 +20,6 @@ import csv
 import tempfile
 import subprocess
 import numpy
-import tqdm
 import fitsio
 import esutil
 from galpy.util import bovy_coords
@@ -27,6 +28,7 @@ import apogee.tools.read as apread
 import apogee.tools.path as appath
 import apogee.select.apogeeSelect
 import apogee.samples.rc as rcmodel
+from apogee.tools import paramIndx
 _ADDHAYDENDIST= False
 _ERASESTR= "                                                                                "
 def make_rcsample(parser):
@@ -95,11 +97,12 @@ def make_rcsample(parser):
     #Select red-clump stars
     jk= data['J0']-data['K0']
     z= isodist.FEH2Z(data['METALS'],zsolar=0.017)
-    if 'l3' in appath._APOGEE_REDUX:
+    if 'l31' in appath._APOGEE_REDUX:
+        logg= data['LOGG']
+    elif 'l30' in appath._APOGEE_REDUX:
         logg= data['LOGG']
     elif appath._APOGEE_REDUX.lower() == 'current' \
             or int(appath._APOGEE_REDUX[1:]) > 600:
-        from apogee.tools import paramIndx
         if False:
             #Use my custom logg calibration that's correct for the RC
             logg= (1.-0.042)*data['FPARAM'][:,paramIndx('logg')]-0.213
@@ -121,7 +124,8 @@ def make_rcsample(parser):
         *(z <= rcmodel.jkzcut(jk,upper=True))\
         *(z >= rcmodel.jkzcut(jk))\
         *(logg >= rcmodel.loggteffcut(data['TEFF'],z,upper=False))\
-        *(logg <= rcmodel.loggteffcut(data['TEFF'],z,upper=True))
+        *(logg+0.1*('l31' in appath._APOGEE_REDUX) \
+              <= rcmodel.loggteffcut(data['TEFF'],z,upper=True))
     data= data[indx]
     #Add more aggressive flag cut
     data= esutil.numpy_util.add_fields(data,[('ADDL_LOGG_CUT',numpy.int32)])
@@ -326,16 +330,16 @@ def make_rcsample(parser):
                                              pmllpmbb[:,1],
                                              lb[:,0],lb[:,1],data['RC_DIST'],
                                              degree=True)
-    vR, vT, vZ= bovy_coords.vxvyvz_to_galcencyl(vxvyvz[:,0],
+    vRvTvZ= bovy_coords.vxvyvz_to_galcencyl(vxvyvz[:,0],
                                                 vxvyvz[:,1],
                                                 vxvyvz[:,2],
                                                 8.-XYZ[:,0],
                                                 XYZ[:,1],
                                                 XYZ[:,2]+0.025,
                                                 vsun=[-11.1,30.24*8.,7.25])#Assumes proper motion of Sgr A* and R0=8 kpc, zo= 25 pc
-    data['GALVR']= vR
-    data['GALVT']= vT
-    data['GALVZ']= vZ
+    data['GALVR']= vRvTvZ[:,0]
+    data['GALVT']= vRvTvZ[:,1]
+    data['GALVZ']= vRvTvZ[:,2]
     data['GALVR'][True-pmindx]= -9999.99
     data['GALVT'][True-pmindx]= -9999.99
     data['GALVZ'][True-pmindx]= -9999.99
@@ -378,11 +382,11 @@ def make_rcsample(parser):
         result.close()
         # Match back and only keep the closest one
         ma= numpy.loadtxt(resultfilename,delimiter=',',skiprows=1,
-                          converters={15: lambda s: float(s.strip() or -9999),
-                                      16: lambda s: float(s.strip() or -9999),
-                                      17: lambda s: float(s.strip() or -9999),
-                                      18: lambda s: float(s.strip() or -9999)},
-                          usecols=(4,5,15,16,19,20))
+                          converters={12: lambda s: float(s.strip() or -9999),
+                                      13: lambda s: float(s.strip() or -9999),
+                                      14: lambda s: float(s.strip() or -9999),
+                                      15: lambda s: float(s.strip() or -9999)},
+                          usecols=(3,4,12,13,14,15))
         h=esutil.htm.HTM()
         m1,m2,d12 = h.match(data['RA'],data['DEC'],
                             ma[:,0],ma[:,1],4./3600.,maxmatch=1)
@@ -403,7 +407,7 @@ def make_rcsample(parser):
         pmdata= fitsio.read(pmfile,1)
         os.remove(posfilename)
         os.remove(resultfilename)
-    #Match proper motions to ppmxl
+    #Match proper motions to ppmxl/HSOY
     data= esutil.numpy_util.add_fields(data,[('PMRA_HSOY', numpy.float),
                                              ('PMDEC_HSOY', numpy.float),
                                              ('PMRA_ERR_HSOY', numpy.float),
@@ -439,16 +443,16 @@ def make_rcsample(parser):
                                              pmllpmbb[:,1],
                                              lb[:,0],lb[:,1],data['RC_DIST'],
                                              degree=True)
-    vR, vT, vZ= bovy_coords.vxvyvz_to_galcencyl(vxvyvz[:,0],
-                                                vxvyvz[:,1],
-                                                vxvyvz[:,2],
-                                                8.-XYZ[:,0],
-                                                XYZ[:,1],
-                                                XYZ[:,2]+0.025,
-                                                vsun=[-11.1,30.24*8.,7.25])#Assumes proper motion of Sgr A* and R0=8 kpc, zo= 25 pc
-    data['GALVR_HSOY']= vR
-    data['GALVT_HSOY']= vT
-    data['GALVZ_HSOY']= vZ
+    vRvTvZ= bovy_coords.vxvyvz_to_galcencyl(vxvyvz[:,0],
+                                            vxvyvz[:,1],
+                                            vxvyvz[:,2],
+                                            8.-XYZ[:,0],
+                                            XYZ[:,1],
+                                            XYZ[:,2]+0.025,
+                                            vsun=[-11.1,30.24*8.,7.25])#Assumes proper motion of Sgr A* and R0=8 kpc, zo= 25 pc
+    data['GALVR_HSOY']= vRvTvZ[:,0]
+    data['GALVT_HSOY']= vRvTvZ[:,1]
+    data['GALVZ_HSOY']= vRvTvZ[:,2]
     data['GALVR_HSOY'][True-pmindx]= -9999.99
     data['GALVT_HSOY'][True-pmindx]= -9999.99
     data['GALVZ_HSOY'][True-pmindx]= -9999.99
