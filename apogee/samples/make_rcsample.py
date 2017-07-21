@@ -144,10 +144,13 @@ def make_rcsample(parser):
                                 data['GLAT'],
                                 data['RC_DIST'],
                                 degree=True)
-    R,phi,Z= bovy_coords.XYZ_to_galcencyl(XYZ[:,0],
-                                          XYZ[:,1],
-                                          XYZ[:,2],
-                                          Xsun=8.,Zsun=0.025)
+    RphiZ= bovy_coords.XYZ_to_galcencyl(XYZ[:,0],
+                                        XYZ[:,1],
+                                        XYZ[:,2],
+                                        Xsun=8.,Zsun=0.025)
+    R= RphiZ[:,0]
+    phi= RphiZ[:,1]
+    Z= RphiZ[:,2]
     data['RC_GALR']= R
     data['RC_GALPHI']= phi
     data['RC_GALZ']= Z
