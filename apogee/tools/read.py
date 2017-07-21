@@ -99,7 +99,8 @@ def allStar(rmcommissioning=True,
             adddist=False,
             distredux=None,
             rmdups=False,
-            raw=False):
+            raw=False,
+            dr=None):
     """
     NAME:
        allStar
@@ -117,20 +118,22 @@ def allStar(rmcommissioning=True,
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
+       dr = (None) data release
     OUTPUT:
        allStar data
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
+       2016-11-23 - Modified - Price-Jones (UofT)
     """
-    filePath= path.allStarPath()
+    filePath= path.allStarPath(dr=dr)
     if not os.path.exists(filePath):
         download.allStar()
     #read allStar file
-    data= fitsio.read(path.allStarPath())
+    data= fitsio.read(filePath)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath().replace('.fits','-nodups.fits')
+        dupsFilename= filePath.replace('.fits','-nodups.fits')
         if os.path.exists(dupsFilename):
             data= fitsio.read(dupsFilename)
         else:
@@ -145,7 +148,8 @@ def allStar(rmcommissioning=True,
     if rmcommissioning:
         indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
         indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
-        data= data[True-indx]
+        indx = [not i for i in indx]
+        data= data[indx]
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
         data= data[indx]
@@ -157,7 +161,9 @@ def allStar(rmcommissioning=True,
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
-        data= data[True-numpy.isnan(data[aktag])]
+        indx = numpy.isnan(data[aktag])
+        indx = [not i for i in indx]
+        data= data[indx]
         data= data[(data[aktag] > -50.)]
     if exclude_star_bad:
         data= data[(data['ASPCAPFLAG'] & 2**23) == 0]
@@ -250,7 +256,8 @@ def allVisit(rmcommissioning=True,
              akvers='targ',
              plateInt=False,
              plateS4=False,
-             raw=False):
+             raw=False,
+             dr=None):
     """
     NAME:
        allVisit
@@ -268,18 +275,20 @@ def allVisit(rmcommissioning=True,
        allVisit data
     HISTORY:
        2013-11-07 - Written - Bovy (IAS)
+       2016-11-23 - Modified - Price-Jones (UofT)
     """
-    filePath= path.allVisitPath()
+    filePath= path.allVisitPath(dr=dr)
     if not os.path.exists(filePath):
         download.allVisit()
     #read allVisit file
-    data= fitsio.read(path.allVisitPath())
+    data= fitsio.read(path.allVisitPath(dr=dr))
     if raw: return data
     #Some cuts
     if rmcommissioning:
         indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
         indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
-        data= data[True-indx]
+        indx = [not i for i in indx]
+        data= data[indx]
     if main:
         indx= mainIndx(data)
         data= data[indx]
@@ -288,7 +297,9 @@ def allVisit(rmcommissioning=True,
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
-        data= data[True-numpy.isnan(data[aktag])]
+        indx = numpy.isnan(data[aktag])
+        indx = [not i for i in indx]
+        data= data[indx]
         data= data[(data[aktag] > -50.)]
     if plateInt or plateS4:
         #If plate is a string, cast it as an integer
@@ -540,7 +551,9 @@ def apogeeObject(field_name,dr=None,
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
-        data= data[True-numpy.isnan(data[aktag])]
+        indx = numpy.isnan(data[aktag])
+        indx = [not i for i in indx]
+        data= data[indx]
         data= data[(data[aktag] > -50.)]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
@@ -816,10 +829,12 @@ def remove_duplicates(data):
         #If some matches are commissioning data or have bad ak, rm from consideration
         comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
         comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
-        goodak= (True-numpy.isnan(data['AK_TARG'][nm2]))\
-            *(data['AK_TARG'][nm2] > -50.)
-        hisnr= numpy.argmax(data['SNR'][nm2]*(True-comindx)*goodak) #effect. make com zero SNR
-        if numpy.amax(data['SNR'][nm2]*(True-comindx)*goodak) == 0.: #all commissioning or bad ak, treat all equally
+        nanindx = numpy.isnan(data['AK_TARG'][nm2])
+        nanindx = [not i for i in nanindx]
+        goodak= (nanindx)*(data['AK_TARG'][nm2] > -50.)
+        notcomindx = [not i for i in comindx]
+        hisnr= numpy.argmax(data['SNR'][nm2]*(notcomindx)*goodak) #effect. make com zero SNR
+        if numpy.amax(data['SNR'][nm2]*(notcomindx)*goodak) == 0.: #all commissioning or bad ak, treat all equally
             hisnr= numpy.argmax(data['SNR'][nm2])
         tindx= numpy.ones(len(nm2),dtype='bool')
         tindx[hisnr]= False
