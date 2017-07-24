@@ -25,6 +25,80 @@ else:
     _ELEM_NUMBER_DICT['CI']= elements.__dict__['C'].number
     _ELEM_NUMBER_DICT['TiII']= elements.__dict__['Ti'].number
 
+
+# DR12 abundance uncertainty coefficients  as a function of Teff, [M/H], SNR
+# from http://www.sdss.org/dr12/irspec/abundances/
+# see also Holtzman et al 2015
+
+_ch_12coeff=[-3.350,0.769,-0.919,-0.066]
+_nh_12coeff=[-2.704,0.291,-0.591,-0.078]
+_oh_12coeff=[-3.649,0.670,-0.614,-0.093]
+_nah_12coeff=[-2.352,-0.002,-0.915,-0.263]
+_mgh_12coeff=[-3.537,0.263,-0.825,-0.297]
+_alh_12coeff=[-2.764,0.471,-0.868,-0.162]
+_sih_12coeff=[-3.150,0.383,-0.224,-0.105]
+_sh_12coeff=[-3.037,0.507,-0.625,-0.299]
+_kh_12coeff=[-2.770,0.216,-0.667,-0.275]
+_cah_12coeff=[-3.226,0.284,-0.879,-0.429]
+_tih_12coeff=[-3.186,0.657,-0.819,-0.068]
+_vh_12coeff=[-1.608,0.900,-0.400,-0.418]
+_mnh_12coeff=[-3.031,0.639,-0.661,-0.326]
+_feh_12coeff=[-3.357,0.098,-0.303,-0.071]
+_nih_12coeff=[-3.153,0.135,-0.493,-0.185]
+_mh_12coeff=[-3.603,0.109,-0.433,0.039]
+_alpha_12coeff=[-4.360,0.060,-0.848,-0.096]
+
+DR12_XH_coeff = {'C_H':_ch_12coeff,'N_H':_nh_12coeff,'O_H':_oh_12coeff,
+                 'NA_H':_nah_12coeff,'MG_H':_mgh_12coeff,'AL_H':_alh_12coeff,
+                 'SI_H':_sih_12coeff,'S_H':_sh_12coeff,'K_H':_kh_12coeff,
+                 'CA_H':_cah_12coeff,'TI_H':_tih_12coeff,'V_H':_vh_12coeff,
+                 'MN_H':_mnh_12coeff,'FE_H':_feh_12coeff,'NI_H':_nih_12coeff,
+                 'METALS':_mh_12coeff,'ALPHAFE':_alpha_12coeff}
+
+
+# DR13 abundance uncertainty coefficients  as a function of Teff, [M/H], SNR
+# from http://www.sdss.org/dr13/irspec/abundances/
+
+_cfe_13coeff=[-3.243,0.608,-0.757,-0.257]
+_cIfe_13coeff=[-2.804,0.403,-0.743,-0.319]
+_nfe_13coeff=[-2.671,0.373,-0.407,-0.192]
+_ofe_13coeff=[-3.410,1.471,-0.778,-0.182]
+_nafe_13coeff=[-2.389,0.140,-0.926,-0.323]
+_mgfe_13coeff=[-3.980,0.284,-0.949,-0.115]
+_alfe_13coeff=[-2.616,-0.192,-0.628,-0.399]
+_sife_13coeff=[-3.464,0.548,-0.482,-0.212]
+_pfe_13coeff=[-1.988,0.384,-0.568,-0.369]
+_sfe_13coeff=[-2.199,-0.030,-0.402,-0.295]
+_kfe_13coeff=[-3.098,0.208,-0.583,-0.496]
+_cafe_13coeff=[-3.520,0.153,-0.895,-0.405]
+_tife_13coeff=[-3.108,0.295,-0.741,-0.185]
+_tiIIfe_13coeff=[-2.192,0.328,-0.538,-0.267]
+_vfe_13coeff=[-2.447,1.030,-1.096,-0.519]
+_crfe_13coeff=[-3.191,0.290,-0.775,-0.455]
+_mnfe_13coeff=[-3.523,0.235,-0.614,-0.488]
+_feh_13coeff=[-5.316,0.202,-0.874,0.019]
+_cofe_13coeff=[-2.062,1.064,-0.656,-0.523]
+_nife_13coeff=[-4.067,0.442,-0.816,-0.395]
+_cufe_13coeff=[-2.140,-0.096,-0.559,-0.426]
+_gefe_13coeff=[-1.893,0.258,-0.665,-0.395]
+_rbfe_13coeff=[-2.325,0.466,-1.117,-0.360]
+_mh_13coeff=[-3.730,0.232,-0.524,0.013]
+_alpha_13coeff=[-4.219,0.053,-0.794,-0.127]
+
+DR13_XH_coeff={'C_FE':_cfe_13coeff,'CI_FE':_cIfe_13coeff,'N_FE':_nfe_13coeff,
+               'O_FE':_ofe_13coeff,'NA_FE':_nafe_13coeff,'MG_FE':_mgfe_13coeff,
+               'AL_FE':_alfe_13coeff,'SI_FE':_sife_13coeff,'P_FE':_pfe_13coeff,
+               'S_FE':_sfe_13coeff,'K_FE':_kfe_13coeff,'CA_FE':_cafe_13coeff,
+               'TI_FE':_tife_13coeff,'TIII_FE':_tiIIfe_13coeff,
+               'V_FE':_vfe_13coeff,'CR_FE':_crfe_13coeff,'MN_FE':_mnfe_13coeff,
+               'FE_H':_feh_13coeff,'CO_FE':_cofe_13coeff,'NI_FE':_nife_13coeff,
+               'CU_FE':_cufe_13coeff,'GE_FE':_gefe_13coeff,
+               'RB_FE':_rbfe_13coeff,'M_H':_mh_13coeff,
+               'ALPHA_M':_alpha_13coeff}
+
+drcoeffs = {'12':DR12_XH_coeff,'13':DR13_XH_coeff}
+ 
+
 # Detector limits used in pix2wv and wv2pix
 apStarBlu_lo = 322
 apStarBlu_hi = 3242
@@ -104,6 +178,32 @@ def atomic_number(elem):
         return _ELEM_NUMBER_DICT[elem.lower()]
     except (NameError,KeyError):
         return elements.__dict__[elem.lower().capitalize()].number
+
+def sigma_XH(elem,Teff=4500.,M_H=0.,SNR=100.,dr=None):
+    """
+    NAME:
+       sigma_XH
+    PURPOSE:
+       return uncertainty in a given element at specified effective 
+       temperature, metallicity and signal to noise ratio (functional form
+       taken from Holtzman et al 2015)
+    INPUT:
+       elem - string element name following the ASPCAP star naming convention
+              i.e. for DR12 carbon, string is 'C_H'
+       Teff - effective temperature or array thereof  in K, defaults to 4500 K
+       M_H  - metallicity or array thereof, defaults to 0
+       SNR  - signal to noise ratio or array thereof, defaults to 100
+       dr   - data release
+    OUTPUT:
+       float or array depending on shape of Teff, M_H and SNR input
+    HISTORY:
+       2017-07-24 - Written - Price-Jones (UofT)
+    """
+    if dr is None: dr=appath._default_dr()
+    A,B,C,D = drcoeffs[dr][elem]
+    logsig = A + B*((Teff-4500.)/1000.) + C*M_H + D*(SNR-100)
+    return numpy.exp(logsig)
+
 
 def vac2air(wave,sdssweb=False):
     """
