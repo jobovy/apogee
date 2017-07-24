@@ -65,8 +65,8 @@ if __name__ == '__main__':
     if False:
         rcclumplogg= clumplogg*(data['RC'] == 1)
         print("%i / %i = %i%% APOKASC logg clump stars are in the RC catalog" % (numpy.sum(rcclumplogg),numpy.sum(clumplogg),float(numpy.sum(rcclumplogg))/numpy.sum(clumplogg)*100))
-        rcnoclumplogg= (True-clumplogg)*(data['RC'] == 1)
-        print("%i / %i = %i%% APOKASC logg non-clump stars are in the RC catalog" % (numpy.sum(rcnoclumplogg),numpy.sum(True-clumplogg),float(numpy.sum(rcnoclumplogg))/numpy.sum(True-clumplogg)*100.))
+        rcnoclumplogg= (True^clumplogg)*(data['RC'] == 1)
+        print("%i / %i = %i%% APOKASC logg non-clump stars are in the RC catalog" % (numpy.sum(rcnoclumplogg),numpy.sum(True^clumplogg),float(numpy.sum(rcnoclumplogg))/numpy.sum(True^clumplogg)*100.))
         print("%i / %i = %i%% APOKASC logg non-clump stars out of all stars are in the RC catalog" % (numpy.sum(rcnoclumplogg),numpy.sum(data['RC'] == 1),float(numpy.sum(rcnoclumplogg))/numpy.sum(data['RC'] == 1)*100.))
     bloggindx= (data['LOGG'] >= 1.8)*\
         (data['LOGG'] <= rcmodel.loggteffcut(data['TEFF'],data['METALS'],
@@ -96,7 +96,7 @@ if __name__ == '__main__':
     #*(logg <= 2.8)            
     rckascdata= data[indx]
     rcseismoState= numpy.char.strip(rckascdata[seismoStateTag])
-    seismo= True-((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
+    seismo= True^((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
     norcseismo= (rcseismoState == 'RGB') \
         + (rcseismoState == 'DWARF/SUBGIANT')
     print("%i / %i = %i%% APOKASC non-CLUMP stars out of all RC stars would be included with good logg" % (numpy.sum(norcseismo),numpy.sum(seismo),float(numpy.sum(norcseismo))/numpy.sum(seismo)*100.))
@@ -107,13 +107,13 @@ if __name__ == '__main__':
     #indx*= ((data['TEFF']-4800.)/1000.+2.75) > logg
     rckascdata= data[indx]
     rcseismoState= numpy.char.strip(rckascdata[seismoStateTag])
-    seismo= True-((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
+    seismo= True^((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
     print("%i / %i = %i%% RC stars based on logg,teff,feh cut have seismo measurements" % (numpy.sum(seismo),len(rckascdata),float(numpy.sum(seismo))/len(rckascdata)*100.))
     indx= (jk < 0.8)*(jk >= 0.5)\
         *(logg > rcmodel.loggteffcut(data['TEFF'],z,upper=True))
     norckascdata= data[indx]
     norcseismoState= numpy.char.strip(norckascdata[seismoStateTag])
-    seismo= True-((norcseismoState == 'UNKNOWN')+(norcseismoState == '-9999'))
+    seismo= True^((norcseismoState == 'UNKNOWN')+(norcseismoState == '-9999'))
     print("%i / %i = %i%% RGB stars based on logg,teff,feh cut have seismo measurements" % (numpy.sum(seismo),len(norckascdata),float(numpy.sum(seismo))*100./len(norckascdata)))
     #Select stars to be in the RC from the APOKASC data, using the selection criteria of Williams et al. then check against 
     #evolutionary state
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         *(logg <= 3.0)            
     rckascdata= data[indx]
     rcseismoState= numpy.char.strip(rckascdata[seismoStateTag])
-    seismo= True-((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
+    seismo= True^((rcseismoState == 'UNKNOWN')+(rcseismoState == '-9999'))
     norcseismo= (rcseismoState == 'RGB') \
         + (rcseismoState == 'DWARF/SUBGIANT')
     print("%i / %i = %i%% APOKASC non-CLUMP stars out of all RC stars would be included with good logg for the Williams et al. selection" % (numpy.sum(norcseismo),numpy.sum(seismo),float(numpy.sum(norcseismo))/numpy.sum(seismo)*100.))
