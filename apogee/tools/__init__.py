@@ -27,6 +27,8 @@ else:
 
 
 # DR12 abundance uncertainty coefficients  as a function of Teff, [M/H], SNR
+# from http://www.sdss.org/dr12/irspec/abundances/
+# see also Holtzman et al 2015
 
 _ch_12coeff=[-3.350,0.769,-0.919,-0.066]
 _nh_12coeff=[-2.704,0.291,-0.591,-0.078]
@@ -55,6 +57,7 @@ DR12_XH_coeff = {'C_H':_ch_12coeff,'N_H':_nh_12coeff,'O_H':_oh_12coeff,
 
 
 # DR13 abundance uncertainty coefficients  as a function of Teff, [M/H], SNR
+# from http://www.sdss.org/dr13/irspec/abundances/
 
 _cfe_13coeff=[-3.243,0.608,-0.757,-0.257]
 _cIfe_13coeff=[-2.804,0.403,-0.743,-0.319]
@@ -182,7 +185,8 @@ def sigma_XH(elem,Teff=4500.,M_H=0.,SNR=100.,dr=None):
        sigma_XH
     PURPOSE:
        return uncertainty in a given element at specified effective 
-       temperature, metallicity and signal to noise ratio
+       temperature, metallicity and signal to noise ratio (functional form
+       taken from Holtzman et al 2015)
     INPUT:
        elem - string element name following the ASPCAP star naming convention
               i.e. for DR12 carbon, string is 'C_H'
