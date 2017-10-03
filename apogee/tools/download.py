@@ -13,7 +13,6 @@ from apogee.tools import path
 _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
 _DR13_URL= 'http://data.sdss.org/sas/dr13'
-_DR14_URL= 'http://data.sdss.org/sas/dr14'
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
@@ -623,7 +622,6 @@ def _base_url(dr,rc=False):
     if dr == '10': return _DR10_URL
     elif dr == '12': return _DR12_URL
     elif dr == '13': return _DR13_URL
-    elif dr == '14': return _DR14_URL
     else: return _PROPRIETARY_URL
 
 def _dr_string(dr):
