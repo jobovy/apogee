@@ -606,6 +606,11 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
             elif not 'exit status 4' in str(e):
                 interrupted= True
             os.remove(tmp_savefilename)
+        except OSError as e:
+            if e.errno == os.errno.ENOENT:
+                raise OSError("Automagically downloading catalogs and data files requires the wget program; please install wget and try again...")
+            else:
+                raise
         finally:
             if os.path.exists(tmp_savefilename):
                 os.remove(tmp_savefilename)
