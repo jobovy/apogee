@@ -905,6 +905,18 @@ def apogeeModelAtmosphereLibraryDirPath(dr=None,lib='kurucz_filled'):
             return os.path.join('speclib','kurucz_filled')
         elif 'marcs' in lib.lower():
             return os.path.join('speclib','marcs',lib)
+
+def change_dr(dr=None):
+    # Doesn't actually change data release
+    if dr is None: dr=_default_dr()
+    global _APOGEE_REDUX
+    if dr == '10': _APOGEE_REDUX=_DR10REDUX
+    elif dr == '11': _APOGEE_REDUX=_DR11REDUX
+    elif dr == '12': _APOGEE_REDUX=_DR12REDUX
+    elif dr == '13': _APOGEE_REDUX=_DR13REDUX
+    elif dr == '14': _APOGEE_REDUX=_DR14REDUX
+    elif dr == 'current': _APOGEE_REDUX=_CURRENTREDUX
+    else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
    
 def _default_dr():
     if _APOGEE_REDUX == _DR10REDUX: dr= '10'
