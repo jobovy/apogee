@@ -153,7 +153,7 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
-def apStar(loc_id,apogee_id,dr=None):
+def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:
        apStar
@@ -162,15 +162,17 @@ def apStar(loc_id,apogee_id,dr=None):
     INPUT:
        loc_id - location ID
        apogee_id - APOGEE ID of the star
+       telescope= telescope used ('apo25m' [default], 'apo1m', 'lco25m')
        dr= return the path corresponding to this data release (general default)
     OUTPUT:
        (none; just downloads)
     HISTORY:
        2015-01-13 - Written - Bovy (IAS)
+       2018-01-22 - Edited for new post-DR14 path structure - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
-    filePath= path.apStarPath(loc_id,apogee_id,dr=dr)
+    filePath= path.apStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
