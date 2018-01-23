@@ -93,14 +93,15 @@ def apallPath(visit=False):
             return os.path.join(_APOGEE_DATA,
                                 'allStar-'+_APOGEE_ASPCAP_REDUX+'.fits')
 
-def allStarPath(dr=None,_old=False):
+def allStarPath(dr=None,_old=False,mjd=58104):
     """
     NAME:
        allStarPath
     PURPOSE:
        returns the path of the relevant file
     INPUT:
-       dr= return the path corresponding to this data release       
+       dr= return the path corresponding to this data release
+       mjd= (58104) MJD of version for monthly internal pipeline runs
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -109,6 +110,7 @@ def allStarPath(dr=None,_old=False):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
+       2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
@@ -130,8 +132,9 @@ def allStarPath(dr=None,_old=False):
             return os.path.join(specReduxPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
-            return os.path.join(specReduxPath,'current','stars','l25_6d',
-                                _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+            specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
+            return os.path.join(specASPCAPPath,'t9','l31c',
+                                'allStar-t9-l31c-%i.fits' % mjd)
 
 def allVisitPath(dr=None,_old=False):
     """
@@ -854,6 +857,27 @@ def apogeeSpectroReduxDirPath(dr=None):
     if dr.lower() == 'current':
         return os.path.join(_APOGEE_DATA,'apogeework',
                             'apogee','spectro','redux')
+    else:
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','spectro','redux')
+   
+def apogeeSpectroASPCAPDirPath(dr=None):
+    """
+    NAME:
+       apogeeSpectroASPCAPDirPath
+    PURPOSE:
+        returns the path of the spectro/aspcap dir
+    INPUT:
+       dr= return the path corresponding to this data release       
+    OUTPUT:
+       path string
+    HISTORY:
+       2018-01-22 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= _default_dr()
+    if dr.lower() == 'current':
+        return os.path.join(_APOGEE_DATA,'apogeework',
+                            'apogee','spectro','aspcap')
     else:
         return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                             'apogee','spectro','redux')

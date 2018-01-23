@@ -99,7 +99,8 @@ def allStar(rmcommissioning=True,
             adddist=False,
             distredux=None,
             rmdups=False,
-            raw=False):
+            raw=False,
+            mjd=58104):
     """
     NAME:
        allStar
@@ -117,12 +118,14 @@ def allStar(rmcommissioning=True,
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
+       mjd= (58104) MJD of version for monthly internal pipeline runs
     OUTPUT:
        allStar data
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
+       2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
     """
-    filePath= path.allStarPath()
+    filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
         download.allStar()
     #read allStar file
