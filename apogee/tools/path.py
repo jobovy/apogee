@@ -405,20 +405,22 @@ def apogeeObjectPath(field_name,dr=None):
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         filename)
 
-def aspcapStarPath(loc_id,apogee_id,dr=None):
+def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:
        aspcapStarPath
     PURPOSE:
        returns the path of the aspcapStar file
     INPUT:
-       loc_id - location ID (field for 1m targets)
+       loc_id - location ID (field for 1m targets or after DR14)
        apogee_id - APOGEE ID of the star
+       telescope= telescope used ('apo25m' [default], 'apo1m', 'lco25m')
        dr= return the path corresponding to this data release
     OUTPUT:
        path string
     HISTORY:
        2014-11-25 - Written - Bovy (IAS)
+       2018-01-22 - Edited for new post-DR14 path structure - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
@@ -467,20 +469,10 @@ def aspcapStarPath(loc_id,apogee_id,dr=None):
                                 'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
     elif dr == 'current':
-        if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'current','stars','l25_6d',
-                                _redux_dr(dr=dr),loc_id.strip(),
-                                'aspcapStar-current-%s-%s.fits' \
-                                    % (_redux_dr(dr=dr),
-                                       apogee_id.strip()))
-        elif loc_id ==1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            return os.path.join(specReduxPath,'current','stars','l25_6d',
-                                _redux_dr(dr=dr),'%i' % loc_id,
-                                'aspcapStar-current-%s-%s.fits' \
-                                    % (_redux_dr(dr=dr),
-                                       apogee_id))
+        specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
+        return os.path.join(specASPCAPPath,'t9','l31c',telescope,
+                            loc_id.strip(),
+                            'aspcapStar-t9-%s.fits' % (apogee_id.strip()))
     
 def apStarPath(loc_id,apogee_id,dr=None):
     """
