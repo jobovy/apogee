@@ -136,7 +136,7 @@ def allStarPath(dr=None,_old=False,mjd=58104):
             return os.path.join(specASPCAPPath,'t9','l31c',
                                 'allStar-t9-l31c-%i.fits' % mjd)
 
-def allVisitPath(dr=None,_old=False):
+def allVisitPath(dr=None,_old=False,mjd=58104):
     """
     NAME:
        allVisitPath
@@ -144,6 +144,7 @@ def allVisitPath(dr=None,_old=False):
        returns the path of the relevant file
     INPUT:
        dr= return the path corresponding to this data release       
+       mjd= (58104) MJD of version for monthly internal pipeline runs
     OUTPUT:
        path string
     REQUIREMENTS:
@@ -152,6 +153,7 @@ def allVisitPath(dr=None,_old=False):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
+       2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
@@ -159,7 +161,7 @@ def allVisitPath(dr=None,_old=False):
         return os.path.join(_APOGEE_DATA,
                             'allVisit-%s.fits' % redux)
     else:
-        return allStarPath(dr=dr,_old=_old).replace('allStar','allVisit')
+        return allStarPath(dr=dr,_old=_old,mjd=mjd).replace('allStar','allVisit')
 
 def apokascPath():
     """
