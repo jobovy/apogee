@@ -8,7 +8,11 @@ import math
 import numpy
 from scipy import special, interpolate, sparse, ndimage
 import scipy.sparse.linalg
-import fitsio
+try:
+    import fitsio
+except ImportError:
+    import astropy.io.fits as pyfits
+    fitsio.read= pyfits.getdata
 import apogee.tools.read as apread
 import apogee.tools.path as appath
 from apogee.tools.download import _download_file

@@ -3,7 +3,11 @@ import numpy
 from scipy import optimize, interpolate
 from . import path as appath
 from . import download as download
-import fitsio
+try:
+    import fitsio
+except ImportError:
+    import astropy.io.fits as pyfits
+    fitsio.read= pyfits.getdata
 import warnings
 from periodictable import elements
 try:
