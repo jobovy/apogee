@@ -6,7 +6,11 @@
 import sys
 import numpy
 import esutil
-import fitsio
+try:
+    import fitsio
+except ImportError:
+    import astropy.io.fits as pyfits
+    fitsio.read= pyfits.getdata
 import isodist
 import apogee.tools.read as apread
 import apogee.samples.rc as rcmodel

@@ -20,7 +20,11 @@ import csv
 import tempfile
 import subprocess
 import numpy
-import fitsio
+try:
+    import fitsio
+except ImportError:
+    import astropy.io.fits as pyfits
+    fitsio.read= pyfits.getdata
 import esutil
 from galpy.util import bovy_coords
 import isodist

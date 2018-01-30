@@ -28,7 +28,11 @@ try:
                       for v in esutil.__version__.split('.')]
 except ImportError:
     _ESUTIL_LOADED= False
-import fitsio
+try:
+    import fitsio
+except ImportError:
+    import astropy.io.fits as pyfits
+    fitsio.read= pyfits.getdata
 import tqdm
 from apogee.tools import path, paramIndx, download
 _ERASESTR= "                                                                                "
@@ -126,6 +130,7 @@ def allStar(rmcommissioning=True,
     if not os.path.exists(filePath):
         download.allStar()
     #read allStar file
+    #data= pyfits.getdata(path.allStarPath())
     data= fitsio.read(path.allStarPath())
     if raw: return data
     #Remove duplicates, cache
