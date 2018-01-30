@@ -111,7 +111,10 @@ This package requires the Python packages `NumPy
 python 3, it is not listed as a dependency in the ``setup.py`` file
 and must be installed separately; if ``esutil`` is not installed, some
 functionality in ``apogee.tools.read`` is lost for which warnings are
-issued.
+issued. If `fitsio <http://github.com/esheldon/fitsio>`__ is not
+installed, the code will fall back onto `astropy
+<http://docs.astropy.org/en/stable/io/fits/index.html>`__ for reading
+FITS files.
 
 The ``apogee`` package should work both in python 2 and 3 (thanks to
 `@mrawls <https://github.com/mrawls>`__ for adding python 3
