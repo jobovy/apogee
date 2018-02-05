@@ -287,7 +287,7 @@ def air2vac(wave,sdssweb=False):
     return optimize.brentq(lambda x: vac2air(x,sdssweb=sdssweb)-wave,
                            wave-20,wave+20.)
 
-def toAspcapGrid(spec):
+def toAspcapGrid(spec,dr=None):
     """
     NAME:
        toAspcapGrid
@@ -295,27 +295,31 @@ def toAspcapGrid(spec):
        convert a spectrum from apStar grid to the ASPCAP grid (w/o the detector gaps)
     INPUT:
        spec - spectrum (or whatever) on the apStar grid; either (nwave) or (nspec,nwave)
+       dr - data release of pixel bounds to use
     OUTPUT:
        spectrum (or whatever) on the ASPCAP grid
     HISTORY:
        2015-02-17 - Written - Bovy (IAS)
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
+    apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=dr)    
+    aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
     if len(spec.shape) == 2: # (nspec,nwave)
-        out= numpy.zeros((spec.shape[0],7214),dtype=spec.dtype)
+        out= numpy.zeros((spec.shape[0],aspcapTotal),dtype=spec.dtype)
         oneSpec= False
     else:
         oneSpec= True
-        out= numpy.zeros((1,7214),dtype=spec.dtype)
+        out= numpy.zeros((1,aspcapTotal),dtype=spec.dtype)
         spec= numpy.reshape(spec,(1,len(spec)))
-    out[:,:2920]= spec[:,322:3242]
-    out[:,2920:5320]= spec[:,3648:6048]
-    out[:,5320:]= spec[:,6412:8306]
+    out[:,:aspcapGre_start]= spec[:,apStarBlu_lo:apStarBlu_hi]
+    out[:,aspcapGre_start:aspcapRed_start]= spec[:,apStarGre_lo:apStarGre_hi]
+    out[:,aspcapRed_start:]= spec[:,apStarRed_lo:apStarRed_hi]
     if oneSpec:
         return out[0]
     else:
         return out
 
-def toApStarGrid(spec):
+def toApStarGrid(spec,dr=None):
     """
     NAME:
        toApStarGrid
@@ -323,11 +327,15 @@ def toApStarGrid(spec):
        convert a spectrum from the ASPCAP grid (w/o the detector gaps) to the apStar grid
     INPUT:
        spec - spectrum (or whatever) on the ASPCAP grid; either (nwave) or (nspec,nwave)
+       dr - data release of pixel bounds to use
     OUTPUT:
        spectrum (or whatever) on the apStar grid
     HISTORY:
        2015-02-17 - Written - Bovy (IAS)
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
+    apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=dr)    
+    aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
     if len(spec.shape) == 2: # (nspec,nwave)
         out= numpy.zeros((spec.shape[0],8575),dtype=spec.dtype)
         oneSpec= False
@@ -335,9 +343,9 @@ def toApStarGrid(spec):
         oneSpec= True
         out= numpy.zeros((1,8575),dtype=spec.dtype)
         spec= numpy.reshape(spec,(1,len(spec)))
-    out[:,322:3242]= spec[:,:2920]
-    out[:,3648:6048]= spec[:,2920:5320]
-    out[:,6412:8306]= spec[:,5320:]
+    out[:,apStarBlu_lo:apStarBlu_hi]= spec[:,:aspcapGre_start]
+    out[:,apStarGre_lo:apStarGre_hi]= spec[:,aspcapGre_start:aspcapRed_start]
+    out[:,apStarRed_lo:apStarRed_hi]= spec[:,aspcapRed_start:]
     if oneSpec:
         return out[0]
     else:
@@ -359,10 +367,12 @@ def pix2wv(pix,apStarWavegrid=False,dr=None):
        pix - pixel (int), range of pixels (tuple) or list of pixels (list/numpy array)
              float input will be converted to integers
        apStarWavegrid = (False) uses aspcapStarWavegrid by default
+       dr - data release of pixel bounds to use
     OUTPUT:
        wavelength(s) in Angstroms corresponding to input pixel(s)
     HISTORY:
        2016-10-18 - Written - Price-Jones
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
     # choose wavelength array to source from
     if apStarWavegrid:
@@ -413,6 +423,7 @@ def wv2pix(wv,apStarWavegrid=False,dr=None):
        wv - wavelength (int), range of wavelengths (tuple) or list of wavelengths
             (list/numpy array) in Angstroms
        apStarWavegrid = (False) uses aspcapStarWavegrid by default
+       dr - data release of pixel bounds to use
     OUTPUT:
        array of pixel(s) corresponding to input wavelength(s)
        nan - indicates input wavelength(s) outside the range
