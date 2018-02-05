@@ -6,7 +6,7 @@ import numpy
 from scipy import special
 import apogee.tools.read as apread
 import apogee.tools.path as appath
-from apogee.tools import toAspcapGrid
+from apogee.tools import toAspcapGrid,_aspcapPixelLimits
 from apogee.spec.plot import apStarWavegrid
 def specFitInput(func):
     """Decorator to parse the input for spectral fitting"""
@@ -23,9 +23,10 @@ def specFitInput(func):
             specerr= ispecerr
         elif (isinstance(specerr,(list,numpy.ndarray)) \
                   and isinstance(specerr[0],str)): # locID+APOGEE-ID; array
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             nspec= len(specerr)
-            ispec= numpy.empty((nspec,7214))
-            ispecerr= numpy.empty((nspec,7214))
+            ispec= numpy.empty((nspec,aspcapTotal))
+            ispecerr= numpy.empty((nspec,aspcapTotal))
             for ii in range(nspec):
                 ispec[ii]= apread.aspcapStar(spec[ii],specerr[ii],ext=1,
                                              header=False,aspcapWavegrid=True)
