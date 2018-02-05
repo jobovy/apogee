@@ -10,7 +10,7 @@ from matplotlib.ticker import NullFormatter
 from matplotlib.backends.backend_pdf import PdfPages
 import apogee.spec.window as apwindow
 import apogee.tools.read as apread
-from apogee.tools import air2vac, atomic_number,apStarWavegrid
+from apogee.tools import air2vac, atomic_number,apStarWavegrid,_apStarPixelLimits,_aspcapPixelLimits
 
 _LAMBDASUB= 15000
 _STARTENDSKIP= 30
@@ -90,11 +90,13 @@ def specPlotInputDecorator(func):
         elif len(args) >= 1 and isinstance(args[0],(list,numpy.ndarray)):
             # spectrum on standard re-sampled wavelength grid
             lam=apStarWavegrid()
-            if len(args[0]) == 7214: # Input is on ASPCAP grid
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
+            if len(args[0]) == aspcapTotal: # Input is on ASPCAP grid
                 spec= numpy.zeros(len(lam))
-                spec[322:3242]= args[0][:2920]
-                spec[3648:6048]= args[0][2920:5320]
-                spec[6412:8306]= args[0][5320:]
+                spec[apStarBlu_lo:apStarBlu_hi]= args[0][:aspcapGre_start]
+                spec[apStarGre_lo:apStarGre_hi]= args[0][aspcapGre_start:aspcapRed_start]
+                spec[apStarRed_lo:apStarRed_hi]= args[0][aspcapRed_start:]
             else:
                 spec= args[0]
             return func(lam,spec,*args[1:],**kwargs)
