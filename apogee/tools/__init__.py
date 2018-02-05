@@ -101,19 +101,59 @@ DR13_XH_coeff={'C_FE':_cfe_13coeff,'CI_FE':_cIfe_13coeff,'N_FE':_nfe_13coeff,
                'ALPHA_M':_alpha_13coeff}
 
 drcoeffs = {'12':DR12_XH_coeff,'13':DR13_XH_coeff}
- 
 
-# Detector limits used in pix2wv and wv2pix
-apStarBlu_lo = 322
-apStarBlu_hi = 3242
-apStarGre_lo = 3648
-apStarGre_hi = 6048
-apStarRed_lo = 6412
-apStarRed_hi = 8306
-aspcapBlu_start = 0
-aspcapGre_start = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
-aspcapRed_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
-aspcapTotal = apStarRed_hi-apStarRed_lo+aspcapRed_start
+
+# Detector limit by data release
+apStarInds = {'12':{'blue':(322,3242),'green':(3648,6048),'red':(6412,8306)},
+              '13':{'blue':(246,3273),'green':(3585,6079),'red':(6344,8334)},
+              '14':{'blue':(246,3273),'green':(3585,6079),'red':(6344,8334)}
+             }
+
+def _apStarPixelLimits(dr=None):
+  """
+  NAME: 
+      _apStarPixelLimits
+  PURPOSE:
+      return the apStar pixel bounds for each detector for the chosen data 
+      release by unpacking apStarInds.
+  INPUT
+      dr - string referring to data release, e.g. '12' 
+  OUTPUT:
+      bounds of blue, green and red detectors.
+  HISTORY:
+      2018-02-05 - Written - Price-Jones (UofT)
+  """
+  if dr is None: 
+    dr=appath._default_dr()
+  inds = apStarInds[dr]
+  apStarBlu_lo,apStarBlu_hi = inds['blue']
+  apStarGre_lo,apStarGre_hi = inds['green']
+  apStarRed_lo,apStarRed_hi = inds['red']
+  return apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi
+
+def _aspcapPixelLimits(dr=None):
+  """
+  NAME: 
+      _aspcapPixelLimits
+  PURPOSE:
+      return the ASPCAP pixel bounds for each detector for the chosen data 
+      release by unpacking apStarInds.
+  INPUT
+      dr - string referring to data release, e.g. '12' 
+  OUTPUT:
+      starting pixel of the blue, green and red detectors, as well as the 
+      total spectrum length in pixels
+  HISTORY:
+      2018-02-05 - Written - Price-Jones (UofT)
+  """
+  if dr is None:
+    dr=appath._default_dr()
+  apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=dr)
+  aspcapBlu_start = 0
+  aspcapGre_start = apStarBlu_hi-apStarBlu_lo+aspcapBlu_start
+  aspcapRed_start = apStarGre_hi-apStarGre_lo+aspcapGre_start
+  aspcapTotal = apStarRed_hi-apStarRed_lo+aspcapRed_start
+  return aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal
 
 # Wavegrid parameters used in apStarWavegrid and pix2wv
 _LOG10LAMBDA0= 4.179 
@@ -309,7 +349,7 @@ pixels = numpy.arange(0,_NLAMBDA)
 apStar_pixel_interp = interpolate.interp1d(wvs,pixels,kind='linear',
                                            bounds_error=False)
 
-def pix2wv(pix,apStarWavegrid=False):
+def pix2wv(pix,apStarWavegrid=False,dr=None):
     """
     NAME:
        pix2wv
@@ -329,6 +369,7 @@ def pix2wv(pix,apStarWavegrid=False):
         wvlist = wvs
         maxpix = _NLAMBDA
     elif not apStarWavegrid:
+        aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
         wvlist = aspcapwvs
         maxpix = aspcapTotal
     # Check input cases
@@ -362,7 +403,7 @@ def pix2wv(pix,apStarWavegrid=False):
         warnings.warn("unrecognized pixel input",RuntimeWarning)
         return None
 
-def wv2pix(wv,apStarWavegrid=False):
+def wv2pix(wv,apStarWavegrid=False,dr=None):
     """
     NAME:
        wv2pix
@@ -380,6 +421,7 @@ def wv2pix(wv,apStarWavegrid=False):
            spcapStarWavegrid
     HISTORY:
        2016-10-18 - Written - Price-Jones
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones
     """
     # Check input cases
     if isinstance(wv,(int,float)):
@@ -414,7 +456,9 @@ def wv2pix(wv,apStarWavegrid=False):
         return pixels.astype(int)
 
     # If on aspcapStarWavegrid, convert appropriately    
-    elif not apStarWavegrid:        
+    elif not apStarWavegrid:
+        apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=dr)    
+        aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
         # find where pixel list matches detectors
         blue = numpy.where((pixels >= apStarBlu_lo) & (pixels < apStarBlu_hi))
         green = numpy.where((pixels >= apStarGre_lo) & (pixels < apStarGre_hi))
