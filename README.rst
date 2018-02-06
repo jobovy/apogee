@@ -134,7 +134,7 @@ RECENTLY CHANGED TO BE MORE CONSISTENT WITH SDSS' OWN ENVIRONMENT
 VARIABLES**)
 
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
-* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14)
+* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path``.
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
 
 In order to use this code, you will need to set these environment variables
@@ -241,7 +241,7 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *K*\ :sub:`s` magnitudes. 
+*J*, *H*, and *K*\ :sub:`s` magnitudes.
 
 The *allStar* read function also has an option *rmdups=True* (default:
 False) that removes a small number of duplicates in the allStar file
@@ -289,7 +289,14 @@ will be automatically removed).
 Spectra will also be automatically downloaded if they are not
 available locally. Module **apogee.tools.read** also contains routines
 to read the various targeting-related files (see above). These are
-*not* automatically downloaded at this point.
+*not* automatically downloaded at this point. 
+
+You can set and change the DR on the fly using the function
+``change_dr`` in ``apogee.tools.path``. Many (but not all) functions
+allow a ``dr=`` keyword that allows one to specify the data release,
+but using ``change_dr`` allows you to change the data release without
+having to specify it for every function (and also allows you to change
+it for functions that do not support the ``dr=`` keyword).
 
 We can also read individual apVisit files, provided the location ID, MJD, and fiber are known.
 Otherwise, it functions similarly to how you would read in an apStar file. If you are interested
