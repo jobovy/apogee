@@ -21,6 +21,8 @@ import sys
 import copy
 import warnings
 import numpy
+from . import _apStarPixelLimits,_aspcapPixelLimits
+
 try:
     import esutil
     _ESUTIL_LOADED= True
@@ -50,14 +52,11 @@ def modelspecOnApStarWavegrid(func):
                 out= out.T
             else:
                 newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
-            if len(out) == 7214:
-                newOut[322:3242]= out[:2920]
-                newOut[3648:6048]= out[2920:5320]
-                newOut[6412:8306]= out[5320:]
-            else:
-                newOut[246:3274]= out[:3028]
-                newOut[3585:6080]= out[3028:5523]
-                newOut[6344:8335]= out[5523:]
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
+            newOut[apStarBlu_lo:apStarBlu_hi]= out[:aspcapGre_start]
+            newOut[apStarGre_lo:apStarGre_hi]= out[aspcapGre_start:aspcapRed_start]
+            newOut[apStarRed_lo:apStarRed_hi]= out[aspcapRed_start:]
             if len(out.shape) == 2:
                 out= newOut.T
             else:
@@ -73,16 +72,18 @@ def specOnAspcapWavegrid(func):
         if kwargs.get('header',True):
             out, hdr= out
         if kwargs.get('aspcapWavegrid',False):
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             if len(out.shape) == 2:
-                newOut= numpy.zeros((7214,out.shape[0]),dtype=out.dtype)
+                newOut= numpy.zeros((aspcapTotal,out.shape[0]),dtype=out.dtype)
                 if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
                 out= out.T
             else:
-                newOut= numpy.zeros(7214,dtype=out.dtype)
+                newOut= numpy.zeros(aspcapTotal,dtype=out.dtype)
                 if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
-            newOut[:2920]= out[322:3242]
-            newOut[2920:5320]= out[3648:6048]
-            newOut[5320:]= out[6412:8306]
+            newOut[:aspcapGre_start]= out[apStarBlu_lo:apStarBlu_hi]
+            newOut[aspcapGre_start:aspcapRed_start]= out[apStarGre_lo:apStarGre_hi]
+            newOut[aspcapRed_start:]= out[apStarRed_lo:apStarRed_hi]
             if len(out.shape) == 2:
                 out= newOut.T
             else:
@@ -677,6 +678,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
        model spectrum or (model spectrum file, header)
     HISTORY:
        2015-01-13 - Written - Bovy (IAS)
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
     filePath= path.modelSpecPath(lib=lib,teff=teff,logg=logg,metals=metals,
                                  cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr)
@@ -708,11 +710,12 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                 hdulist[ext].header)
     elif not ext == 234:
         return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
-    else: #ext == 234, combine 2,3,4
-        out= numpy.zeros(7214)
-        out[:2920]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
-        out[2920:5320]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
-        out[5320:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
+    else: #ext == 234, combine 2,3,4    
+        aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
+        out= numpy.zeros(aspcapTotal)
+        out[:aspcapGre_start]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
+        out[aspcapGre_start:aspcapRed_start]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
+        out[aspcapRed_start:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
         return out
 
 def apWave(chip,ext=2,dr=None):
