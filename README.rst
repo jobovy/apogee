@@ -101,8 +101,8 @@ DEPENDENCIES AND PYTHON VERSIONS
 This package requires the Python packages `NumPy
 <http://numpy.scipy.org/>`__, `Scipy <http://www.scipy.org/>`__,
 `Matplotlib <http://matplotlib.sourceforge.net/>`__, `tqdm
-<http://github.com/tqdm/tqdm>`__, `fitsio
-<http://github.com/esheldon/fitsio>`__, `esutil
+<http://github.com/tqdm/tqdm>`__, `astropy
+<https://github.com/astropy/astropy>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
 <http://github.com/jobovy/galpy>`__, `isodist
 <http://github.com/jobovy/isodist>`__, and `periodictable
@@ -111,10 +111,8 @@ This package requires the Python packages `NumPy
 python 3, it is not listed as a dependency in the ``setup.py`` file
 and must be installed separately; if ``esutil`` is not installed, some
 functionality in ``apogee.tools.read`` is lost for which warnings are
-issued. If `fitsio <http://github.com/esheldon/fitsio>`__ is not
-installed, the code will fall back onto `astropy
-<http://docs.astropy.org/en/stable/io/fits/index.html>`__ for reading
-FITS files.
+issued. With standard installation, astropy is used to read FITS files. Installing `fitsio <http://github.com/esheldon/fitsio>`__ will cause those routines to take precedence over `astropy
+<http://docs.astropy.org/en/stable/io/fits/index.html>`__.
 
 The ``apogee`` package should work both in python 2 and 3 (thanks to
 `@mrawls <https://github.com/mrawls>`__ for adding python 3
@@ -134,7 +132,7 @@ RECENTLY CHANGED TO BE MORE CONSISTENT WITH SDSS' OWN ENVIRONMENT
 VARIABLES**)
 
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
-* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14)
+* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path``.
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
 
 In order to use this code, you will need to set these environment variables
@@ -241,7 +239,7 @@ remove stars only observed on commissioning plates
 estimate (*ak=True*), and use the original extinction estimate used to
 define the targeting sample (*akvers='targ'*). The output
 numpy.recarray has additional tags containing the extinction-corrected
-*J*, *H*, and *K*\ :sub:`s` magnitudes. 
+*J*, *H*, and *K*\ :sub:`s` magnitudes.
 
 The *allStar* read function also has an option *rmdups=True* (default:
 False) that removes a small number of duplicates in the allStar file
@@ -289,7 +287,14 @@ will be automatically removed).
 Spectra will also be automatically downloaded if they are not
 available locally. Module **apogee.tools.read** also contains routines
 to read the various targeting-related files (see above). These are
-*not* automatically downloaded at this point.
+*not* automatically downloaded at this point. 
+
+You can set and change the DR on the fly using the function
+``change_dr`` in ``apogee.tools.path``. Many (but not all) functions
+allow a ``dr=`` keyword that allows one to specify the data release,
+but using ``change_dr`` allows you to change the data release without
+having to specify it for every function (and also allows you to change
+it for functions that do not support the ``dr=`` keyword).
 
 We can also read individual apVisit files, provided the location ID, MJD, and fiber are known.
 Otherwise, it functions similarly to how you would read in an apStar file. If you are interested

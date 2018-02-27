@@ -1,4 +1,4 @@
-##################################################################################
+#######################f###########################################################
 #
 #   apogee.tools.read: read various APOGEE data files
 #
@@ -21,6 +21,8 @@ import sys
 import copy
 import warnings
 import numpy
+from . import _apStarPixelLimits,_aspcapPixelLimits
+
 try:
     import esutil
     _ESUTIL_LOADED= True
@@ -30,9 +32,12 @@ except ImportError:
     _ESUTIL_LOADED= False
 try:
     import fitsio
+    fitsread= fitsio.read
+    fitswrite=fitsio.write
 except ImportError:
     import astropy.io.fits as pyfits
-    fitsio.read= pyfits.getdata
+    fitsread= pyfits.getdata
+    fitswrite=pyfits.writeto
 import tqdm
 from apogee.tools import path, paramIndx, download
 _ERASESTR= "                                                                                "
@@ -50,14 +55,11 @@ def modelspecOnApStarWavegrid(func):
                 out= out.T
             else:
                 newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
-            if len(out) == 7214:
-                newOut[322:3242]= out[:2920]
-                newOut[3648:6048]= out[2920:5320]
-                newOut[6412:8306]= out[5320:]
-            else:
-                newOut[246:3274]= out[:3028]
-                newOut[3585:6080]= out[3028:5523]
-                newOut[6344:8335]= out[5523:]
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
+            newOut[apStarBlu_lo:apStarBlu_hi]= out[:aspcapGre_start]
+            newOut[apStarGre_lo:apStarGre_hi]= out[aspcapGre_start:aspcapRed_start]
+            newOut[apStarRed_lo:apStarRed_hi]= out[aspcapRed_start:]
             if len(out.shape) == 2:
                 out= newOut.T
             else:
@@ -73,16 +75,18 @@ def specOnAspcapWavegrid(func):
         if kwargs.get('header',True):
             out, hdr= out
         if kwargs.get('aspcapWavegrid',False):
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             if len(out.shape) == 2:
-                newOut= numpy.zeros((7214,out.shape[0]),dtype=out.dtype)
+                newOut= numpy.zeros((aspcapTotal,out.shape[0]),dtype=out.dtype)
                 if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
                 out= out.T
             else:
-                newOut= numpy.zeros(7214,dtype=out.dtype)
+                newOut= numpy.zeros(aspcapTotal,dtype=out.dtype)
                 if issubclass(out.dtype.type,numpy.float): newOut+= numpy.nan
-            newOut[:2920]= out[322:3242]
-            newOut[2920:5320]= out[3648:6048]
-            newOut[5320:]= out[6412:8306]
+            newOut[:aspcapGre_start]= out[apStarBlu_lo:apStarBlu_hi]
+            newOut[aspcapGre_start:aspcapRed_start]= out[apStarGre_lo:apStarGre_hi]
+            newOut[aspcapRed_start:]= out[apStarRed_lo:apStarRed_hi]
             if len(out.shape) == 2:
                 out= newOut.T
             else:
@@ -134,19 +138,19 @@ def allStar(rmcommissioning=True,
         download.allStar()
     #read allStar file
     #data= pyfits.getdata(path.allStarPath())
-    data= fitsio.read(path.allStarPath())
+    data= fitsread(path.allStarPath())
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
         dupsFilename= path.allStarPath().replace('.fits','-nodups.fits')
         if os.path.exists(dupsFilename):
-            data= fitsio.read(dupsFilename)
+            data= fitsread(dupsFilename)
         else:
             sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
             sys.stdout.flush()
             data= remove_duplicates(data)
             #Cache this file for subsequent use of rmdups
-            fitsio.write(dupsFilename,data,clobber=True)
+            fitswrite(dupsFilename,data,clobber=True)
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.flush()
     #Some cuts
@@ -188,7 +192,7 @@ def allStar(rmcommissioning=True,
         warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     #Add distances
     if adddist and _ESUTIL_LOADED:
-        dist= fitsio.read(path.distPath(),1)
+        dist= fitsread(path.distPath(),1)
         h=esutil.htm.HTM()
         m1,m2,d12 = h.match(dist['RA'],dist['DEC'],
                              data['RA'],data['DEC'],
@@ -281,7 +285,7 @@ def allVisit(rmcommissioning=True,
     if not os.path.exists(filePath):
         download.allVisit()
     #read allVisit file
-    data= fitsio.read(path.allVisitPath())
+    data= fitsread(path.allVisitPath())
     if raw: return data
     #Some cuts
     if rmcommissioning:
@@ -356,7 +360,7 @@ def apokasc(rmcommissioning=True,
     data= allStar(rmcommissioning=rmcommissioning,main=main,adddist=False,
                   rmdups=False)
     #read the APOKASC file
-    kascdata= fitsio.read(path.apokascPath())
+    kascdata= fitsread(path.apokascPath())
     #Match these two
     h=esutil.htm.HTM()
     m1,m2,d12 = h.match(kascdata['RA'],kascdata['DEC'],
@@ -408,7 +412,7 @@ def rcsample(main=False,dr=None):
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
     #read rcsample file
-    data= fitsio.read(path.rcsamplePath(dr=dr))
+    data= fitsread(path.rcsamplePath(dr=dr))
     #Some cuts
     if main:
         indx= mainIndx(data)
@@ -483,7 +487,7 @@ def apogeePlate(dr=None):
     filePath= path.apogeePlatePath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeePlate(dr=dr)
-    return fitsio.read(filePath)
+    return fitsread(filePath)
 
 def apogeeDesign(dr=None):
     """
@@ -501,7 +505,7 @@ def apogeeDesign(dr=None):
     filePath= path.apogeeDesignPath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeeDesign(dr=dr)
-    return fitsio.read(filePath)
+    return fitsread(filePath)
 
 def apogeeField(dr=None):
     """
@@ -519,7 +523,7 @@ def apogeeField(dr=None):
     filePath= path.apogeeFieldPath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeeField(dr=dr)
-    return fitsio.read(filePath)
+    return fitsread(filePath)
 
 def apogeeObject(field_name,dr=None,
                  ak=True,
@@ -542,7 +546,7 @@ def apogeeObject(field_name,dr=None,
     filePath= path.apogeeObjectPath(field_name,dr=dr)
     if not os.path.exists(filePath):
         download.apogeeObject(field_name,dr=dr)
-    data= fitsio.read(filePath)
+    data= fitsread(filePath)
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
     elif akvers.lower() == 'wise':
@@ -593,7 +597,7 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',ext=1,dr=None,header=True,
     filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if not os.path.exists(filePath):
         download.aspcapStar(loc_id,apogee_id,dr=dr,telescope=telescope)
-    data= fitsio.read(filePath,ext,header=header)
+    data= fitsread(filePath,ext,header=header)
     return data
 
 @specOnAspcapWavegrid
@@ -622,7 +626,7 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
     filePath= path.apStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if not os.path.exists(filePath):
         download.apStar(loc_id,apogee_id,dr=dr,telescope=telescope)
-    data= fitsio.read(filePath,ext,header=header)
+    data= fitsread(filePath,ext,header=header)
     return data
 
 def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
@@ -651,7 +655,7 @@ def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
     filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
     if not os.path.exists(filePath):
         download.apVisit(loc_id, mjd, fiberid, dr=dr)
-    data = fitsio.read(filePath, ext, header=header)
+    data = fitsread(filePath, ext, header=header)
     if header == False: # stitch three chips together in increasing wavelength order
         data = data.flatten()
         data = numpy.flipud(data)
@@ -685,6 +689,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
        model spectrum or (model spectrum file, header)
     HISTORY:
        2015-01-13 - Written - Bovy (IAS)
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
     filePath= path.modelSpecPath(lib=lib,teff=teff,logg=logg,metals=metals,
                                  cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr)
@@ -716,11 +721,12 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                 hdulist[ext].header)
     elif not ext == 234:
         return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
-    else: #ext == 234, combine 2,3,4
-        out= numpy.zeros(7214)
-        out[:2920]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
-        out[2920:5320]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
-        out[5320:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
+    else: #ext == 234, combine 2,3,4    
+        aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
+        out= numpy.zeros(aspcapTotal)
+        out[:aspcapGre_start]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
+        out[aspcapGre_start:aspcapRed_start]= hdulist[3].data[metalsIndx,loggIndx,teffIndx]
+        out[aspcapRed_start:]= hdulist[4].data[metalsIndx,loggIndx,teffIndx]
         return out
 
 def apWave(chip,ext=2,dr=None):
@@ -741,7 +747,7 @@ def apWave(chip,ext=2,dr=None):
     filePath= path.apWavePath(chip,dr=dr)
     if not os.path.exists(filePath):
         download.apWave(chip,dr=dr)
-    data= fitsio.read(filePath,ext)
+    data= fitsread(filePath,ext)
     return data
 
 def apLSF(chip,ext=0,dr=None):
@@ -762,7 +768,7 @@ def apLSF(chip,ext=0,dr=None):
     filePath= path.apLSFPath(chip,dr=dr)
     if not os.path.exists(filePath):
         download.apLSF(chip,dr=dr)
-    data= fitsio.read(filePath,ext)
+    data= fitsread(filePath,ext)
     return data
 
 def mainIndx(data):

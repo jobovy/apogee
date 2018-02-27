@@ -22,9 +22,12 @@ import subprocess
 import numpy
 try:
     import fitsio
+    fitsread = fitsio.read
+    fitswrite = fitsio.wrte
 except ImportError:
     import astropy.io.fits as pyfits
-    fitsio.read= pyfits.getdata
+    fitsread = pyfits.getdata
+    fitswrite = pyfits.writeto
 import esutil
 from galpy.util import bovy_coords
 import isodist
@@ -163,7 +166,7 @@ def make_rcsample(parser):
     data['RC_GALPHI']= phi
     data['RC_GALZ']= Z
     #Save
-    fitsio.write(savefilename,data,clobber=True)
+    fitswrite(savefilename,data,clobber=True)
     # Add Tycho-2 matches
     if options.tyc2:
         data= esutil.numpy_util.add_fields(data,[('TYC2MATCH',numpy.int32),
@@ -229,12 +232,12 @@ def make_rcsample(parser):
             else:
                 data['INVSF'][ii]= -1.
     if options.nopm:
-        fitsio.write(savefilename,data,clobber=True)       
+        fitswrite(savefilename,data,clobber=True)       
         return None
     #Get proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms.fits'
     if os.path.exists(pmfile):
-        pmdata= fitsio.read(pmfile,1)
+        pmdata= fitsread(pmfile,1)
     else:
         pmdata= numpy.recarray(len(data),
                                formats=['f8','f8','f8','f8','f8','f8','i4'],
@@ -290,9 +293,9 @@ def make_rcsample(parser):
                           +(pmdata['PMDEC'] == -9999) \
                           +(pmdata['PMRA_ERR'] == -9999) \
                           +(pmdata['PMDEC_ERR'] == -9999)]= 0
-        fitsio.write(pmfile,pmdata,clobber=True)
+        fitswrite(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
-        pmdata= fitsio.read(pmfile,1)
+        pmdata= fitsread(pmfile,1)
         os.remove(posfilename)
         os.remove(resultfilename)
     #Match proper motions
@@ -350,7 +353,7 @@ def make_rcsample(parser):
     #Get HSOY proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms_ppmxl.fits'
     if os.path.exists(pmfile):
-        pmdata= fitsio.read(pmfile,1)
+        pmdata= fitsread(pmfile,1)
     else:
         pmdata= numpy.recarray(len(data),
                                formats=['f8','f8','f8','f8','f8','f8','i4'],
@@ -406,9 +409,9 @@ def make_rcsample(parser):
                           +(pmdata['PMDEC'] == -9999) \
                           +(pmdata['PMRA_ERR'] == -9999) \
                           +(pmdata['PMDEC_ERR'] == -9999)]= 0
-        fitsio.write(pmfile,pmdata,clobber=True)
+        fitswrite(pmfile,pmdata,clobber=True)
         #To make sure we're using the same format below
-        pmdata= fitsio.read(pmfile,1)
+        pmdata= fitsread(pmfile,1)
         os.remove(posfilename)
         os.remove(resultfilename)
     #Match proper motions to ppmxl/HSOY
@@ -461,7 +464,7 @@ def make_rcsample(parser):
     data['GALVT_HSOY'][True-pmindx]= -9999.99
     data['GALVZ_HSOY'][True-pmindx]= -9999.99
     #Save
-    fitsio.write(savefilename,data,clobber=True)
+    fitswrite(savefilename,data,clobber=True)
     return None
 
 def cos_sphere_dist(theta,phi,theta_o,phi_o):

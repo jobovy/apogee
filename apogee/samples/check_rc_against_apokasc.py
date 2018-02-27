@@ -8,9 +8,10 @@ import numpy
 import esutil
 try:
     import fitsio
+    fitsread = fitsio.read
 except ImportError:
     import astropy.io.fits as pyfits
-    fitsio.read= pyfits.getdata
+    fitsread= pyfits.getdata
 import isodist
 import apogee.tools.read as apread
 import apogee.samples.rc as rcmodel
@@ -21,7 +22,7 @@ def match_apokasc_rc(rcfile=None,addl_logg_cut=False):
     if rcfile is None:
         rcdata= apread.rcsample()
     else:
-        rcdata= fitsio.read(rcfile)
+        rcdata= fitsread(rcfile)
     if addl_logg_cut:
         rcdata= rcdata[rcdata['ADDL_LOGG_CUT'] == 1]
     print("RC catalog has %i entries ..." % len(rcdata))

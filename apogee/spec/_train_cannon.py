@@ -3,6 +3,7 @@
 ###############################################################################
 import os, os.path
 import numpy
+from apogee.tools import _aspcapPixelLimits
 import apogee.tools.read as apread
 from apogee.spec import cannon
 def train_quadfit(\
@@ -26,6 +27,7 @@ def train_quadfit(\
        (none; just writes the output to a file)
     HISTORY:
        2015-02-28 - Written - Bovy (IAS)
+       2018-02-05 - Updated to account for changing detector ranges - Price-Jones (UofT)
     """
     # Read the training data
     loc_ids, ap_ids, labels= _read_training(trainingfilename)
@@ -34,8 +36,9 @@ def train_quadfit(\
         new_labels= new_labels+(labels[ii]-baseline_labels[ii],)
     labels= new_labels
     # Load the spectra for these data
-    spec= numpy.empty((len(loc_ids),7214))
-    specerr= numpy.empty((len(loc_ids),7214))
+    aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
+    spec= numpy.empty((len(loc_ids),aspcapTotal))
+    specerr= numpy.empty((len(loc_ids),aspcapTotal))
     for ii in range(len(loc_ids)):
         spec[ii]= apread.aspcapStar(loc_ids[ii],ap_ids[ii],ext=1,header=False,
                                     aspcapWavegrid=True)
