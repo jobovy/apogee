@@ -10,9 +10,10 @@ from scipy import special, interpolate, sparse, ndimage
 import scipy.sparse.linalg
 try:
     import fitsio
+    fitsread = fitsio.read
 except ImportError:
     import astropy.io.fits as pyfits
-    fitsio.read= pyfits.getdata
+    fitsread= pyfits.getdata
 import apogee.tools.read as apread
 import apogee.tools.path as appath
 from apogee.tools.download import _download_file
@@ -437,7 +438,7 @@ def _load_precomp(dr=None,fiber='combo',sparse=True):
             filePath.replace(fileDir,'https://zenodo.org/record/16147/files')
         _download_file(dlink,filePath,dr)
     x= numpy.linspace(-7.,7.,43)
-    elsf= fitsio.read(filePath)
+    elsf= fitsread(filePath)
     if sparse:
         return (x,sparsify(elsf))
     else:

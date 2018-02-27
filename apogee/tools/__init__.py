@@ -5,9 +5,10 @@ from . import path as appath
 from . import download as download
 try:
     import fitsio
+    fitsread = fitsio.read
 except ImportError:
     import astropy.io.fits as pyfits
-    fitsio.read= pyfits.getdata
+    fitsread= pyfits.getdata
 import warnings
 from periodictable import elements
 try:
@@ -15,7 +16,7 @@ try:
     filePath= appath.allStarPath()
     if not os.path.exists(filePath):
         download.allStar()
-    indexArrays= fitsio.read(appath.allStarPath(),3)
+    indexArrays= fitsread(appath.allStarPath(),3)
 except ValueError:
     _INDEX_ARRAYS_LOADED= False
 else:
