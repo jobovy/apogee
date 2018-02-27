@@ -101,8 +101,8 @@ DEPENDENCIES AND PYTHON VERSIONS
 This package requires the Python packages `NumPy
 <http://numpy.scipy.org/>`__, `Scipy <http://www.scipy.org/>`__,
 `Matplotlib <http://matplotlib.sourceforge.net/>`__, `tqdm
-<http://github.com/tqdm/tqdm>`__, `fitsio
-<http://github.com/esheldon/fitsio>`__, `esutil
+<http://github.com/tqdm/tqdm>`__, `astropy
+<https://github.com/astropy/astropy>`__, `esutil
 <http://code.google.com/p/esutil/>`__, `galpy
 <http://github.com/jobovy/galpy>`__, `isodist
 <http://github.com/jobovy/isodist>`__, and `periodictable
@@ -111,10 +111,8 @@ This package requires the Python packages `NumPy
 python 3, it is not listed as a dependency in the ``setup.py`` file
 and must be installed separately; if ``esutil`` is not installed, some
 functionality in ``apogee.tools.read`` is lost for which warnings are
-issued. If `fitsio <http://github.com/esheldon/fitsio>`__ is not
-installed, the code will fall back onto `astropy
-<http://docs.astropy.org/en/stable/io/fits/index.html>`__ for reading
-FITS files.
+issued. With standard installation, astropy is used to read FITS files. Installing `fitsio <http://github.com/esheldon/fitsio>`__ will cause those routines to take precedence over `astropy
+<http://docs.astropy.org/en/stable/io/fits/index.html>`__.
 
 The ``apogee`` package should work both in python 2 and 3 (thanks to
 `@mrawls <https://github.com/mrawls>`__ for adding python 3

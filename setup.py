@@ -128,6 +128,6 @@ setup(name='apogee',
       dependency_links = ['https://github.com/jobovy/galpy/tarball/master#egg=galpy',
                           'https://github.com/jobovy/isodist/tarball/master#egg=isodist'],
       install_requires=['numpy','scipy','matplotlib',
-                        'fitsio','galpy',
+                        'astropy','galpy',
                         'isodist','periodictable','tqdm']
       )
