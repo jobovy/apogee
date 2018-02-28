@@ -135,14 +135,13 @@ def allStar(rmcommissioning=True,
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
-        download.allStar()
+        download.allStar(mjd=mjd)
     #read allStar file
-    #data= pyfits.getdata(path.allStarPath())
-    data= fitsread(path.allStarPath())
+    data= fitsread(path.allStarPath(mjd=mjd))
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath().replace('.fits','-nodups.fits')
+        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
         if os.path.exists(dupsFilename):
             data= fitsread(dupsFilename)
         else:
@@ -262,6 +261,7 @@ def allVisit(rmcommissioning=True,
              akvers='targ',
              plateInt=False,
              plateS4=False,
+             mjd=58104,
              raw=False):
     """
     NAME:
@@ -275,17 +275,19 @@ def allVisit(rmcommissioning=True,
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        plateInt= (False) if True, cast plate as an integer and give special plates -1
        plateS4= (False) if True, cast plate as four character string
+       mjd= (58104) MJD of version for monthly internal pipeline runs
        raw= (False) if True, just return the raw file, read w/ fitsio
     OUTPUT:
        allVisit data
     HISTORY:
        2013-11-07 - Written - Bovy (IAS)
+       2018-02-28 - Edited for new monthly pipeline runs - Bovy (UofT)
     """
-    filePath= path.allVisitPath()
+    filePath= path.allVisitPath(mjd=mjd)
     if not os.path.exists(filePath):
-        download.allVisit()
+        download.allVisit(mjd=mjd)
     #read allVisit file
-    data= fitsread(path.allVisitPath())
+    data= fitsread(path.allVisitPath(mjd=mjd))
     if raw: return data
     #Some cuts
     if rmcommissioning:
