@@ -297,6 +297,7 @@ def apogeeObject(field_name,dr=None):
        (none; just downloads)
     HISTORY:
        2015-12-27 - Written - Bovy (UofT)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
@@ -304,7 +305,8 @@ def apogeeObject(field_name,dr=None):
     if os.path.exists(filePath): return None
     # Create the file path    
     downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
-                               'apogee','target','apogeeObject',
+                               'apogee','target',
+                               'apogee%sObject' % ('2' if int(dr) > 13 else ''),
                                os.path.basename(filePath))\
                                .replace(os.path.join(path._APOGEE_DATA,
                                                      _dr_string(dr)),

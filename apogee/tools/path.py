@@ -299,10 +299,15 @@ def apogeeTargetDirPath(dr=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeeTargetDir - Bovy (IAS)
+       2018-03-16 - Edited for current SAS layout - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    return os.path.join(_APOGEE_DATA,'dr%s' % dr,
-                        'apogee','target','apogee_DR'+dr)
+    if int(dr) > 13:
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','target')
+    else:
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','target','apogee_DR'+dr)
     
 def apogeePlatePath(dr=None):
     """
@@ -320,10 +325,13 @@ def apogeePlatePath(dr=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     if dr == '11' or dr == '12':
         platename= 'apogeePlate.fits'
+    elif int(dr) > 13:
+        platename= 'apogee2Plate.fits'
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
@@ -345,10 +353,13 @@ def apogeeDesignPath(dr=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    if dr == '11' or dr == '12':
+    if str(dr) == '11' or str(dr) == '12':
         platename= 'apogeeDesign.fits'
+    elif int(dr) > 13:
+        platename= 'apogee2Design.fits'
     else:
         platename= 'apogeeDesign_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
@@ -370,10 +381,13 @@ def apogeeFieldPath(dr=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeePlate - Bovy (IAS)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     if dr == '11' or dr == '12':
         platename= 'apogeeField.fits'
+    elif int(dr) > 13:
+        platename= 'apogee2Field.fits'
     else:
         platename= 'apogeeField_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
@@ -396,10 +410,14 @@ def apogeeObjectPath(field_name,dr=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for apogeeObject - Bovy (IAS)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     if dr == '11' or dr == '12':
         filename= 'apogeeObject_%s.fits' % field_name.strip()
+    elif int(dr) > 13:
+        filename= os.path.join('apogee2Object',
+                               'apogee2Object_%s.fits' % field_name.strip())
     else:
         filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
     return os.path.join(apogeeTargetDirPath(dr=dr),
