@@ -923,12 +923,12 @@ def change_dr(dr=None):
     # Doesn't actually change data release
     if dr is None: dr=_default_dr()
     global _APOGEE_REDUX
-    if dr == '10': _APOGEE_REDUX=_DR10REDUX
-    elif dr == '11': _APOGEE_REDUX=_DR11REDUX
-    elif dr == '12': _APOGEE_REDUX=_DR12REDUX
-    elif dr == '13': _APOGEE_REDUX=_DR13REDUX
-    elif dr == '14': _APOGEE_REDUX=_DR14REDUX
-    elif dr == 'current': _APOGEE_REDUX=_CURRENTREDUX
+    if str(dr) == '10': _APOGEE_REDUX=_DR10REDUX
+    elif str(dr) == '11': _APOGEE_REDUX=_DR11REDUX
+    elif str(dr) == '12': _APOGEE_REDUX=_DR12REDUX
+    elif str(dr) == '13': _APOGEE_REDUX=_DR13REDUX
+    elif str(dr) == '14': _APOGEE_REDUX=_DR14REDUX
+    elif str(dr) == 'current': _APOGEE_REDUX=_CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
    
 def _default_dr():
