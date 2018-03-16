@@ -40,6 +40,7 @@ except ImportError:
     fitswrite=pyfits.writeto
 import tqdm
 from apogee.tools import path, paramIndx, download
+from apogee.tools.path import change_dr # make this available here
 _ERASESTR= "                                                                                "
 def modelspecOnApStarWavegrid(func):
     """Decorator to put a model spectrum onto the apStar wavelength grid"""
