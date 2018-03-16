@@ -676,9 +676,9 @@ their uncertainties using one of two methods (specified using the
 
 The first method is ``type='aspcap'``, which is also the default. This
 is an implementation of the default APOGEE/ASPCAP
-continuum-normalization (see Garcia Perez et al. 2015), which
-iteratively searches for the upper envelope of the spectrum. An
-example of this procedure is the following::
+continuum-normalization in data releases < 14 (see Garcia Perez et
+al. 2015), which iteratively searches for the upper envelope of the
+spectrum. An example of this procedure is the following::
 
 	aspec= apread.apStar(4159,'2M07000348+0319407',ext=1,header=False)[1]
 	aspecerr= apread.apStar(4159,'2M07000348+0319407',ext=2,header=False)[1]
@@ -700,6 +700,8 @@ in ``aspcapStar``::
 .. image:: _readme_files/_continuum_aspcap_example.png
 
 which demonstrates very good agreement.
+
+In DR14, ASPCAP changed its pseudo-continuum normalization from an iterative search to a simple fourth-order polynomial fit. This can be done using the code above by specifying ``niter=0`` in the call to ``continuum.fit``.
 
 The second method is ``type='cannon'``, which is an implementation of
 a Cannon-style continuum-normalization (see `Ness et al. 2015
