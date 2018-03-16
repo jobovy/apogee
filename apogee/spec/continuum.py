@@ -4,7 +4,8 @@
 import copy
 import numpy
 from apogee.spec import cannon
-from apogee.tools import toAspcapGrid, toApStarGrid
+from apogee.tools import toAspcapGrid, toApStarGrid, \
+    _apStarPixelLimits,_aspcapPixelLimits
 def fit(spec,specerr,type='aspcap',
         deg=None,
         niter=10,usigma=3.,lsigma=0.1,
@@ -41,62 +42,73 @@ def fit(spec,specerr,type='aspcap',
     if tspec.shape[1] == 8575:
         tspec= toAspcapGrid(tspec)
         tspecerr= toAspcapGrid(tspecerr)
+    apStarBlu_lo,apStarBlu_hi,\
+        apStarGre_lo,apStarGre_hi,\
+        apStarRed_lo,apStarRed_hi= _apStarPixelLimits(dr=None)    
+    aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
     if deg is None and type.lower() == 'aspcap': deg= 4
     elif deg is None: deg= 2
     # Fit each detector separately
     cont= numpy.empty_like(tspec)
     # Rescale wavelengths
-    bluewav= numpy.arange(2920)/2919.*2.-1.
-    greenwav= numpy.arange(2400)/2399.*2.-1.
-    redwav= numpy.arange(1894)/1893.*2.-1.
+    bluewav= numpy.arange(aspcapGre_start)/float(aspcapGre_start-1.)*2.-1.
+    greenwav= numpy.arange((aspcapRed_start-aspcapGre_start))/float(aspcapRed_start-aspcapGre_start-1.)*2.-1.
+    redwav= numpy.arange((aspcapTotal-aspcapRed_start))/float(aspcapTotal-aspcapRed_start-1.)*2.-1.
     # Split the continuum pixels
     if type.lower() == 'cannon':
         if cont_pixels is None:
             cont_pixels= pixels_cannon()
-        blue_pixels= cont_pixels[:2920]
-        green_pixels= cont_pixels[2920:5320]
-        red_pixels= cont_pixels[5320:]
+        blue_pixels= cont_pixels[:aspcapGre_start]
+        green_pixels= cont_pixels[aspcapGre_start:aspcapRed_start]
+        red_pixels= cont_pixels[aspcapRed_start:]
     # Loop through the data
     for ii in range(tspec.shape[0]):
         # Blue
         if type.lower() == 'aspcap':
-            cont[ii,:2920]= _fit_aspcap(bluewav,
-                                        tspec[ii,:2920],
-                                        tspecerr[ii,:2920],
-                                        deg,
-                                        niter,usigma,lsigma)
+            print(len(bluewav),len(tspec[ii,:aspcapGre_start]))
+            cont[ii,:aspcapGre_start]=\
+                _fit_aspcap(bluewav,
+                            tspec[ii,:aspcapGre_start],
+                            tspecerr[ii,:aspcapGre_start],
+                            deg,
+                            niter,usigma,lsigma)
         else:
-            cont[ii,:2920]= _fit_cannonpixels(bluewav,
-                                              tspec[ii,:2920],
-                                              tspecerr[ii,:2920],
-                                              deg,
-                                              blue_pixels)
+            cont[ii,:aspcapGre_start]=\
+                _fit_cannonpixels(bluewav,
+                                  tspec[ii,:aspcapGre_start],
+                                  tspecerr[ii,:aspcapGre_start],
+                                  deg,
+                                  blue_pixels)
         # Green
         if type.lower() == 'aspcap':
-            cont[ii,2920:5320]= _fit_aspcap(greenwav,
-                                            tspec[ii,2920:5320],
-                                            tspecerr[ii,2920:5320],
-                                            deg,
-                                            niter,usigma,lsigma)
+            cont[ii,aspcapGre_start:aspcapRed_start]=\
+                _fit_aspcap(greenwav,
+                            tspec[ii,aspcapGre_start:aspcapRed_start],
+                            tspecerr[ii,aspcapGre_start:aspcapRed_start],
+                            deg,
+                            niter,usigma,lsigma)
         else:
-            cont[ii,2920:5320]= _fit_cannonpixels(greenwav,
-                                                  tspec[ii,2920:5320],
-                                                  tspecerr[ii,2920:5320],
-                                                  deg,
-                                                  green_pixels)
+            cont[ii,aspcapGre_start:aspcapRed_start]=\
+                _fit_cannonpixels(greenwav,
+                                  tspec[ii,aspcapGre_start:aspcapRed_start],
+                                  tspecerr[ii,aspcapGre_start:aspcapRed_start],
+                                  deg,
+                                  green_pixels)
         # Red
         if type.lower() == 'aspcap':
-            cont[ii,5320:]= _fit_aspcap(redwav,
-                                        tspec[ii,5320:],
-                                        tspecerr[ii,5320:],
-                                        deg,
-                                        niter,usigma,lsigma)
+            cont[ii,aspcapRed_start:]=\
+                _fit_aspcap(redwav,
+                            tspec[ii,aspcapRed_start:],
+                            tspecerr[ii,aspcapRed_start:],
+                            deg,
+                            niter,usigma,lsigma)
         else:
-            cont[ii,5320:]= _fit_cannonpixels(redwav,
-                                              tspec[ii,5320:],
-                                              tspecerr[ii,5320:],
-                                              deg,
-                                              red_pixels)
+            cont[ii,aspcapRed_start:]=\
+                _fit_cannonpixels(redwav,
+                                  tspec[ii,aspcapRed_start:],
+                                  tspecerr[ii,aspcapRed_start:],
+                                  deg,
+                                  red_pixels)
     if (len(spec.shape) == 1 and spec.shape[0] == 8575) \
             or (len(spec.shape) == 2 and spec.shape[1] == 8575):
         cont= toApStarGrid(cont)
