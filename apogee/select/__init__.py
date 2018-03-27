@@ -1,1 +1,1 @@
-from apogeeSelect import *
+from apogee.select.apogeeSelect import *
