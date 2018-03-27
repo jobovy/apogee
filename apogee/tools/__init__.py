@@ -21,8 +21,16 @@ except ValueError:
     _INDEX_ARRAYS_LOADED= False
 else:
     _INDEX_ARRAYS_LOADED= True
-    _PARAM_SYMBOL= [index.strip().lower().decode("utf-8")  for index in indexArrays['PARAM_SYMBOL'].flatten()]
-    _ELEM_SYMBOL= [index.strip().lower().decode("utf-8")  for index in indexArrays['ELEM_SYMBOL'].flatten()]
+    if type(indexArrays['PARAM_SYMBOL'][0,0]) == numpy.dtype(bytes):
+        _PARAM_SYMBOL= [index.strip().lower().decode("utf-8")  
+                        for index in indexArrays['PARAM_SYMBOL'].flatten()]
+        _ELEM_SYMBOL= [index.strip().lower().decode("utf-8") 
+                       for index in indexArrays['ELEM_SYMBOL'].flatten()]
+    else:
+        _PARAM_SYMBOL= [index.strip().lower()  
+                        for index in indexArrays['PARAM_SYMBOL'].flatten()]
+        _ELEM_SYMBOL= [index.strip().lower()
+                       for index in indexArrays['ELEM_SYMBOL'].flatten()]
     _ELEM_NUMBER_DICT= dict((elem,
                              elements.__dict__[elem.capitalize()].number)
                             for elem in _ELEM_SYMBOL 
@@ -205,7 +213,7 @@ def elemIndx(elem):
     """
     if not _INDEX_ARRAYS_LOADED: raise ImportError("elemIndx function cannot be used, because the allStar file could not be properly loaded")
     try:
-        return _ELEM_SYMBOL.index(elem.lower().decode("utf-8"))
+        return _ELEM_SYMBOL.index(elem.lower())
     except ValueError:
         raise KeyError("Element %s is not part of the APOGEE elements (can't do everything!) or something went wrong)" % elem)
 

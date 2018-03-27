@@ -6,6 +6,7 @@ import numpy
 from apogee.spec import cannon
 from apogee.tools import toAspcapGrid, toApStarGrid, \
     _apStarPixelLimits,_aspcapPixelLimits
+import apogee.tools.path as path
 def fit(spec,specerr,type='aspcap',
         deg=None,
         niter=10,usigma=3.,lsigma=0.1,
@@ -209,6 +210,7 @@ def pixels_cannon(*args,**kwargs):
        labelN_max= same with default 0.03
        ...
        scatter_max= (0.015) maximum scatter of residuals
+       dr= (module-wide default) data release
     OUTPUT:
        Boolean index into the wavelength range with True for continuum pixels
     HISTORY:
@@ -216,6 +218,7 @@ def pixels_cannon(*args,**kwargs):
     """
     # Grab kwargs
     type= kwargs.pop('type','lin')
+    dr= kwargs.pop('dr',path._default_dr())
     # Parse input
     if len(args) == 0: # Use default fit
         from apogee.spec._train_cannon import load_fit
@@ -254,5 +257,15 @@ def pixels_cannon(*args,**kwargs):
         out[numpy.fabs(coeffs[ii]) > maxs[ii-1]]= False
     # Large residuals
     out[scatter > kwargs.get('scatter_max',0.015)]= False
+    _,_,_,aspcapDR12length = _aspcapPixelLimits(dr='12')
+    if int(dr) > 12 and coeffs.shape[1] == aspcapDR12length:
+        # Want continuum pixels on >DR12 ASPCAP grid, but using coefficients
+        # from <= DR12 grid
+        dr_module= path._default_dr()
+        path.change_dr(12)
+        out= toApStarGrid(out)
+        path.change_dr(dr)
+        out= toAspcapGrid(out)
+        path.change_dr(dr_module)
     return out
     
