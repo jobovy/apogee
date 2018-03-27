@@ -848,7 +848,9 @@ class apogeeSelect:
                           yrange=[-90.,90.],
                           ms=30.,
                           add_mean_label=False,
-                          add_cohort_label=False):
+                          add_cohort_label=False,
+                          incl_not_started=True,
+                          cmap='viridis'):
         """
         NAME:
            plot_obs_progress
@@ -859,8 +861,10 @@ class apogeeSelect:
            cohort= ('short') cohort to consider
            xrange, yrange= ranges in l and b for plot
            ms= (30) marker size
-           add_mean_label= add a label with the mean completeness
-           add_cohort_label= add a label with the cohort
+           add_mean_label= (False) add a label with the mean completeness
+           add_cohort_label= (False) add a label with the cohort
+           incl_not_started= (True) include fields that haven't been started yet
+           cmap= ('viridis') colormap to use
         OUTPUT:
            plot to output device
         HISTORY:
@@ -881,6 +885,7 @@ class apogeeSelect:
                             scatter=True,
                             edgecolor='none',
                             colorbar=True,
+                            cmap=cmap,
                             vmin=0.,vmax=1.,
                             crange=[0.,1.],
                             xrange=xrange,yrange=yrange,
@@ -891,7 +896,7 @@ class apogeeSelect:
         #Then plot *all* locations as zero progress, to include the ones that 
         #haven't been started yet
         apF= apread.apogeeField(dr=self._dr)
-        apD= apread.apogeeDesign(dr=self._dr)
+        apD= apread.apogeeDesign(dr=self._dr,ap1ize=True)
         #Remove fields that don't have this cohort
         has_cohort= numpy.ones(len(apF),dtype='bool')
         for ii in range(len(apF)):
@@ -907,15 +912,16 @@ class apogeeSelect:
                     has_cohort[ii]= False
         apF= apF[has_cohort]
         apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
-        colormap = cm.jet
-        bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
-                            s=ms,overplot=True,
-                            c=colormap(0.),
-                            edgecolor='none',
-                            scatter=True,
-                            vmin=0.,vmax=1.,
-                            crange=[0.,1.],
-                            zorder=1)
+        colormap = cm.get_cmap(cmap)
+        if incl_not_started:
+            bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
+                                s=ms,overplot=True,
+                                c=colormap(0.),
+                                edgecolor='none',
+                                scatter=True,
+                                vmin=0.,vmax=1.,
+                                crange=[0.,1.],
+                                zorder=1)
         if add_mean_label:
             bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
                                 (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
@@ -1259,7 +1265,7 @@ class apogeeSelect:
                 indx[ii]= False
             if origobslog[ii]['Plate'] == 8632:
                 import warnings
-                warnings.warn('Removing plate 8632 because not in apogeePlate...')
+                warnings.warn('Removing plate 8632 because not in apogee2Plate...')
                 indx[ii]= False
         origobslog= origobslog[indx]
         indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
@@ -1291,7 +1297,7 @@ class apogeeSelect:
             if apogeePlate['PLATE_ID'][ii] in _COMPLATES:
                 pindx[ii]= False
         apogeePlate= apogeePlate[pindx]
-        apogeeDesign= apread.apogeeDesign(dr=self._dr)
+        apogeeDesign= apread.apogeeDesign(dr=self._dr,ap1ize=True)
         designs= numpy.zeros_like(self._plates)
         platesIndx= numpy.zeros(nplates,dtype='int')
         designsIndx= numpy.zeros(nplates,dtype='int')
@@ -1308,12 +1314,20 @@ class apogeeSelect:
         self._designs= designs
         self._platesIndx= platesIndx
         self._designsIndx= designsIndx
-        #Remove plates that do not have the main sample color cut (J-Ks > 0.5)
+        # Remove plates that do not have the simple color cut for selection
         if not dontcutcolorplates:
             indx= numpy.ones(nplates,dtype='bool')
             for ii in range(nplates):
-                if not apogeeDesign[self._designsIndx[ii]]['DEREDDENED_MIN_J_KS_COLOR'] == 0.5:
+                # APOGEE-1: Remove plates that do not have the main sample 
+                # color cut (J-Ks > 0.5)
+                if year < 4 and not apogeeDesign[self._designsIndx[ii]]['DEREDDENED_MIN_J_KS_COLOR'] == 0.5:
                     indx[ii]= False
+                # APOGEE-2: Remove plates that have no bins w/o W+D
+                elif year > 4 and numpy.sum(apogeeDesign[self._designsIndx[ii]]['BIN_USE_WD_FLAG']) >= apogeeDesign[self._designsIndx[ii]]['NUMBER_OF_SELECTION_BINS']:
+                    indx[ii]= False                   
+                # APOGEE-2: Remove halo_stream fields
+                elif year > 4 and apogeeDesign[self._designsIndx[ii]]['DESIGN_TYPE'] == b'halo_stream':
+                    indx[ii]= False                   
             self._plates= self._plates[indx]
             nplates= len(self._plates)
             self._obslog= self._obslog[indx]
@@ -1336,12 +1350,16 @@ class apogeeSelect:
             pindx= apogeePlate['LOCATION_ID'] == self._locations[ii]
             if numpy.sum(pindx) == 0:
                 raise IOError("No entry found in apogeePlate for location %i" % (self._locations[ii]))
-            #Remove designs with negative short cohort numbers
+            #Remove designs with negative short cohort numbers and unobserved
+            #plates
             cpindx= copy.copy(pindx)
             for jj in range(numpy.sum(cpindx)):
                 dindx= apogeeDesign['DESIGN_ID'] == apogeePlate['DESIGN_ID'][cpindx][jj]
                 if numpy.any(apogeeDesign['SHORT_COHORT_VERSION'][dindx] < 0.):
-                    pindx[dummyIndxArray[pindx][jj]]= False
+                    pindx[dummyIndxArray[cpindx][jj]]= False
+                oindx= origobslog['Plate'] == apogeePlate['PLATE_ID'][cpindx][jj]
+                if origobslog['ObsHistory'][oindx] == b'NOT,OBSERVED':
+                    pindx[dummyIndxArray[cpindx][jj]]= False
             locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
             for jj in range(numpy.sum(pindx)):
                 #Find the design index
@@ -1444,8 +1462,14 @@ class apogeeSelect:
         #apogeeField is now ordered the same as locations
         fieldlb= bovy_coords.radec_to_lb(apogeeField['RA'],apogeeField['DEC'],
                                          degree=True)
-        apogeeField= _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])
-        apogeeField= _append_field_recarray(apogeeField,'GLAT',fieldlb[:,1])
+        if year > 4:
+            apogeeField['GLON']= fieldlb[:,0]
+            apogeeField['GLAT']= fieldlb[:,1]
+        else:
+            apogeeField=\
+                _append_field_recarray(apogeeField,'GLON',fieldlb[:,0])
+            apogeeField=\
+                _append_field_recarray(apogeeField,'GLAT',fieldlb[:,1])
         #Save these
         self._apogeeDesign= apogeeDesign
         self._apogeeField= apogeeField
