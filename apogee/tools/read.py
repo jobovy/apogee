@@ -511,7 +511,7 @@ def apogeePlate(dr=None):
         download.apogeePlate(dr=dr)
     return fitsread(filePath)
 
-def apogeeDesign(dr=None):
+def apogeeDesign(dr=None,ap1ize=False):
     """
     NAME:
        apogeeDesign
@@ -519,6 +519,7 @@ def apogeeDesign(dr=None):
        read the apogeeDesign file
     INPUT:
        dr= return the file corresponding to this data release
+       ap1ize= (False) if True and DR >= 14: adjust tags to match APOGEE-1 more
     OUTPUT:
        apogeeDesign file
     HISTORY:
@@ -527,7 +528,26 @@ def apogeeDesign(dr=None):
     filePath= path.apogeeDesignPath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeeDesign(dr=dr)
-    return fitsread(filePath)
+    out= fitsread(filePath)
+    if ap1ize and 'COHORT_SHORT_VERSION' in out.dtype.fields:
+        names= list(out.dtype.names)
+        names[names.index('COHORT_SHORT_VERSION')]= 'SHORT_COHORT_VERSION'
+        names[names.index('COHORT_MEDIUM_VERSION')]= 'MEDIUM_COHORT_VERSION'
+        names[names.index('COHORT_LONG_VERSION')]= 'LONG_COHORT_VERSION'
+        out.dtype.names= names
+        out= esutil.numpy_util.add_fields(out,[('SHORT_COHORT_MIN_H', float),
+                                               ('SHORT_COHORT_MAX_H', float),
+                                               ('MEDIUM_COHORT_MIN_H', float),
+                                               ('MEDIUM_COHORT_MAX_H', float),
+                                               ('LONG_COHORT_MIN_H', float),
+                                               ('LONG_COHORT_MAX_H', float)])
+        out['SHORT_COHORT_MIN_H']= out['COHORT_MIN_H'][:,0]
+        out['SHORT_COHORT_MAX_H']= out['COHORT_MAX_H'][:,0]
+        out['MEDIUM_COHORT_MIN_H']= out['COHORT_MIN_H'][:,1]
+        out['MEDIUM_COHORT_MAX_H']= out['COHORT_MAX_H'][:,1]
+        out['LONG_COHORT_MIN_H']= out['COHORT_MIN_H'][:,2]
+        out['LONG_COHORT_MAX_H']= out['COHORT_MAX_H'][:,2]
+    return out        
 
 def apogeeField(dr=None):
     """
