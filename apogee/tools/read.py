@@ -104,6 +104,7 @@ def allStar(rmcommissioning=True,
             exclude_star_warn=False,
             ak=True,
             akvers='targ',
+            survey='all',
             rmnovisits=False,
             adddist=False,
             distredux=None,
@@ -122,6 +123,7 @@ def allStar(rmcommissioning=True,
        exclude_star_warn= (False) if True, remove stars with the STAR_WARN flag set in ASPCAPFLAG
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
+       survey= ('all') When reading an APOGEE-2 allStar file, select stars from both APOGEE-1 and -2 ('all'), just APOGEE-1 ('apogee1'), or just APOGEE-2 ('apogee-2') [Note: both 'apogee1' and 'apogee2' exclude stars from the APO-1m]
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
@@ -160,6 +162,15 @@ def allStar(rmcommissioning=True,
         data= data[True^indx]
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
+        data= data[indx]
+    if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
+        if survey.lower() == 'apogee1':
+            indx= (data['SURVEY'] == b'apogee        ') \
+                + (data['SURVEY'] == b'apogee-marvels')
+        elif survey.lower() == 'apogee2':
+            indx= (data['SURVEY'] == b'apogee2       ') \
+                   + (data['SURVEY'] == b'apogee2-manga ') \
+                   + (data['SURVEY'] == b'manga-apogee2 ')
         data= data[indx]
     if main:
         indx= mainIndx(data)
