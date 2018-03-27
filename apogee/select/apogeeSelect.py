@@ -1241,20 +1241,28 @@ class apogeeSelect:
             if appath._APOGEE_REDUX == 'v402': year= 2
             elif appath._APOGEE_REDUX == 'v603' \
                     or appath._APOGEE_REDUX == 'l30e.2': year= 3
+            elif appath._APOGEE_REDUX == 'l31c.2': year= 5
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         self._year= year
         origobslog= apread.obslog(year=self._year)
         #Remove plates that only have pre-commissioning data
         indx= numpy.ones(len(origobslog),dtype='bool')
         for ii in range(len(origobslog)):
-            if origobslog[ii]['ObsHistory'] == 'NOT,OBSERVED': continue
-            mjds= numpy.array(origobslog[ii]['ObsHistory'].split(','),dtype='int')
+            if origobslog[ii]['ObsHistory'] == b'NOT,OBSERVED': continue
+            if year < 4:
+                mjds= numpy.array(origobslog[ii]['ObsHistory'].astype(str).split(','),dtype='int')
+            else: # MJDs now end in ',' so need to cut the last
+                mjds= numpy.array(origobslog[ii]['ObsHistory'].astype(str).split(',')[:-1],dtype='int')
             if numpy.all(mjds < 55805): #commissioning MJD
                 indx[ii]= False
             if origobslog[ii]['Plate'] in _COMPLATES:
                 indx[ii]= False
+            if origobslog[ii]['Plate'] == 8632:
+                import warnings
+                warnings.warn('Removing plate 8632 because not in apogeePlate...')
+                indx[ii]= False
         origobslog= origobslog[indx]
-        indx= origobslog['ObsHistory'] != 'NOT,OBSERVED'
+        indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
         obslog= origobslog[indx]
         #Remove plates that aren't complete yet
         indx= numpy.ones(len(obslog),dtype='bool')
@@ -1270,8 +1278,10 @@ class apogeeSelect:
             self._dr= '10'
         elif self._year == 2:
             self._dr= '11'
-        elif self._year == 3:
+        elif self._year == 3: # DR13 == DR12
             self._dr= '12'
+        elif self._year == 5: # there's no year = 4, bc no DR
+            self._dr= '14'
         #Match up plates with designs           
         apogeePlate= apread.apogeePlate(dr=self._dr)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
