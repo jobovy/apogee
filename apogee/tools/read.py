@@ -825,12 +825,20 @@ def mainIndx(data):
        index of 'main' targets in data
     HISTORY:
        2013-11-19 - Written - Bovy (IAS)
+       2018-03-27 - Edited for APOGEE-2 - Bovy (UofT)
     """
     indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
         *((data['APOGEE_TARGET1'] & 2**7) == 0)\
         *((data['APOGEE_TARGET1'] & 2**8) == 0)\
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
+    if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
+        indx*= ((data['SURVEY'] == b'apogee        ')
+                  + (data['SURVEY'] == b'apogee-marvels'))
+        indx+= ((data['SURVEY'] == b'apogee2       ') 
+                  + (data['SURVEY'] == b'apogee2-manga ')
+                  + (data['SURVEY'] == b'manga-apogee2 '))\
+            *((data['APOGEE2_TARGET1'] & 2**14) != 0)
     return indx
 
 def remove_duplicates(data):
