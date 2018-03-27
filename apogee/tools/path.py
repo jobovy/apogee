@@ -271,10 +271,12 @@ def obslogPath(year=None):
     HISTORY:
        2012-01-02 - Written - Bovy (IAS)
        2012-11-04 - Edited for obslog - Bovy (IAS)
+       2018-03-26 - Edited for APOGEE-2 DR14 - Bovy (UofT)
     """
     if year is None:
         if _APOGEE_REDUX == 'v402': year= 2
-        elif _APOGEE_REDUX == 'v603': year= 3
+        elif _APOGEE_REDUX == 'v603' or _APOGEE_REDUX == 'l30e.2': year= 3
+        elif _APOGEE_REDUX == 'l31c.2': year= 5
         else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     if year == 1 or year == 2:
         return os.path.join(_APOGEE_DATA,
@@ -282,6 +284,9 @@ def obslogPath(year=None):
     elif year == 3:
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year123.csv')
+    elif year == 5:
+        return os.path.join(_APOGEE_DATA,
+                            'obs-summary-year45.csv')
 
 def apogeeTargetDirPath(dr=None):
     """
