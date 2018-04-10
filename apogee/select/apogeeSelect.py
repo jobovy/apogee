@@ -1149,10 +1149,11 @@ class apogeeSelect:
         #locDesignsIndx has the corresponding indices into apogeeDesign
         #Now figure out how much of each cohort has been observed
         self._frac4complete= frac4complete
-        color_bins = numpy.zeros((len(self._locations),5))
-        color_bins_total = numpy.zeros((len(self._locations),5))
-        color_bins_jkmin = numpy.zeros((len(self._locations),5))+numpy.nan
-        color_bins_jkmax = numpy.zeros((len(self._locations),5))+numpy.nan
+        if year > 4:
+            color_bins = numpy.zeros((len(self._locations),5))
+            color_bins_total = numpy.zeros((len(self._locations),5))
+            color_bins_jkmin = numpy.zeros((len(self._locations),5))+numpy.nan
+            color_bins_jkmax = numpy.zeros((len(self._locations),5))+numpy.nan
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
         short_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
@@ -1174,7 +1175,8 @@ class apogeeSelect:
                     medium_cohorts_total[ii,apogeeDesign['MEDIUM_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
                 if apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                     long_cohorts_total[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
-                color_bins_total[ii][:apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]]] += 1
+                if year > 4:
+                    color_bins_total[ii][:apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]]] += 1
                 if apogeePlate['PLATE_ID'][self._locPlatesIndx[ii,jj]] in self._plates:
                     if apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         short_cohorts[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
@@ -1188,9 +1190,10 @@ class apogeeSelect:
                         long_cohorts[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
                         long_cohorts_hmin[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['LONG_COHORT_MIN_H'][self._locDesignsIndx[ii,jj]]
                         long_cohorts_hmax[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]= apogeeDesign['LONG_COHORT_MAX_H'][self._locDesignsIndx[ii,jj]]
-                    color_bins[ii][:apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]]] += 1
-                    color_bins_jkmin[ii] = apogeeDesign['BIN_DEREDDENED_MIN_JK_COLOR'][self._locDesignsIndx[ii,jj]]
-                    color_bins_jkmax[ii] = apogeeDesign['BIN_DEREDDENED_MAX_JK_COLOR'][self._locDesignsIndx[ii,jj]]
+                    if year > 4:
+                        color_bins[ii][:apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]]] += 1
+                        color_bins_jkmin[ii] = apogeeDesign['BIN_DEREDDENED_MIN_JK_COLOR'][self._locDesignsIndx[ii,jj]]
+                        color_bins_jkmax[ii] = apogeeDesign['BIN_DEREDDENED_MAX_JK_COLOR'][self._locDesignsIndx[ii,jj]]
         self._short_completion= numpy.zeros_like(short_cohorts)+numpy.nan
         self._short_completion[short_cohorts_total != 0.]= short_cohorts[short_cohorts_total != 0.]/short_cohorts_total[short_cohorts_total != 0.]
         self._medium_completion= numpy.zeros_like(medium_cohorts)+numpy.nan
@@ -1209,10 +1212,11 @@ class apogeeSelect:
         self._medium_cohorts_hmax= medium_cohorts_hmax
         self._long_cohorts_hmin= long_cohorts_hmin
         self._long_cohorts_hmax= long_cohorts_hmax
-        self._bin_completion = numpy.zeros_like(color_bins)+numpy.nan
-        self._bin_completion[color_bins_total != 0.] = color_bins[color_bins_total != 0.]/color_bins_total[color_bins_total != 0.]
-        self._color_bins_jkmin = color_bins_jkmin
-        self._color_bins_jkmax = color_bins_jkmax
+        if year > 4:
+            self._bin_completion = numpy.zeros_like(color_bins)+numpy.nan
+            self._bin_completion[color_bins_total != 0.] = color_bins[color_bins_total != 0.]/color_bins_total[color_bins_total != 0.]
+            self._color_bins_jkmin = color_bins_jkmin
+            self._color_bins_jkmax = color_bins_jkmax
         #Also store the overall hmin and hmax for each location/cohort
         self._short_hmin= numpy.nanmin(self._short_cohorts_hmin,axis=1)
         self._short_hmax= numpy.nanmax(self._short_cohorts_hmax,axis=1)
