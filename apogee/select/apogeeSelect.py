@@ -1154,6 +1154,7 @@ class apogeeSelect:
             color_bins_total = numpy.zeros((len(self._locations),5))
             color_bins_jkmin = numpy.zeros((len(self._locations),5))+numpy.nan
             color_bins_jkmax = numpy.zeros((len(self._locations),5))+numpy.nan
+            number_of_bins = numpy.zeros(len(self._locations))
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
         short_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
@@ -1177,6 +1178,7 @@ class apogeeSelect:
                     long_cohorts_total[ii,apogeeDesign['LONG_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
                 if year > 4:
                     color_bins_total[ii][:apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]]] += 1
+                    number_of_bins[ii] = int(apogeeDesign['NUMBER_OF_SELECTION_BINS'][self._locDesignsIndx[ii,jj]])
                 if apogeePlate['PLATE_ID'][self._locPlatesIndx[ii,jj]] in self._plates:
                     if apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]] > 0:
                         short_cohorts[ii,apogeeDesign['SHORT_COHORT_VERSION'][self._locDesignsIndx[ii,jj]]-1]+= 1
@@ -1217,6 +1219,7 @@ class apogeeSelect:
             self._bin_completion[color_bins_total != 0.] = color_bins[color_bins_total != 0.]/color_bins_total[color_bins_total != 0.]
             self._color_bins_jkmin = color_bins_jkmin
             self._color_bins_jkmax = color_bins_jkmax
+            self._number_of_bins = number_of_bins
         #Also store the overall hmin and hmax for each location/cohort
         self._short_hmin= numpy.nanmin(self._short_cohorts_hmin,axis=1)
         self._short_hmax= numpy.nanmax(self._short_cohorts_hmax,axis=1)
@@ -1566,17 +1569,127 @@ class apogee2Select(apogeeSelect):
 #                print("Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate)
             #determine which colour bin the star is in
             jko = specdata['J0'][ii]-specdata['K0'][ii]
-            nbins = avisitsDesign['NUMBER_OF_SELECTION_BINS']
+            nbins = int(avisitsDesign['NUMBER_OF_SELECTION_BINS'])
             for b in range(nbins):
-                if jko >= avisitsDesign['BIN_DEREDDENED_MIN_JK_COLOR'][b] and jko <= avistsDesign['BIN_DEREDDENED_MAX_JK_COLOR'][b]:
+                if jko >= avisitsDesign['BIN_DEREDDENED_MIN_JK_COLOR'][0][b] and jko <= avisitsDesign['BIN_DEREDDENED_MAX_JK_COLOR'][0][b]:
                     cbin = b
             locIndx= specdata['LOCATION_ID'][ii] == self._locations
             if cohortnum > 0 and tcohort != '???' and \
                     ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
                          or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
-                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)) and \
+                         self._bin_completion[locIndx,cbin] >= self._frac4complete:
                 statIndx[ii]= True
         return statIndx*apread.mainIndx(specdata)
+
+    def _determine_selection(self,sample='rcsample',sftype='constant',
+                             minnspec=10):
+        """Internal function to determine the selection function"""
+        selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
+        self._minnspec= minnspec
+        self._sftype= sftype
+        if self._sftype.lower() == 'constant':
+            for ii in range(len(self._locations)):
+                if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_short[ii] >= minnspec:
+                    #There is a short cohort
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
+                else:
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_medium[ii] >= minnspec:
+                    #There is a medium cohort
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
+                else:
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_long[ii] >= minnspec:
+                    #There is a long cohort
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
+                else:
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
+        self._selfunc= selfunc
+        return None
+
+    def _load_phot_data(self,sample='rcsample'):
+        """Internal function to load the full, relevant photometric data set
+        for the statistical sample"""
+        photdata= {} #we're going to arrange this by location
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        for ii in range(len(self._locations)):
+            field_name= self._apogeeField[ii]['FIELD_NAME']
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
+            sys.stdout.flush()
+            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                               ak=True,akvers='targ')
+            #Cut to relevant color range
+            jko= tapogeeObject['J0']-tapogeeObject['K0']
+            if sample.lower() == 'rcsample':
+                indx=(jko >= 0.5)*(jko < 0.8)
+            else:
+                indx= jko >= 0.5
+            #print(field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
+            tapogeeObject= tapogeeObject[indx]
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+            else:
+                photdata['%i' % self._locations[ii]]= None
+            if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            else: #this avoids a warning
+                thmin= numpy.nan
+            #print(numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax)
+            indx= (tapogeeObject['H'] >= thmin)\
+                *(tapogeeObject['H'] <= thmax)
+            #print(numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
+            tapogeeObject= tapogeeObject[indx]
+            photdata['%i' % self._locations[ii]]= tapogeeObject
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        self._photdata= photdata
+        #Now record the number of photometric objects in each cohort
+        nphot_short= numpy.zeros((len(self._locations),5))+numpy.nan
+        nphot_medium= numpy.zeros((len(self._locations),5))+numpy.nan
+        nphot_long= numpy.zeros((len(self._locations),5))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                for b in range(int(self._number_of_bins[ii])):
+                    nphot_short[ii,b]= numpy.sum(\
+                        (self._photdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                for b in range(int(self._number_of_bins[ii])):
+                    nphot_medium[ii,b]= numpy.sum(\
+                        (self._photdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                for b in range(int(self._number_of_bins[ii])):
+                    nphot_long[ii,b]= numpy.sum(\
+                        (self._photdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._photdata['%i' % self._locations[ii]]['J0']-self._photdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
+        self._nphot_short= nphot_short
+        self._nphot_medium= nphot_medium
+        self._nphot_long= nphot_long
+        return None
 
     def _load_spec_data(self,sample='rcsample'):
         """Internal function to load the full spectroscopic data set and
@@ -1596,7 +1709,7 @@ class apogee2Select(apogeeSelect):
         allStar= allStar[indx]
         statIndx= self.determine_statistical(allStar)
         allStar= allStar[statIndx]
-        #Save spectroscopic data by location
+        #Save spectroscopic data by location COLORBIN INFO?
         specdata= {}
         for ii in range(len(self._locations)):
             #Cut to relevant magnitude range
@@ -1617,26 +1730,35 @@ class apogee2Select(apogeeSelect):
                 *(allStar['H'] <= thmax)
             specdata['%i' % self._locations[ii]]= allStar[indx]
         self._specdata= specdata
-        #Now record the number of spectroscopic objects in each cohort
-        nspec_short= numpy.zeros(len(self._locations))+numpy.nan
-        nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
-        nspec_long= numpy.zeros(len(self._locations))+numpy.nan
+        #Now record the number of spectroscopic objects in each cohort and COLOR BIN?
+        nspec_short= numpy.zeros([len(self._locations),5])+numpy.nan
+        nspec_medium= numpy.zeros([len(self._locations),5])+numpy.nan
+        nspec_long= numpy.zeros([len(self._locations),5])+numpy.nan
         for ii in range(len(self._locations)):
             if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
                 #There is a completed short cohort
-                nspec_short[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+                for b in range(int(self._number_of_bins[ii])):
+                    nspec_short[ii,b]= numpy.sum(\
+                        (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
             if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
                 #There is a completed medium cohort
-                nspec_medium[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+                for b in range(int(self._number_of_bins[ii])):
+                    nspec_medium[ii,b]= numpy.sum(\
+                        (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
             if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
                 #There is a completed long cohort
-                nspec_long[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+                for b in range(int(self._number_of_bins[ii])):
+                    nspec_long[ii,b]= numpy.sum(\
+                        (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] >= self._color_bins_jkmin[ii,b])\
+                            *(self._specdata['%i' % self._locations[ii]]['J0']-self._specdata['%i' % self._locations[ii]]['K0'] <= self._color_bins_jkmax[ii,b]))
         self._nspec_short= nspec_short
         self._nspec_medium= nspec_medium
         self._nspec_long= nspec_long
