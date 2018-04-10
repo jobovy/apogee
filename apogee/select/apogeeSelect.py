@@ -1149,10 +1149,10 @@ class apogeeSelect:
         #locDesignsIndx has the corresponding indices into apogeeDesign
         #Now figure out how much of each cohort has been observed
         self._frac4complete= frac4complete
-        color_bins = numpy.zeros((len(self.locations),5))
-        color_bins_total = numpy.zeros((len(self.locations),5))
-        color_bins_jkmin = numpy.zeros((len(self.locations),5))+numpy.nan
-        color_bins_jkmax = numpy.zeros((len(self.locations),5))+numpy.nan
+        color_bins = numpy.zeros((len(self._locations),5))
+        color_bins_total = numpy.zeros((len(self._locations),5))
+        color_bins_jkmin = numpy.zeros((len(self._locations),5))+numpy.nan
+        color_bins_jkmax = numpy.zeros((len(self._locations),5))+numpy.nan
         short_cohorts= numpy.zeros((len(self._locations),20))
         short_cohorts_total= numpy.zeros((len(self._locations),20))
         short_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
