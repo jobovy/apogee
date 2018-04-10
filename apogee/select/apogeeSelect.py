@@ -38,8 +38,9 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4325,#Not ever drilled, just test from here
              4326,4327,4328,4329]
 _ERASESTR= "                                                                                "
+
 class apogeeSelect:
-    """Class that contains selection functions for APOGEE targets"""
+    """Superclass defining general selection functions for APOGEE targets"""
     def __init__(self,sample='main',
                  locations=None,
                  year=None,
@@ -91,7 +92,7 @@ class apogeeSelect:
         self._load_spec_data(sample=sample)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
-        #Load the underlying photometric sample for the locations/cohorts in 
+        #Load the underlying photometric sample for the locations/cohorts in
         #the statistical sample
         sys.stdout.write('\r'+"Reading and parsing photometric data ...\r")
         sys.stdout.flush()
@@ -159,7 +160,7 @@ class apogeeSelect:
         if scalarOut:
             return out[0]
         else:
-            return out        
+            return out
 
     def nphot(self,location_id,cohort='short'):
         """
@@ -259,7 +260,7 @@ class apogeeSelect:
            2014-01-12 - Written - Bovy (IAS)
         """
         return plate in self._plates
-        
+
     def glonGlat(self,location_id):
         """
         NAME:
@@ -283,7 +284,7 @@ class apogeeSelect:
         PURPOSE:
            return the radius around glonGlat from which targets were drawn for this field
         INPUT:
-           location_id - field location ID          
+           location_id - field location ID
         OUTPUT:
            radius in deg
         HISTORY:
@@ -303,7 +304,7 @@ class apogeeSelect:
         PURPOSE:
            return the area around glonGlat from which targets were drawn for this field
         INPUT:
-           location_id - field location ID          
+           location_id - field location ID
         OUTPUT:
            area in deg^2
         HISTORY:
@@ -365,73 +366,12 @@ class apogeeSelect:
         locIndx= self._locations == location_id
         return self._apogeeField['FIELD_NAME'][locIndx][0]
 
-    def determine_statistical(self,specdata):
-        """
-        NAME:
-           determine_statistical
-        PURPOSE:
-           Determine the subsample that is part of the statistical sample
-           described by this selection function object
-        INPUT:
-           specdata - a spectroscopic subsample (e.g., a red-clump sample)
-        OUTPUT:
-           index array into specdata that has True for members of the 
-           statistical sample
-        HISTORY:
-           2013-11-10 - Written - Bovy (IAS)
-        """
-        #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
-                 allVisit['PLATE'][ii]+'-'+
-                 '%05i' % allVisit['MJD'][ii] + '-'
-                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S17')
-        statIndx= numpy.zeros(len(specdata),dtype='bool')
-        #Go through the spectroscopic sample and check that it is in a full cohort
-        plateIncomplete= 0
-        for ii in tqdm.trange(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
-            indx= visits == avisit
-            if numpy.sum(indx) == 0.:
-                #Hasn't happened so far
-                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
-                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
-                indx= visits == avisit
-            avisitsplate= int(allVisit['PLATE'][indx][0])
-            #Find the design corresponding to this plate
-            tplatesIndx= (self._plates == avisitsplate)
-            if numpy.sum(tplatesIndx) == 0.:
-                plateIncomplete+= 1
-                continue
-            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
-            #Determine which cohort this star is in
-            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
-                tcohort= 'short'
-                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
-            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
-                tcohort= 'medium'
-                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
-            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
-                tcohort= 'long'
-                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
-            else:
-                tcohort= '???'
-                plateIncomplete+= 1
-#                print("Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate)
-            locIndx= specdata['LOCATION_ID'][ii] == self._locations
-            if cohortnum > 0 and tcohort != '???' and \
-                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
-                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
-                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
-                statIndx[ii]= True
-        return statIndx*apread.mainIndx(specdata)
-                     
+
     def plot_selfunc_xy(self,cohort='all',
                         mh=-1.49,
                         type='xy',
                         vmin=None,vmax=None):
-        
+
         """
         NAME:
            plot_selfunc_xy
@@ -546,10 +486,10 @@ class apogeeSelect:
             xarr, dx= 6.2, 2.2
             arr= FancyArrowPatch(posA=(xarr,0.),
                                  posB=(xarr+dx,0.),
-                                 arrowstyle='->', 
-                                 connectionstyle='arc3,rad=%4.2f' % (0.), 
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
                                  shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0, 
+                                 mutation_scale=20.0,
                                  mutation_aspect=None,fc='k')
             ax = pyplot.gca()
             ax.add_patch(arr)
@@ -559,20 +499,20 @@ class apogeeSelect:
             arr= FancyArrowPatch(posA=(xcen-dr*numpy.cos(t),
                                        ycen+dr*numpy.sin(t)),
                                  posB=(xcen-dr*numpy.cos(-t),ycen+dr*numpy.sin(-t)),
-                                 arrowstyle='<-', 
-                                 connectionstyle='arc3,rad=%4.2f' % (2.*t), 
+                                 arrowstyle='<-',
+                                 connectionstyle='arc3,rad=%4.2f' % (2.*t),
                                  shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0, 
+                                 mutation_scale=20.0,
                                  mutation_aspect=None,fc='k')
             ax.add_patch(arr)
         else:
             xarr, dx=1.5, -1.
             arr= FancyArrowPatch(posA=(xarr+0.05,0.),
                                  posB=(xarr+dx*10./8.,0.),
-                                 arrowstyle='->', 
-                                 connectionstyle='arc3,rad=%4.2f' % (0.), 
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
                                  shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0, 
+                                 mutation_scale=20.0,
                                  mutation_aspect=None,fc='k')
             ax = pyplot.gca()
             ax.add_patch(arr)
@@ -580,10 +520,10 @@ class apogeeSelect:
                                 size=_legendsize)
             arr= FancyArrowPatch(posA=(1.5,-0.05),
                                  posB=(1.5,.75),
-                                 arrowstyle='->', 
-                                 connectionstyle='arc3,rad=%4.2f' % (0.), 
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
                                  shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0, 
+                                 mutation_scale=20.0,
                                  mutation_aspect=None,fc='k')
             ax = pyplot.gca()
             ax.add_patch(arr)
@@ -597,12 +537,12 @@ class apogeeSelect:
                         ms=30.,
                         type='selfunc',
                         vmin=None,vmax=None):
-        
+
         """
         NAME:
            plot_selfunc_lb
         PURPOSE:
-           plot the selection function as a function of l,b for a specific 
+           plot the selection function as a function of l,b for a specific
            cohort
         INPUT:
            cohort= ('short') cohort to consider
@@ -615,7 +555,7 @@ class apogeeSelect:
               - nspec: number of spectroscopic objects
               - hmin: minimum H of cohort
               - hmax: maximum H of cohort
-              - ks: KS probability that the spectro data was drawn from the 
+              - ks: KS probability that the spectro data was drawn from the
                     underlying photo sample x selection function
         OUTPUT:
            plot to output device
@@ -683,7 +623,7 @@ class apogeeSelect:
         NAME:
            plotColorMag
         PURPOSE:
-           plot the distribution of photometric/spectroscopic objects in 
+           plot the distribution of photometric/spectroscopic objects in
            color and magnitude
         INPUT:
            x= ('JK0') what to plot on the X-axis
@@ -691,7 +631,7 @@ class apogeeSelect:
            location= location_id(s), or 'all'
            cohort= ('all') cohorts to plot
            spec= if True, overlay spectroscopic objects as white contours
-           reweight= if True, also plot the re-weighted photometric 
+           reweight= if True, also plot the re-weighted photometric
                      histograms in 1D
            bins= number of bins to use in the histograms
            specbins= number of bins to use in the spectroscopic histograms
@@ -841,7 +781,7 @@ class apogeeSelect:
                               overplot=spec or reweight,
                               cntrSmooth=cntrSmooth,
                               onedhistsbins=onedhistsbins)
-        return None                
+        return None
 
     def plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
@@ -893,7 +833,7 @@ class apogeeSelect:
                             ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
                             clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
                             zorder=10)
-        #Then plot *all* locations as zero progress, to include the ones that 
+        #Then plot *all* locations as zero progress, to include the ones that
         #haven't been started yet
         apF= apread.apogeeField(dr=self._dr)
         apD= apread.apogeeDesign(dr=self._dr,ap1ize=True)
@@ -923,7 +863,7 @@ class apogeeSelect:
                                 crange=[0.,1.],
                                 zorder=1)
         if add_mean_label:
-            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' % 
+            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' %
                                 (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
                                 bottom_right=True,size=16.)
         if add_cohort_label:
@@ -937,13 +877,13 @@ class apogeeSelect:
                 bovy_plot.bovy_text(r'$12.8 < H \leq 13.3\ \mathrm{or}\ 13.8$',
                                     bottom_right=True,size=16.)
         return None
-                    
+
     def check_consistency(self,location,cohort='all'):
         """
         NAME:
            check_consistency
         PURPOSE:
-           calculate the KS probability that this field is consistent with 
+           calculate the KS probability that this field is consistent with
            being drawn from the underlying photometric sample using our model
            for the selection function
         INPUT:
@@ -992,7 +932,7 @@ class apogeeSelect:
         if numpy.all(numpy.isnan(photr)):
             print("Location %i has no spectroscopic data in the statistical sample ..." % location)
             print("Returning ...")
-            return None           
+            return None
         if xrange is None: xrange= [numpy.amin([numpy.amin(photr),numpy.amin(specr)])-0.1,
                                     numpy.amax([numpy.amax(photr),numpy.amax(specr)])+0.1]
         if yrange is None: yrange= [0.,1.1]
@@ -1073,171 +1013,8 @@ class apogeeSelect:
         fn2= numpy.ones(len(sortindx_spec))
         fn2= numpy.cumsum(fn2)
         fn2/= fn2[-1]
-        return (sortphot['H'],sortspec['H'],fn1,fn2)    
+        return (sortphot['H'],sortspec['H'],fn1,fn2)
 
-    def _determine_selection(self,sample='rcsample',sftype='constant',
-                             minnspec=10):
-        """Internal function to determine the selection function"""
-        selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
-        self._minnspec= minnspec
-        self._sftype= sftype
-        if self._sftype.lower() == 'constant':
-            for ii in range(len(self._locations)):
-                if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_short[ii] >= minnspec:
-                    #There is a short cohort
-                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
-                else:
-                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_medium[ii] >= minnspec:
-                    #There is a medium cohort
-                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
-                else:
-                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
-                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_long[ii] >= minnspec:
-                    #There is a long cohort
-                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
-                else:
-                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
-        self._selfunc= selfunc
-        return None
-
-    def _load_phot_data(self,sample='rcsample'):
-        """Internal function to load the full, relevant photometric data set
-        for the statistical sample"""
-        photdata= {} #we're going to arrange this by location
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
-        for ii in range(len(self._locations)):
-            field_name= self._apogeeField[ii]['FIELD_NAME']
-            sys.stdout.write('\r'+_ERASESTR+'\r')
-            sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
-            sys.stdout.flush()
-            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
-                                               ak=True,akvers='targ')
-            #Cut to relevant color range
-            jko= tapogeeObject['J0']-tapogeeObject['K0']
-            if sample.lower() == 'rcsample':
-                indx=(jko >= 0.5)*(jko < 0.8)
-            else:
-                indx= jko >= 0.5
-            #print(field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
-            tapogeeObject= tapogeeObject[indx]
-            #Cut to relevant magnitude range
-            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
-                #There is a completed long cohort
-                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
-            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
-                #There is a completed medium cohort
-                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
-            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
-                #There is a completed short cohort
-                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
-            else:
-                photdata['%i' % self._locations[ii]]= None
-            if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
-                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
-            else: #this avoids a warning
-                thmin= numpy.nan
-            #print(numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax)
-            indx= (tapogeeObject['H'] >= thmin)\
-                *(tapogeeObject['H'] <= thmax)
-            #print(numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
-            tapogeeObject= tapogeeObject[indx]
-            photdata['%i' % self._locations[ii]]= tapogeeObject
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
-        self._photdata= photdata
-        #Now record the number of photometric objects in each cohort
-        nphot_short= numpy.zeros(len(self._locations))+numpy.nan
-        nphot_medium= numpy.zeros(len(self._locations))+numpy.nan
-        nphot_long= numpy.zeros(len(self._locations))+numpy.nan
-        for ii in range(len(self._locations)):
-            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
-                #There is a completed short cohort
-                nphot_short[ii]= numpy.sum(\
-                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
-                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
-            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
-                #There is a completed medium cohort
-                nphot_medium[ii]= numpy.sum(\
-                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
-                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
-            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
-                #There is a completed long cohort
-                nphot_long[ii]= numpy.sum(\
-                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
-                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
-        self._nphot_short= nphot_short
-        self._nphot_medium= nphot_medium
-        self._nphot_long= nphot_long
-        return None
-
-    def _load_spec_data(self,sample='rcsample'):
-        """Internal function to load the full spectroscopic data set and 
-        cut it down to the statistical sample"""
-        allStar= apread.allStar(main=True,akvers='targ',rmdups=True)
-        #Only keep stars in locations for which we are loading the 
-        #selection function
-        indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations 
-                           for ii in range(len(allStar))],dtype='bool')
-        allStar= allStar[indx]
-        jko= allStar['J0']-allStar['K0']
-        self._sample= sample
-        if sample.lower() == 'rcsample':
-            indx=(jko >= 0.5)*(jko < 0.8)
-        else:
-            indx= jko >= 0.5
-        allStar= allStar[indx]
-        statIndx= self.determine_statistical(allStar)
-        allStar= allStar[statIndx]
-        #Save spectroscopic data by location
-        specdata= {}
-        for ii in range(len(self._locations)):
-            #Cut to relevant magnitude range
-            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
-                #There is a completed long cohort
-                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
-            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
-                #There is a completed medium cohort
-                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
-            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
-                #There is a completed short cohort
-                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
-            else:
-                specdata['%i' % self._locations[ii]]= None
-            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
-            indx= (allStar['LOCATION_ID'] == self._locations[ii])\
-                *(allStar['H'] >= thmin)\
-                *(allStar['H'] <= thmax)
-            specdata['%i' % self._locations[ii]]= allStar[indx]
-        self._specdata= specdata     
-        #Now record the number of spectroscopic objects in each cohort
-        nspec_short= numpy.zeros(len(self._locations))+numpy.nan
-        nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
-        nspec_long= numpy.zeros(len(self._locations))+numpy.nan
-        for ii in range(len(self._locations)):
-            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
-                #There is a completed short cohort
-                nspec_short[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
-            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
-                #There is a completed medium cohort
-                nspec_medium[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
-            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
-                #There is a completed long cohort
-                nspec_long[ii]= numpy.sum(\
-                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
-                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
-        self._nspec_short= nspec_short
-        self._nspec_medium= nspec_medium
-        self._nspec_long= nspec_long
-        return None
 
     def _process_obslog(self,locations=None,year=None,frac4complete=1.,
                         dontcutcolorplates=False):
@@ -1288,7 +1065,7 @@ class apogeeSelect:
             self._dr= '12'
         elif self._year == 5: # there's no year = 4, bc no DR
             self._dr= '14'
-        #Match up plates with designs           
+        #Match up plates with designs
         apogeePlate= apread.apogeePlate(dr=self._dr)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
         for ii in range(len(apogeePlate)):
@@ -1318,16 +1095,16 @@ class apogeeSelect:
         if not dontcutcolorplates:
             indx= numpy.ones(nplates,dtype='bool')
             for ii in range(nplates):
-                # APOGEE-1: Remove plates that do not have the main sample 
+                # APOGEE-1: Remove plates that do not have the main sample
                 # color cut (J-Ks > 0.5)
                 if year < 4 and not apogeeDesign[self._designsIndx[ii]]['DEREDDENED_MIN_J_KS_COLOR'] == 0.5:
                     indx[ii]= False
                 # APOGEE-2: Remove plates that have no bins w/o W+D
                 elif year > 4 and numpy.sum(apogeeDesign[self._designsIndx[ii]]['BIN_USE_WD_FLAG']) >= apogeeDesign[self._designsIndx[ii]]['NUMBER_OF_SELECTION_BINS']:
-                    indx[ii]= False                   
+                    indx[ii]= False
                 # APOGEE-2: Remove halo_stream fields
                 elif year > 4 and apogeeDesign[self._designsIndx[ii]]['DESIGN_TYPE'] == b'halo_stream':
-                    indx[ii]= False                   
+                    indx[ii]= False
             self._plates= self._plates[indx]
             nplates= len(self._plates)
             self._obslog= self._obslog[indx]
@@ -1486,6 +1263,364 @@ class apogeeSelect:
                                   minnspec=self._minnspec)
         return None
 
+class apogee1Select(apogeeSelect):
+    """sub class containing APOGEE-1 selection function"""
+    def determine_statistical(self,specdata):
+        """
+        NAME:
+           determine_statistical
+        PURPOSE:
+           Determine the subsample that is part of the statistical sample
+           described by this selection function object
+        INPUT:
+           specdata - a spectroscopic subsample (e.g., a red-clump sample)
+        OUTPUT:
+           index array into specdata that has True for members of the
+           statistical sample
+        HISTORY:
+           2013-11-10 - Written - Bovy (IAS)
+        """
+        #Read the allVisit file to match back to plates
+        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
+                 allVisit['PLATE'][ii]+b'-'+
+                 b'%05i' % allVisit['MJD'][ii] + b'-'
+                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S17')
+        statIndx= numpy.zeros(len(specdata),dtype='bool')
+        #Go through the spectroscopic sample and check that it is in a full cohort
+        plateIncomplete= 0
+        for ii in tqdm.trange(len(specdata)):
+            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            indx= visits == avisit
+            if numpy.sum(indx) == 0.:
+                #Hasn't happened so far
+                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
+                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                indx= visits == avisit
+            avisitsplate= int(allVisit['PLATE'][indx][0])
+            #Find the design corresponding to this plate
+            tplatesIndx= (self._plates == avisitsplate)
+            if numpy.sum(tplatesIndx) == 0.:
+                plateIncomplete+= 1
+                continue
+            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
+            #Determine which cohort this star is in
+            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
+                tcohort= 'short'
+                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
+                tcohort= 'medium'
+                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
+                tcohort= 'long'
+                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
+            else:
+                tcohort= '???'
+                plateIncomplete+= 1
+#                print("Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate)
+            locIndx= specdata['LOCATION_ID'][ii] == self._locations
+            if cohortnum > 0 and tcohort != '???' and \
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
+                statIndx[ii]= True
+        return statIndx*apread.mainIndx(specdata)
+
+    def _determine_selection(self,sample='rcsample',sftype='constant',
+                             minnspec=10):
+        """Internal function to determine the selection function"""
+        selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
+        self._minnspec= minnspec
+        self._sftype= sftype
+        if self._sftype.lower() == 'constant':
+            for ii in range(len(self._locations)):
+                if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_short[ii] >= minnspec:
+                    #There is a short cohort
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
+                else:
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_medium[ii] >= minnspec:
+                    #There is a medium cohort
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
+                else:
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_long[ii] >= minnspec:
+                    #There is a long cohort
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
+                else:
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
+        self._selfunc= selfunc
+        return None
+
+
+    def _load_phot_data(self,sample='rcsample'):
+        """Internal function to load the full, relevant photometric data set
+        for the statistical sample"""
+        photdata= {} #we're going to arrange this by location
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        for ii in range(len(self._locations)):
+            field_name= self._apogeeField[ii]['FIELD_NAME']
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
+            sys.stdout.flush()
+            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                               ak=True,akvers='targ')
+            #Cut to relevant color range
+            jko= tapogeeObject['J0']-tapogeeObject['K0']
+            if sample.lower() == 'rcsample':
+                indx=(jko >= 0.5)*(jko < 0.8)
+            else:
+                indx= jko >= 0.5
+            #print(field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
+            tapogeeObject= tapogeeObject[indx]
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+            else:
+                photdata['%i' % self._locations[ii]]= None
+            if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
+                thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            else: #this avoids a warning
+                thmin= numpy.nan
+            #print(numpy.nanmax(self._long_completion[ii,:]), numpy.nanmax(self._medium_completion[ii,:]), numpy.nanmax(self._short_completion[ii,:]), thmin, thmax)
+            indx= (tapogeeObject['H'] >= thmin)\
+                *(tapogeeObject['H'] <= thmax)
+            #print(numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
+            tapogeeObject= tapogeeObject[indx]
+            photdata['%i' % self._locations[ii]]= tapogeeObject
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
+        self._photdata= photdata
+        #Now record the number of photometric objects in each cohort
+        nphot_short= numpy.zeros(len(self._locations))+numpy.nan
+        nphot_medium= numpy.zeros(len(self._locations))+numpy.nan
+        nphot_long= numpy.zeros(len(self._locations))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                nphot_short[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                nphot_medium[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                nphot_long[ii]= numpy.sum(\
+                    (self._photdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                        *(self._photdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+        self._nphot_short= nphot_short
+        self._nphot_medium= nphot_medium
+        self._nphot_long= nphot_long
+        return None
+
+    def _load_spec_data(self,sample='rcsample'):
+        """Internal function to load the full spectroscopic data set and
+        cut it down to the statistical sample"""
+        allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee1')
+        #Only keep stars in locations for which we are loading the
+        #selection function
+        indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations
+                           for ii in range(len(allStar))],dtype='bool')
+        allStar= allStar[indx]
+        jko= allStar['J0']-allStar['K0']
+        self._sample= sample
+        if sample.lower() == 'rcsample':
+            indx=(jko >= 0.5)*(jko < 0.8)
+        else:
+            indx= jko >= 0.5
+        allStar= allStar[indx]
+        statIndx= self.determine_statistical(allStar)
+        allStar= allStar[statIndx]
+        #Save spectroscopic data by location
+        specdata= {}
+        for ii in range(len(self._locations)):
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+            else:
+                specdata['%i' % self._locations[ii]]= None
+            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            indx= (allStar['LOCATION_ID'] == self._locations[ii])\
+                *(allStar['H'] >= thmin)\
+                *(allStar['H'] <= thmax)
+            specdata['%i' % self._locations[ii]]= allStar[indx]
+        self._specdata= specdata
+        #Now record the number of spectroscopic objects in each cohort
+        nspec_short= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_long= numpy.zeros(len(self._locations))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                nspec_short[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                nspec_medium[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                nspec_long[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+        self._nspec_short= nspec_short
+        self._nspec_medium= nspec_medium
+        self._nspec_long= nspec_long
+        return None
+
+class apogee2Select(apogeeSelect):
+    """subclass containing APOGEE-2 specific selection function"""
+    def determine_statistical(self,specdata):
+        """
+        NAME:
+           determine_statistical
+        PURPOSE:
+           Determine the subsample that is part of the statistical sample
+           described by this selection function object
+        INPUT:
+           specdata - a spectroscopic subsample (e.g., a red-clump sample)
+        OUTPUT:
+           index array into specdata that has True for members of the
+           statistical sample
+        HISTORY:
+           2013-11-10 - Written - Bovy (IAS)
+        """
+        #Read the allVisit file to match back to plates
+        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
+                 allVisit['PLATE'][ii]+b'-'+
+                 b'%05i' % allVisit['MJD'][ii] + b'-'
+                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S17')
+        statIndx= numpy.zeros(len(specdata),dtype='bool')
+        #Go through the spectroscopic sample and check that it is in a full cohort
+        plateIncomplete= 0
+        for ii in tqdm.trange(len(specdata)):
+            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            indx= visits == avisit
+            if numpy.sum(indx) == 0.:
+                #Hasn't happened so far
+                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
+                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                indx= visits == avisit
+            avisitsplate= int(allVisit['PLATE'][indx][0])
+            #Find the design corresponding to this plate
+            tplatesIndx= (self._plates == avisitsplate)
+            if numpy.sum(tplatesIndx) == 0.:
+                plateIncomplete+= 1
+                continue
+            avisitsDesign= self._apogeeDesign[self._designsIndx[tplatesIndx]]
+            #Determine which cohort this star is in
+            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
+                tcohort= 'short'
+                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
+                tcohort= 'medium'
+                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
+                tcohort= 'long'
+                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
+            else:
+                tcohort= '???'
+                plateIncomplete+= 1
+#                print("Warning: cohort undetermined: H = %f" % specdata['H'][ii], avisitsDesign['SHORT_COHORT_MIN_H'], avisitsDesign['SHORT_COHORT_MAX_H'], avisitsDesign['MEDIUM_COHORT_MIN_H'], avisitsDesign['MEDIUM_COHORT_MAX_H'], avisitsDesign['LONG_COHORT_MIN_H'], avisitsDesign['LONG_COHORT_MAX_H'], avisitsplate)
+            locIndx= specdata['LOCATION_ID'][ii] == self._locations
+            if cohortnum > 0 and tcohort != '???' and \
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)):
+                statIndx[ii]= True
+        return statIndx*apread.mainIndx(specdata)
+
+    def _load_spec_data(self,sample='rcsample'):
+        """Internal function to load the full spectroscopic data set and
+        cut it down to the statistical sample"""
+        allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2')
+        #Only keep stars in locations for which we are loading the
+        #selection function
+        indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations
+                           for ii in range(len(allStar))],dtype='bool')
+        allStar= allStar[indx]
+        jko= allStar['J0']-allStar['K0']
+        self._sample= sample
+        if sample.lower() == 'rcsample':
+            indx=(jko >= 0.5)*(jko < 0.8)
+        else:
+            indx= jko >= 0.5
+        allStar= allStar[indx]
+        statIndx= self.determine_statistical(allStar)
+        allStar= allStar[statIndx]
+        #Save spectroscopic data by location
+        specdata= {}
+        for ii in range(len(self._locations)):
+            #Cut to relevant magnitude range
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                thmax= self._long_cohorts_hmax[ii,numpy.nanargmax(self._long_completion[ii,:])]
+            elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                thmax= self._medium_cohorts_hmax[ii,numpy.nanargmax(self._medium_completion[ii,:])]
+            elif numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
+            else:
+                specdata['%i' % self._locations[ii]]= None
+            thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
+            indx= (allStar['LOCATION_ID'] == self._locations[ii])\
+                *(allStar['H'] >= thmin)\
+                *(allStar['H'] <= thmax)
+            specdata['%i' % self._locations[ii]]= allStar[indx]
+        self._specdata= specdata
+        #Now record the number of spectroscopic objects in each cohort
+        nspec_short= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_medium= numpy.zeros(len(self._locations))+numpy.nan
+        nspec_long= numpy.zeros(len(self._locations))+numpy.nan
+        for ii in range(len(self._locations)):
+            if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                nspec_short[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._short_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._short_hmax[ii]))
+            if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                nspec_medium[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._medium_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._medium_hmax[ii]))
+            if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                nspec_long[ii]= numpy.sum(\
+                    (self._specdata['%i' % self._locations[ii]]['H'] >= self._long_hmin[ii])\
+                        *(self._specdata['%i' % self._locations[ii]]['H'] <= self._long_hmax[ii]))
+        self._nspec_short= nspec_short
+        self._nspec_medium= nspec_medium
+        self._nspec_long= nspec_long
+        return None
+
+
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
     def __init__(self,apoSel,MH=-1.49,dmap3d=None):
@@ -1539,13 +1674,13 @@ class apogeeEffectiveSelect:
         lcen, bcen= self._apoSel.glonGlat(location)
         pixarea, ah= self._dmap3d.dust_vals_disk(lcen[0],bcen[0],dist,
                                                  self._apoSel.radius(location))
-        distmod= numpy.tile(distmod,(ah.shape[0],1))       
+        distmod= numpy.tile(distmod,(ah.shape[0],1))
         out= numpy.zeros_like(dist)
         # Cache the values of the selection function
         cohorts= ['short','medium','long']
         hmins= dict((c,self._apoSel.Hmin(location,cohort=c)) for c in cohorts)
         hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
-        selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.)) 
+        selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.))
                       for c in cohorts)
         totarea= numpy.sum(pixarea)
         for cohort in cohorts:
