@@ -108,7 +108,7 @@ class apogeeSelect:
         sys.stdout.flush()
         return None
 
-    def __call__(self,location,H):
+    def __call__(self,location,H,JK0=None):
         """
         NAME:
            __call__
@@ -126,37 +126,85 @@ class apogeeSelect:
         #Handle input
         if isinstance(H,(int,float,numpy.float32,numpy.float64)): #Scalar input
             H= [H]
+            if JK0 is not None:
+                JK0 = [JK0]
             scalarOut= True
         elif isinstance(location,(numpy.int16,int)) \
                 and isinstance(H,(list,numpy.ndarray)) \
                 and self._sftype.lower() == 'constant': #special case this for speed
+            if JK0 is not None and numpy.shape(H) != numpy.shape(JK0):
+                raise ValueError('shape of JK0 does not match input magnitude array')
             out= numpy.zeros_like(H)
-            #short
-            sindx= (H >= self._short_hmin[locIndx])\
-                *(H <= self._short_hmax[locIndx])
-            out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx]) #constant
-            #medium
-            mindx= (H > self._medium_hmin[locIndx])\
-                *(H <= self._medium_hmax[locIndx])
-            out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx]) #constant
-            #long
-            lindx= (H > self._long_hmin[locIndx])\
-                *(H <= self._long_hmax[locIndx])
-            out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx]) #constant
-            out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
-            return out
+            if JK0 is not None:
+                #see which bins the stars are in, first work out the bins and the limits
+                nbins = self._number_of_bins[locIndx][0]
+                lowjk = self._color_bins_jkmin[locIndx][0]
+                bins = lowjk[:int(nbins+1)]
+                #find the index of the corresponding color bin
+                bin_inds = numpy.digitize(JK0,bins)
+                bin_inds -= 1
+            #then find the selection
+            if JK0 is None:
+                if numpy.shape(self._selfunc['%is' % location](self._short_hmax[locIndx])) == (5,):
+                    raise ValueError('Must give dereddened J-K when using APOGEE-2 selection function')
+                #short
+                sindx= (H >= self._short_hmin[locIndx])\
+                    *(H <= self._short_hmax[locIndx])
+                out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx]) #constant
+                #medium
+                mindx= (H > self._medium_hmin[locIndx])\
+                    *(H <= self._medium_hmax[locIndx])
+                out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx]) #constant
+                #long
+                lindx= (H > self._long_hmin[locIndx])\
+                    *(H <= self._long_hmax[locIndx])
+                out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx]) #constant
+                out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+                return out
+            else:
+                #short
+                sindx= (H >= self._short_hmin[locIndx])\
+                    *(H <= self._short_hmax[locIndx])
+                out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx])[bin_inds[sindx]] #constant
+                #medium
+                mindx= (H > self._medium_hmin[locIndx])\
+                    *(H <= self._medium_hmax[locIndx])
+                out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[bin_inds[mindx]] #constant
+                #long
+                lindx= (H > self._long_hmin[locIndx])\
+                    *(H <= self._long_hmax[locIndx])
+                out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx])[bin_inds[lindx]] #constant
+                out[bin_inds == -1] = 0. #stars outside the color bins to zero
+                out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+                return out
         out= numpy.zeros(len(H))
-        for ii in range(len(H)):
-            if H[ii] >= self._short_hmin[locIndx] \
-                    and H[ii] <= self._short_hmax[locIndx]:
-                out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])
-            elif H[ii] > self._medium_hmin[locIndx] \
-                    and H[ii] <= self._medium_hmax[locIndx]:
-                out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])
-            elif H[ii] > self._long_hmin[locIndx] \
-                    and H[ii] <= self._long_hmax[locIndx]:
-                out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])
-        out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+        if JK0 is None:
+            if numpy.shape(self._selfunc['%is' % location](self._short_hmax[locIndx])) == (5,):
+                raise ValueError('Must give dereddened J-K when using APOGEE-2 selection function')
+            for ii in range(len(H)):
+                if H[ii] >= self._short_hmin[locIndx] \
+                        and H[ii] <= self._short_hmax[locIndx]:
+                    out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])
+                elif H[ii] > self._medium_hmin[locIndx] \
+                        and H[ii] <= self._medium_hmax[locIndx]:
+                    out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])
+                elif H[ii] > self._long_hmin[locIndx] \
+                        and H[ii] <= self._long_hmax[locIndx]:
+                    out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])
+            out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+        else:
+            for ii in range(len(H)):
+                if H[ii] >= self._short_hmin[locIndx] \
+                        and H[ii] <= self._short_hmax[locIndx]:
+                    out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])[:,bin_inds[sindx]]
+                elif H[ii] > self._medium_hmin[locIndx] \
+                        and H[ii] <= self._medium_hmax[locIndx]:
+                    out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[:,bin_inds[mindx]]
+                elif H[ii] > self._long_hmin[locIndx] \
+                        and H[ii] <= self._long_hmax[locIndx]:
+                    out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])[:,bin_inds[lindx]]
+            out[bin_inds == -1] = 0. #stars outside color bins to zero
+            out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
         if scalarOut:
             return out[0]
         else:
@@ -1591,23 +1639,23 @@ class apogee2Select(apogeeSelect):
         if self._sftype.lower() == 'constant':
             for ii in range(len(self._locations)):
                 if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_short[ii] >= minnspec:
+                        and numpy.nansum(self._nspec_short[ii]) >= minnspec:
                     #There is a short cohort
-                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: self._nspec_short[copy]/self._nphot_short[copy]
                 else:
-                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
                 if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_medium[ii] >= minnspec:
+                        and numpy.nansum(self._nspec_medium[ii]) >= minnspec:
                     #There is a medium cohort
-                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: self._nspec_medium[copy]/self._nphot_medium[copy]
                 else:
-                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
                 if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_long[ii] >= minnspec:
+                        and np.nansum(self._nspec_long[ii]) >= minnspec:
                     #There is a long cohort
-                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: self._nspec_long[copy]/self._nphot_long[copy]
                 else:
-                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
         self._selfunc= selfunc
         return None
 
