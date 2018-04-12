@@ -607,6 +607,8 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
         except subprocess.CalledProcessError as e:
             if not downloading: #Assume KeyboardInterrupt
                 raise
+            elif 'exit status 5' in str(e):
+                raise IOError("Download failed because of wget SSL certification error; you can turn off SSL certification checking by setting the option\n\ncheck_certificate = off\n\nin the file $HOME/.wgetrc (create this if it does not exist)")
             elif ntries > _MAX_NTRIES:
                 raise IOError('File %s does not appear to exist on the server (as %s) ...' % (os.path.basename(filePath),downloadPath))
             elif not 'exit status 4' in str(e):
