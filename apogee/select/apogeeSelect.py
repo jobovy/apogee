@@ -196,13 +196,13 @@ class apogeeSelect:
             for ii in range(len(H)):
                 if H[ii] >= self._short_hmin[locIndx] \
                         and H[ii] <= self._short_hmax[locIndx]:
-                    out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])[:,bin_inds[sindx]]
+                    out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])[bin_inds[ii]]
                 elif H[ii] > self._medium_hmin[locIndx] \
                         and H[ii] <= self._medium_hmax[locIndx]:
-                    out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[:,bin_inds[mindx]]
+                    out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[bin_inds[ii]]
                 elif H[ii] > self._long_hmin[locIndx] \
                         and H[ii] <= self._long_hmax[locIndx]:
-                    out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])[:,bin_inds[lindx]]
+                    out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])[bin_inds[ii]]
             out[bin_inds == -1] = 0. #stars outside color bins to zero
             out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
         if scalarOut:
@@ -1651,7 +1651,7 @@ class apogee2Select(apogeeSelect):
                 else:
                     selfunc['%im' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
                 if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and np.nansum(self._nspec_long[ii]) >= minnspec:
+                        and numpy.nansum(self._nspec_long[ii]) >= minnspec:
                     #There is a long cohort
                     selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: self._nspec_long[copy]/self._nphot_long[copy]
                 else:
@@ -1812,6 +1812,122 @@ class apogee2Select(apogeeSelect):
         self._nspec_long= nspec_long
         return None
 
+class apogeeCombinedSelect:
+    """ Class that combines APOGEE 1 and 2 raw selection functions """
+    def __init__(self,sample='main',
+                 locations=None,
+                 year=None,
+                 sftype='constant',
+                 minnspec=3,
+                 frac4complete=1.):
+        self._sftype = sftype
+        self._frac4complete = frac4complete
+        if year is None:
+            self.apo1year = 3
+            self.apo2year = 5
+        #load an APOGEE 1 and 2 selection function
+        apo1sel = apogee1Select(year=self.apo1year, sample=sample)
+        apo2sel = apogee2Select(year=self.apo2year, sample=sample)
+        #combine and store the locations (concatenate and add missing dimensions)
+        self._locations = numpy.concatenate([apo1sel._locations, apo2sel._locations])
+        self._apo1_locations = apo1sel._locations
+        self._apo2_locations = apo2sel._locations
+        self._selfunc = {}
+        #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
+        for ii,loc in enumerate(self._apo1_locations):
+            #short
+            self._selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
+            #medium
+            self._selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
+            #long
+            self._selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
+        self._selfunc.update(apo2sel._selfunc)
+        self._short_hmin = numpy.concatenate([apo1sel._short_hmin, apo2sel._short_hmin])
+        self._medium_hmin = numpy.concatenate([apo1sel._medium_hmin, apo2sel._medium_hmin])
+        self._long_hmin = numpy.concatenate([apo1sel._long_hmin, apo2sel._long_hmin])
+        self._short_hmax = numpy.concatenate([apo1sel._short_hmax, apo2sel._short_hmax])
+        self._medium_hmax = numpy.concatenate([apo1sel._medium_hmax, apo2sel._medium_hmax])
+        self._long_hmax = numpy.concatenate([apo1sel._long_hmax, apo2sel._long_hmax])
+        self._number_of_bins = numpy.concatenate([numpy.ones(len(self._apo1_locations)), apo2sel._number_of_bins])
+        self._color_bins_jkmax = numpy.concatenate([numpy.ones([len(self._apo1_locations), 5])*999.,apo2sel._color_bins_jkmax])
+        jkmin_apo1 = numpy.ones([len(self._apo1_locations), 5])*999.
+        jkmin_apo1[:,0] = 0.5
+        self._color_bins_jkmin = numpy.concatenate([jkmin_apo1, apo2sel._color_bins_jkmin])
+
+    def __call__(self, location, H, JK0):
+        """
+        NAME:
+           __call__
+        PURPOSE:
+           evaluate the selection function
+        INPUT:
+           location - location_id (single location)
+           H - H-band magnitude (can be array or list)
+           JK0 - dereddened J-K color
+        OUTPUT:
+           selection function
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+           2018-04-12 - Adapted - Mackereth (LJMU)
+        """
+        locIndx= self._locations == location
+        #Handle input
+        if isinstance(H,(int,float,numpy.float32,numpy.float64)): #Scalar input
+            H= [H]
+            JK0 = [JK0]
+            scalarOut= True
+        elif isinstance(location,(numpy.int16,int)) \
+                and isinstance(H,(list,numpy.ndarray)) \
+                and self._sftype.lower() == 'constant': #special case this for speed
+            if numpy.shape(H) != numpy.shape(JK0):
+                raise ValueError('shape of JK0 does not match input magnitude array')
+            out= numpy.zeros_like(H)
+            #see which bins the stars are in, first work out the bins and the limits
+            nbins = self._number_of_bins[locIndx][0]
+            lowjk = self._color_bins_jkmin[locIndx][0]
+            bins = lowjk[:int(nbins+1)]
+            #find the index of the corresponding color bin
+            bin_inds = numpy.digitize(JK0,bins)
+            bin_inds -= 1
+            #short
+            sindx= (H >= self._short_hmin[locIndx])\
+                *(H <= self._short_hmax[locIndx])
+            out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx])[bin_inds[sindx]] #constant
+            #medium
+            mindx= (H > self._medium_hmin[locIndx])\
+                *(H <= self._medium_hmax[locIndx])
+            out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[bin_inds[mindx]] #constant
+            #long
+            lindx= (H > self._long_hmin[locIndx])\
+                *(H <= self._long_hmax[locIndx])
+            out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx])[bin_inds[lindx]] #constant
+            out[bin_inds == -1] = 0. #stars outside the color bins to zero
+            out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+            return out
+        out= numpy.zeros(len(H))
+        #see which bins the stars are in, first work out the bins and the limits
+        nbins = self._number_of_bins[locIndx][0]
+        lowjk = self._color_bins_jkmin[locIndx][0]
+        bins = lowjk[:int(nbins+1)]
+        #find the index of the corresponding color bin
+        bin_inds = numpy.digitize(JK0,bins)
+        bin_inds -= 1
+        for ii in range(len(H)):
+            if H[ii] >= self._short_hmin[locIndx] \
+                    and H[ii] <= self._short_hmax[locIndx]:
+                out[ii]= self._selfunc['%is' % location](self._short_hmax[locIndx])[bin_inds[ii]]
+            elif H[ii] > self._medium_hmin[locIndx] \
+                    and H[ii] <= self._medium_hmax[locIndx]:
+                out[ii]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[bin_inds[ii]]
+            elif H[ii] > self._long_hmin[locIndx] \
+                    and H[ii] <= self._long_hmax[locIndx]:
+                out[ii]= self._selfunc['%il' % location](self._long_hmax[locIndx])[bin_inds[ii]]
+        out[bin_inds == -1] = 0. #stars outside color bins to zero
+        out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+        if scalarOut:
+            return out[0]
+        else:
+            return out
 
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
