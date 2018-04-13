@@ -279,7 +279,7 @@ def waveregions(*args,**kwargs):
             thisax.xaxis.set_major_locator(ticker.MultipleLocator(2.))
         else:
             thisax.xaxis.set_major_locator(ticker.MultipleLocator(tickStep))
-        bovy_plot._add_ticks(xticks=True-noxticks)
+        bovy_plot._add_ticks(xticks=True^noxticks)
         if ii > 0:
             nullfmt   = NullFormatter()         # no labels
             thisax.yaxis.set_major_formatter(nullfmt)

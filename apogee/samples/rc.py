@@ -145,7 +145,7 @@ class rcdist:
         out= numpy.empty_like(jk)
         indx= (Z >= jkzcut(jk))*(Z <= jkzcut(jk,upper=True))\
             *(jk >= 0.5)*(Z <= 0.06)
-        out[True-indx]= numpy.nan
+        out[True^indx]= numpy.nan
         if mh:
             absmag= self._interpMag.ev(jk,Z)+dh
         else:

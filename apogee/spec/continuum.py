@@ -162,7 +162,7 @@ def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
     tres= spec-tcont
     sig= numpy.std(tres)
     mask= (tres < usigma*sig)*(tres > -lsigma*sig)
-    spec[True-mask]= chpoly(wav[True-mask])
+    spec[True^mask]= chpoly(wav[True^mask])
     for ii in range(niter):
         chpoly= numpy.polynomial.Chebyshev.fit(wav,
                                                spec,
@@ -172,7 +172,7 @@ def _fit_aspcap(wav,spec,specerr,deg,niter,usigma,lsigma):
         tres= spec-tcont
         sig= numpy.std(tres)
         mask= (tres < usigma*sig)*(tres > -lsigma*sig)
-        spec[True-mask]= chpoly(wav[True-mask])
+        spec[True^mask]= chpoly(wav[True^mask])
     return chpoly(wav)
 
 def _fit_cannonpixels(wav,spec,specerr,deg,cont_pixels):

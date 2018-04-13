@@ -10,7 +10,7 @@ def test_telescope():
     onemIndx= numpy.array(['apogee.apo1m' in s for s in _DATA['APSTAR_ID']])
     telescopeIndx= numpy.array(['apo1m' in d for d in _DATA['TELESCOPE']],
                                dtype='bool')
-    assert numpy.sum(onemIndx*(True-telescopeIndx)) == 0,\
+    assert numpy.sum(onemIndx*(True^telescopeIndx)) == 0,\
         'TELESCOPE tag does not correspond to APSTAR_ID for 1m data'
     return None
 
@@ -26,7 +26,7 @@ def test_targflags_apogee_target1():
             targindx*= \
                 numpy.array([not 'APOGEE_FAINT_EXTRA' in s for s in _DATA['TARGFLAGS']],
                             dtype='bool')
-        badindx= ((_DATA['APOGEE_TARGET1'] & 2**targbit) != 0)*(True-targindx)
+        badindx= ((_DATA['APOGEE_TARGET1'] & 2**targbit) != 0)*(True^targindx)
         assert numpy.sum(badindx) == 0, 'Some objects with bit %i set in apogee_target1 do not have the corresponding flag name in TARGFLAGS set' % targbit
     return None
 
@@ -37,7 +37,7 @@ def test_targflags_apogee_target2():
         name= bitmask.apogee_target2_string(targbit)
         targindx= numpy.array([name in s for s in _DATA['TARGFLAGS']],
                               dtype='bool')
-        badindx= ((_DATA['APOGEE_TARGET2'] & 2**targbit) != 0)*(True-targindx)
+        badindx= ((_DATA['APOGEE_TARGET2'] & 2**targbit) != 0)*(True^targindx)
         assert numpy.sum(badindx) == 0, 'Some objects with bit %i set in apogee_target2 do not have the corresponding flag name in TARGFLAGS set' % targbit
     return None
 
@@ -53,22 +53,22 @@ def test_extratarg():
     mainIndx*= (_DATA['EXTRATARG'] != 2**4) #rm duplicates
     #Also rm commissioning
     commIndx= _DATA['COMMISS'] == 1
-    mainIndx*= (True-commIndx)
+    mainIndx*= (True^commIndx)
     assert numpy.sum(mainIndx*(_DATA['EXTRATARG'] != 0)) == 0, '%i main survey targets have EXTRATARG neq 0' % numpy.sum(mainIndx*_DATA['EXTRATARG'] > 0)
     commBitSet= numpy.array([bitmask.bit_set(1,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
-    assert numpy.sum(commIndx*(True-commBitSet)) == 0, '%i commissioning targets do not have bit 1 in EXTRATARG set' % numpy.sum(commIndx*(True-commBitSet)) == 0
+    assert numpy.sum(commIndx*(True^commBitSet)) == 0, '%i commissioning targets do not have bit 1 in EXTRATARG set' % numpy.sum(commIndx*(True^commBitSet)) == 0
     tellIndx= (_DATA['APOGEE_TARGET2'] & 2**9) != 0
     tellBitSet= numpy.array([bitmask.bit_set(2,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
     #Rm the tellurics that are main targets
-    tellIndx*= (True-mainIndx)
-    assert numpy.sum(tellIndx*(True-tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True-tellBitSet))
+    tellIndx*= (True^mainIndx)
+    assert numpy.sum(tellIndx*(True^tellBitSet)) == 0, '%i telluric targets do not have bit 2 in EXTRATARG set' % numpy.sum(tellIndx*(True^tellBitSet))
     #1m
     onemIndx= numpy.array(['apogee.apo1m' in s for s in _DATA['APSTAR_ID']])
     onemBitSet= numpy.array([bitmask.bit_set(3,e) for e in _DATA['EXTRATARG']],
                             dtype='bool')
-    assert numpy.sum(onemIndx*(True-onemBitSet)) == 0, '%i 1m targets do not have bit 3 in EXTRATARG set' % numpy.sum(onemIndx*(True-onemBitSet))
+    assert numpy.sum(onemIndx*(True^onemBitSet)) == 0, '%i 1m targets do not have bit 3 in EXTRATARG set' % numpy.sum(onemIndx*(True^onemBitSet))
     return None
 
 def test_params_named():
@@ -77,11 +77,11 @@ def test_params_named():
                                 -_DATA['TEFF']) < 10.**-10.), 'PARAM TEFF does not correspond to tag TEFF'
     assert numpy.all(numpy.fabs(_DATA['PARAM'][:,paramIndx('logg')]
                                 -_DATA['LOGG']) < 10.**-10.), 'PARAM LOGG does not correspond to tag LOGG'
-    cnanIndx= (True-numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('teff'),paramIndx('teff')])))
+    cnanIndx= (True^numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('teff'),paramIndx('teff')])))
     if numpy.sum(cnanIndx) > 0:
         assert numpy.all(numpy.fabs(numpy.sqrt(_DATA['PARAM_COV'][cnanIndx,paramIndx('teff'),paramIndx('teff')])
                                     -_DATA['TEFF_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV TEFF does not correspond to tag TEFF_ERR'
-    cnanIndx= (True-numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('logg'),paramIndx('logg')])))
+    cnanIndx= (True^numpy.isnan(numpy.sqrt(_DATA['PARAM_COV'][:,paramIndx('logg'),paramIndx('logg')])))
     if numpy.sum(cnanIndx) > 0:
         assert numpy.all(numpy.fabs(numpy.sqrt(_DATA['PARAM_COV'][cnanIndx,paramIndx('logg'),paramIndx('logg')])
                                     -_DATA['LOGG_ERR'][cnanIndx]) < 10.**-10.), 'PARAM_COV LOGG does not correspond to tag LOGG_ERR'
@@ -115,7 +115,7 @@ def test_elem_err_named_exclNaN():
     for ii,elem in enumerate(elems):
         errDiff= _DATA['ELEM_ERR'][:,elemIndx(elem)]\
             -_DATA[elem.upper()+'_H_ERR']
-        cnanIndx= True-numpy.isnan(errDiff)
+        cnanIndx= True^numpy.isnan(errDiff)
         assert numpy.all(numpy.fabs(errDiff[cnanIndx]) < 10.**-10.), 'ELEM_ERR value for %s_H_ERR does not agree with named tag' % elem 
     return None
                                 
