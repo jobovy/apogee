@@ -2080,11 +2080,11 @@ class apogeeCombinedSelect:
         HISTORY:
            2014-01-11 - Written - Bovy (IAS)
         """
-        if location_id in self._apo1_locations
+        if location_id in self._apo1_locations:
             locIndx= self._apo1_locations == location_id
             return (self._apogee1Field['GLON'][locIndx],
                     self._apogee1Field['GLAT'][locIndx])
-        elif location_id in self._apo2_locations
+        elif location_id in self._apo2_locations:
             locIndx= self._apo2_locations == location_id
             return (self._apogee2Field['GLON'][locIndx],
                     self._apogee2Field['GLAT'][locIndx])
