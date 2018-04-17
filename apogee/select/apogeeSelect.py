@@ -1853,6 +1853,46 @@ class apogeeCombinedSelect:
         jkmin_apo1 = numpy.ones([len(self._apo1_locations), 5])*999.
         jkmin_apo1[:,0] = 0.5
         self._color_bins_jkmin = numpy.concatenate([jkmin_apo1, apo2sel._color_bins_jkmin])
+        #need to concatenate obslog info too (for determine_statistical)
+        self._short_completion = numpy.concatenate([apo1sel._short_completion,apo2sel._short_completion])
+        self._medium_completion = numpy.concatenate([apo1sel._medium_completion, apo2sel._medium_completion])
+        self._long_completion = numpy.concatenate([apo1sel._long_completion, apo2sel._long_completion])
+        bincomp_apo1 = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        bincomp_apo1[:,0] = 1.
+        self._bin_completion = numpy.concatenate([bincomp_apo1,apo2sel._bin_completion])
+        self._apogee1Design = apo1sel._apogeeDesign
+        self._apogee2Design = apo2sel._apogeeDesign
+        self._apogee1Field = apo1sel._apogeeField
+        self._apogee2Field = apo2sel._apogeeField
+        self._designs1Indx = apo1sel._designsIndx
+        self._designs2Indx = apo2sel._designsIndx
+        self._1plates = apo1sel._plates
+        self._2plates = apo2sel._plates
+        self._plates = numpy.concatenate([self._1plates, self._2plates])
+        self._loc_design_radius = numpy.concatenate([apo1sel._loc_design_radius, apo2sel._loc_design_radius])
+        #combine the specdata and photdata for plots?
+        self._specdata = apo1sel._specdata
+        self._specdata.update(apo2sel._specdata)
+        self._photdata = apo1sel._photdata
+        self._photdata.update(apo2sel._photdata)
+        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nspec[:,0] = apo1sel._nspec_short
+        self._nspec_short = numpy.concatenate([apo1_nspec,apo2sel._nspec_short])
+        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nspec[:,0] = apo1sel._nspec_medium
+        self._nspec_medium = numpy.concatenate([apo1_nspec,apo2sel._nspec_medium])
+        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nspec[:,0] = apo1sel._nspec_long
+        self._nspec_long = numpy.concatenate([apo1_nspec,apo2sel._nspec_long])
+        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nphot[:,0] = apo1sel._nphot_short
+        self._nphot_short = numpy.concatenate([apo1_nphot,apo2sel._nphot_short])
+        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nphot[:,0] = apo1sel._nphot_medium
+        self._nphot_medium = numpy.concatenate([apo1_nphot,apo2sel._nphot_medium])
+        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
+        apo1_nphot[:,0] = apo1sel._nphot_long
+        self._nphot_long = numpy.concatenate([apo1_nphot,apo2sel._nphot_long])
 
     def __call__(self, location, H, JK0):
         """
@@ -1928,6 +1968,457 @@ class apogeeCombinedSelect:
             return out[0]
         else:
             return out
+
+    def nphot(self,location_id,cohort='short', color_bin=0):
+        """
+        NAME:
+           nphot
+        PURPOSE:
+           Return the number of photometric objects in a given field, cohort and color bin
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           number of objects in 2MASS
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return int(self.__dict__['_nphot_%s' % cohort][locIndx,color_bin])
+
+    def nspec(self,location_id,cohort='short',color_bin=0):
+        """
+        NAME:
+           nspec
+        PURPOSE:
+           Return the number of objects in the statstical spectroscopic sample a given field, cohort and color bin
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           number of objects in the statistical sample
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        out= self.__dict__['_nspec_%s' % cohort][locIndx,color_bin]
+        if numpy.isnan(out): return 0
+        else: return int(out)
+
+    def list_fields(self,cohort='short'):
+        """
+        NAME:
+           list_fields
+        PURPOSE:
+           return a list of all of the fields in the statistical sample
+        INPUT:
+           cohort= ('short') only return fields for which this cohort is in
+                   the statistical sample ['short','medium','long']
+        OUTPUT:
+           list of field (location_ids)
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        out= []
+        for ii in range(len(self._locations)):
+            if cohort.lower() == 'all' and \
+                    ((numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete and numpy.nansum(self._nspec_short[ii], axis=1) >= self._minnspec) \
+                         or (numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete and numpy.nansum(self._nspec_medium[ii], axis=1) >= self._minnspec) \
+                         or (numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete and numpy.nansum(self._nspec_long[ii], axis=1) >= self._minnspec)):
+                #There is a completed cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'short' and numpy.nansum(self._nspec_short[ii], axis=1) >= self._minnspec and \
+                    numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete:
+                #There is a completed short cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'medium' and numpy.nansum(self._nspec_medium[ii], axis=1) >= self._minnspec and \
+                    numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete:
+                #There is a completed medium cohort
+                out.append(self._locations[ii])
+            elif cohort.lower() == 'long' and numpy.nansum(self._nspec_long[ii], axis=1) >= self._minnspec and \
+                    numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete:
+                #There is a completed long cohort
+                out.append(self._locations[ii])
+        return out
+
+    def list_plates(self):
+        """
+        NAME:
+           list_plates
+        PURPOSE:
+           return a list of all of the plates that are complete
+        INPUT:
+        OUTPUT:
+           list of plate ids
+        HISTORY:
+           2014-01-12 - Written - Bovy (IAS)
+        """
+        return self._plates
+
+    def plateComplete(self,plate):
+        """
+        NAME:
+           plateComplete
+        PURPOSE:
+           return whether a plate is complete or not
+        INPUT:
+           plate - plate ID
+        OUTPUT:
+           True or False
+        HISTORY:
+           2014-01-12 - Written - Bovy (IAS)
+        """
+        return plate in self._plates
+
+    def glonGlat(self,location_id):
+        """
+        NAME:
+           glonGlat
+        PURPOSE:
+           return the longitude and latitude corresponding to a location_id
+        INPUT:
+        OUTPUT:
+           Galactic longitude and latitude in degrees
+        HISTORY:
+           2014-01-11 - Written - Bovy (IAS)
+        """
+        if location_id in self._apo1_locations
+            locIndx= self._apo1_locations == location_id
+            return (self._apogee1Field['GLON'][locIndx],
+                    self._apogee1Field['GLAT'][locIndx])
+        elif location_id in self._apo2_locations
+            locIndx= self._apo2_locations == location_id
+            return (self._apogee2Field['GLON'][locIndx],
+                    self._apogee2Field['GLAT'][locIndx])
+        else:
+            return (np.nan, np.nan)
+
+    def radius(self,location_id):
+        """
+        NAME:
+           radius
+        PURPOSE:
+           return the radius around glonGlat from which targets were drawn for this field
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           radius in deg
+        HISTORY:
+           2014-01-15 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        radii= self._loc_design_radius[locIndx]
+        radii= radii[True-numpy.isnan(radii)]
+        if len(set(radii)) > 1:
+            warnings.warn("Different designs for this field have different radii; returning the first of these...")
+        return radii[0]
+
+    def area(self,location_id):
+        """
+        NAME:
+           area
+        PURPOSE:
+           return the area around glonGlat from which targets were drawn for this field
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           area in deg^2
+        HISTORY:
+           2015-03-09 - Written - Bovy (IAS)
+        """
+        radius= self.radius(location_id)
+        tarea= (1.-numpy.cos(radius*_DEGTORAD))*2.*numpy.pi/_DEGTORAD**2.
+        # Remove central hole of radius 5'
+        tarea-= (1.-numpy.cos(_DEGTORAD/12.))*2.*numpy.pi/_DEGTORAD**2.
+        return tarea
+
+    def Hmin(self,location_id,cohort='short'):
+        """
+        NAME:
+          Hmin
+        PURPOSE:
+           return the minimum H of a field/cohort combination
+        INPUT:
+           location_id - field location ID
+           cohort= ('short') cohort ['short','medium','long']
+        OUTPUT:
+           Hmin (NaN if the cohort does not exist)
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return self.__dict__['_%s_hmin' % cohort][locIndx]
+
+    def Hmax(self,location_id,cohort='short'):
+        """
+        NAME:
+          Hmax
+        PURPOSE:
+           return the maximum H of a field/cohort combination
+        INPUT:
+           location_id - field location ID
+           cohort= ('short') cohort ['short','medium','long']
+        OUTPUT:
+           Hmax
+        HISTORY:
+           2013-11-13 - Written - Bovy (IAS)
+        """
+        locIndx= self._locations == location_id
+        return self.__dict__['_%s_hmax' % cohort][locIndx]
+
+    def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
+                     spec=True,reweight=True,
+                     bins=None,specbins=None,
+                     onedhistsbins=None,
+                     onedhistsspecbins=None,
+                     cntrSmooth=None,
+                     speccolor='r',reweightcolor='b',color_bin=0):
+        """
+        NAME:
+           plotColorMag
+        PURPOSE:
+           plot the distribution of photometric/spectroscopic objects in
+           color and magnitude
+        INPUT:
+           x= ('JK0') what to plot on the X-axis
+           y= ('H') what to plot on the Y-axis
+           location= location_id(s), or 'all'
+           cohort= ('all') cohorts to plot
+           spec= if True, overlay spectroscopic objects as white contours
+           reweight= if True, also plot the re-weighted photometric
+                     histograms in 1D
+           bins= number of bins to use in the histograms
+           specbins= number of bins to use in the spectroscopic histograms
+           onedhistsbins= number of bins to use in the 1D histograms
+           onedhistsspecbins= number of bins to use in the 1D histograms (spec.)
+           cntrSmooth= cntrSmooth keyword of scatterplot
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        if isinstance(location,str) and location.lower() == 'all':
+            location= self._locations
+        elif isinstance(location,str) and location.lower() == 'short':
+            cohort= 'short'
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_short, axis=1) >= self._minnspec)]
+        elif isinstance(location,str) and location.lower() == 'medium':
+            cohort= 'medium'
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_medium, axis=1) >= self._minnspec)]
+        elif isinstance(location,str) and location.lower() == 'long':
+            cohort= 'long'
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_long, axis=1) >= self._minnspec)]
+        if isinstance(location,(numpy.int16,int)): #Scalar input
+            location= [location]
+        #Gather data from all requested locations and cohorts
+        photxs= []
+        photys= []
+        if spec:
+            specxs= []
+            specys= []
+        if reweight:
+            w= []
+        for ii in tqdm(range(len(location))):
+            tphotdata= self._photdata['%i' % location[ii]]
+            locIndx= self._locations == location[ii]
+            if cohort.lower() == 'short':
+                indx= (tphotdata['H'] >= self._short_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._short_hmax[locIndx])
+            elif cohort.lower() == 'medium':
+                indx= (tphotdata['H'] > self._medium_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._medium_hmax[locIndx])
+            elif cohort.lower() == 'long':
+                indx= (tphotdata['H'] > self._long_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._long_hmax[locIndx])
+            else:
+                indx= numpy.ones(len(tphotdata),dtype='bool')
+            tphotdata= tphotdata[indx]
+            if x == 'JK0':
+                photxs.extend(tphotdata['J0']-tphotdata['K0'])
+            if y == 'H':
+                photys.extend(tphotdata['H'])
+            #weights
+            if reweight:
+                w.extend(self(location[ii],tphotdata['H'],tphotdata['J0']-tphotdata['K0']))
+            #spec
+            if spec:
+                tspecdata= self._specdata['%i' % location[ii]]
+                if cohort.lower() == 'short':
+                    indx= (tspecdata['H'] >= self._short_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._short_hmax[locIndx])
+                elif cohort.lower() == 'medium':
+                    indx= (tspecdata['H'] > self._medium_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._medium_hmax[locIndx])
+                elif cohort.lower() == 'long':
+                    indx= (tspecdata['H'] > self._long_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._long_hmax[locIndx])
+                else:
+                    indx= numpy.ones(len(tspecdata),dtype='bool')
+                tspecdata= tspecdata[indx]
+                if x == 'JK0':
+                    specxs.extend(tspecdata['J0']-tspecdata['K0'])
+                if y == 'H':
+                    specys.extend(tspecdata['H'])
+        photxs= numpy.array(photxs)
+        photys= numpy.array(photys)
+        if reweight:
+            w= numpy.array(w)
+        if spec:
+            specxs= numpy.array(specxs)
+            specys= numpy.array(specys)
+        if x == 'JK0':
+            xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
+            xrange= [0.4,1.4]
+        if y == 'H':
+            ylabel=r'$H\, (\mathrm{mag})$'
+            yrange=[6.,14.]
+        if matplotlib.pyplot.get_backend().lower() == 'macosx':
+            #Bug in matplotlib
+            xlabel= None
+            ylabel= None
+        #Plot
+        if bins is None:
+            bins= int(numpy.ceil(0.3*numpy.sqrt(len(photxs))))
+        if onedhistsbins is None: onedhistsbins= bins
+        if spec and specbins is None:
+            specbins= int(numpy.ceil(0.3*numpy.sqrt(len(specxs))))
+        if spec and onedhistsspecbins is None: onedhistsspecbins= specbins
+        if len(photxs) > 100000: symb= 'w,'
+        else: symb= 'k,'
+        if spec:
+            #First plot spectroscopic sample
+            cdict = {'red': ((.0, 1.0, 1.0),
+                             (1.0, 1.0, 1.0)),
+                     'green': ((.0, 1.0, 1.0),
+                               (1.0, 1.0, 1.0)),
+                     'blue': ((.0, 1.0, 1.0),
+                              (1.0, 1.0, 1.0))}
+            allwhite = matplotlib.colors.LinearSegmentedColormap('allwhite',cdict,256)
+            speclevels= list(special.erf(0.5*numpy.arange(1,4)))
+            speclevels.append(1.01)#HACK TO REMOVE OUTLIERS
+            bovy_plot.scatterplot(specxs,specys,symb,onedhists=True,
+                                  levels=speclevels,
+                                  onedhistec=speccolor,
+                                  cntrcolors=speccolor,
+                                  onedhistls='dashed',
+                                  cntrls='--',
+                                  cntrlw=2.,
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,
+                                  bins=specbins,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsspecbins)
+        if reweight:
+            bovy_plot.scatterplot(photxs,photys,symb,
+                                  weights=w,
+                                  onedhists=True,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,bins=bins,
+                                  overplot=spec,
+                                  levels=speclevels,
+                                  cntrcolors=reweightcolor,
+                                  onedhistec=reweightcolor,
+                                  cntrlw=2.,
+                                  onedhistls='dashdot',
+                                  cntrls='-.',
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsbins)
+        bovy_plot.scatterplot(photxs,photys,symb,onedhists=True,
+                              levels=speclevels,
+                              xlabel=xlabel,ylabel=ylabel,
+                              cntrlw=1.5,
+                              xrange=xrange,yrange=yrange,bins=bins,
+                              overplot=spec or reweight,
+                              cntrSmooth=cntrSmooth,
+                              onedhistsbins=onedhistsbins)
+        return None
+
+    def determine_statistical(self,specdata):
+        """
+        NAME:
+           determine_statistical
+        PURPOSE:
+           Determine the subsample that is part of the statistical sample
+           described by this selection function object
+        INPUT:
+           specdata - a spectroscopic subsample (e.g., a red-clump sample)
+        OUTPUT:
+           index array into specdata that has True for members of the
+           statistical sample
+        HISTORY:
+           2013-11-10 - Written - Bovy (IAS)
+        """
+        #Read the allVisit file to match back to plates
+        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
+                 allVisit['PLATE'][ii]+b'-'+
+                 b'%05i' % allVisit['MJD'][ii] + b'-'
+                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S17')
+        statIndx= numpy.zeros(len(specdata),dtype='bool')
+        #Go through the spectroscopic sample and check that it is in a full cohort
+        plateIncomplete= 0
+        for ii in tqdm.trange(len(specdata)):
+            #determine if APOGEE-1 or 2!
+            if specdata['LOCATION_ID'][ii] in self._apo1_locations:
+                survey = 1
+                platelist = self._1plates
+                design = self._apogee1Design
+                desIndx = self._designs1Indx
+                locs = self._apo1_locations
+            elif specdata['LOCATION_ID'][ii] in self._apo2_locations:
+                survey = 2
+                platelist = self._2plates
+                design = self._apogee2Design
+                desIndx = self._designs2Indx
+                locs = self._apo2_locations
+            else:
+                continue
+            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            indx= visits == avisit
+            if numpy.sum(indx) == 0.:
+                #Hasn't happened so far
+                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
+                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                indx= visits == avisit
+            avisitsplate= int(allVisit['PLATE'][indx][0])
+            #Find the design corresponding to this plate
+            tplatesIndx= (platelist == avisitsplate)
+            if numpy.sum(tplatesIndx) == 0.:
+                plateIncomplete+= 1
+                continue
+            avisitsDesign= design[desIndx[tplatesIndx]]
+            #Determine which cohort this star is in
+            if specdata['H'][ii] >= avisitsDesign['SHORT_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['SHORT_COHORT_MAX_H']:
+                tcohort= 'short'
+                cohortnum= avisitsDesign['SHORT_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['MEDIUM_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['MEDIUM_COHORT_MAX_H']:
+                tcohort= 'medium'
+                cohortnum= avisitsDesign['MEDIUM_COHORT_VERSION']
+            elif specdata['H'][ii] > avisitsDesign['LONG_COHORT_MIN_H'] and specdata['H'][ii] <= avisitsDesign['LONG_COHORT_MAX_H']:
+                tcohort= 'long'
+                cohortnum= avisitsDesign['LONG_COHORT_VERSION']
+            else:
+                tcohort= '???'
+                plateIncomplete+= 1
+            if survey == 2:
+                jko = specdata['J0'][ii]-specdata['K0'][ii]
+                nbins = int(avisitsDesign['NUMBER_OF_SELECTION_BINS'])
+                for b in range(nbins):
+                    if jko >= avisitsDesign['BIN_DEREDDENED_MIN_JK_COLOR'][0][b] and jko <= avisitsDesign['BIN_DEREDDENED_MAX_JK_COLOR'][0][b]:
+                        cbin = b
+            if survey == 1:
+                cbin = 0
+            locIndx= specdata['LOCATION_ID'][ii] == self._locations
+            if cohortnum > 0 and tcohort != '???' and \
+                    ((tcohort == 'short' and self._short_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'medium' and self._medium_completion[locIndx,cohortnum-1] >= self._frac4complete) \
+                         or (tcohort == 'long' and self._long_completion[locIndx,cohortnum-1] >= self._frac4complete)) and \
+                         self._bin_completion[locIndx,cbin] >= self._frac4complete:
+                statIndx[ii]= True
+        return statIndx*apread.mainIndx(specdata)
 
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
