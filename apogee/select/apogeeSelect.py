@@ -2216,7 +2216,7 @@ class apogeeCombinedSelect:
             specys= []
         if reweight:
             w= []
-        for ii in tqdm(range(len(location))):
+        for ii in tqdm.trange(len(location)):
             tphotdata= self._photdata['%i' % location[ii]]
             locIndx= self._locations == location[ii]
             if cohort.lower() == 'short':
