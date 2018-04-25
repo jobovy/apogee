@@ -23,7 +23,7 @@ import numpy
 try:
     import fitsio
     fitsread = fitsio.read
-    fitswrite = fitsio.wrte
+    fitswrite = fitsio.write
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread = pyfits.getdata
