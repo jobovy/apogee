@@ -3,7 +3,7 @@
 #   apogee.tools.read: read various APOGEE data files
 #
 #   contains:
-#   
+#
 #             - allStar: read the allStar.fits file
 #             - apogeeDesign: read the apogeeDesign file
 #             - apogeeField: read the apogeeField file
@@ -56,7 +56,7 @@ def modelspecOnApStarWavegrid(func):
                 out= out.T
             else:
                 newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
-            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)
             aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             newOut[apStarBlu_lo:apStarBlu_hi]= out[:aspcapGre_start]
             newOut[apStarGre_lo:apStarGre_hi]= out[aspcapGre_start:aspcapRed_start]
@@ -76,7 +76,7 @@ def specOnAspcapWavegrid(func):
         if kwargs.get('header',True):
             out, hdr= out
         if kwargs.get('aspcapWavegrid',False):
-            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)
             aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             if len(out.shape) == 2:
                 newOut= numpy.zeros((aspcapTotal,out.shape[0]),dtype=out.dtype)
@@ -266,7 +266,7 @@ def allStar(rmcommissioning=True,
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
         data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
     return data
-        
+
 def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
@@ -318,7 +318,7 @@ def allVisit(rmcommissioning=True,
         data= data[(data[aktag] > -50.)]
     if plateInt or plateS4:
         #If plate is a string, cast it as an integer
-        if isinstance(data['PLATE'][0],str):
+        if isinstance(data['PLATE'][0],bytes):
             #First cast the special plates as -1
             plateDtype= data['PLATE'].dtype
             data['PLATE'][data['PLATE'] == 'calibration'.ljust(int(str(plateDtype)[2:]))]= '-1'
@@ -350,9 +350,9 @@ def allVisit(rmcommissioning=True,
         data['H0'][(data[aktag] <= -50.)]= -9999.9999
         data['K0'][(data[aktag] <= -50.)]= -9999.9999
     else:
-        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     return data
-        
+
 def apokasc(rmcommissioning=True,
             main=False):
     """
@@ -432,7 +432,7 @@ def rcsample(main=False,dr=None):
         indx= mainIndx(data)
         data= data[indx]
     return data
-        
+
 def obslog(year=None):
     """
     NAME:
@@ -558,7 +558,7 @@ def apogeeDesign(dr=None,ap1ize=False):
         out['MEDIUM_COHORT_MAX_H']= out['COHORT_MAX_H'][:,1]
         out['LONG_COHORT_MIN_H']= out['COHORT_MIN_H'][:,2]
         out['LONG_COHORT_MAX_H']= out['COHORT_MAX_H'][:,2]
-    return out        
+    return out
 
 def apogeeField(dr=None):
     """
@@ -610,7 +610,7 @@ def apogeeObject(field_name,dr=None,
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
-    if _ESUTIL_LOADED:   
+    if _ESUTIL_LOADED:
         data= esutil.numpy_util.add_fields(data,[('J0', float),
                                                  ('H0', float),
                                                  ('K0', float)])
@@ -621,7 +621,7 @@ def apogeeObject(field_name,dr=None,
         data['H0'][(data[aktag] <= -50.)]= -9999.9999
         data['K0'][(data[aktag] <= -50.)]= -9999.9999
     else:
-        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     return data
 
 @specOnAspcapWavegrid
@@ -639,7 +639,7 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',ext=1,dr=None,header=True,
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
-       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP
                        wavelength grid
     OUTPUT:
        aspcapStar file or (aspcapStar file, header)
@@ -668,7 +668,7 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
-       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP
                        wavelength grid
     OUTPUT:
        apStar file or (apStar file, header)
@@ -693,7 +693,7 @@ def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
-    OUTPUT: 
+    OUTPUT:
        header=False:
             1D array with apVisit fluxes (ext=1)
             1D array with apVisit flux errors (ext=2)
@@ -774,7 +774,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                 hdulist[ext].header)
     elif not ext == 234:
         return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
-    else: #ext == 234, combine 2,3,4    
+    else: #ext == 234, combine 2,3,4
         aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
         out= numpy.zeros(aspcapTotal)
         out[:aspcapGre_start]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
@@ -791,7 +791,7 @@ def apWave(chip,ext=2,dr=None):
     INPUT:
        chip - chip 'a', 'b', or 'c'
        ext= (2) extension to read
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        contents of HDU ext
     HISTORY:
@@ -812,7 +812,7 @@ def apLSF(chip,ext=0,dr=None):
     INPUT:
        chip - chip 'a', 'b', or 'c'
        ext= (0) extension to read
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        contents of HDU ext
     HISTORY:
@@ -846,7 +846,7 @@ def mainIndx(data):
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         indx*= ((data['SURVEY'] == b'apogee        ')
                   + (data['SURVEY'] == b'apogee-marvels'))
-        indx+= ((data['SURVEY'] == b'apogee2       ') 
+        indx+= ((data['SURVEY'] == b'apogee2       ')
                   + (data['SURVEY'] == b'apogee2-manga ')
                   + (data['SURVEY'] == b'manga-apogee2 '))\
             *((data['APOGEE2_TARGET1'] & 2**14) != 0)
