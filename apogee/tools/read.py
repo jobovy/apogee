@@ -882,7 +882,7 @@ def remove_duplicates(data):
         try:
             comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
             comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
-        except TypeError
+        except TypeError:
             comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
             comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
         goodak= (True^numpy.isnan(data['AK_TARG'][nm2]))\
