@@ -109,7 +109,8 @@ def allStar(rmcommissioning=True,
             distredux=None,
             rmdups=False,
             raw=False,
-            mjd=58104):
+            mjd=58104,
+            xmatch=None,**kwargs):
     """
     NAME:
        allStar
@@ -128,11 +129,14 @@ def allStar(rmcommissioning=True,
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
+       xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
+        +gaia_tools.xmatch.cds keywords 
     OUTPUT:
-       allStar data
+       allStar data[,xmatched table]
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
+       2018-05-09 - Add xmatch - Bovy (UofT) 
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
@@ -153,27 +157,45 @@ def allStar(rmcommissioning=True,
             fitswrite(dupsFilename,data,clobber=True)
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.flush()
+    if not xmatch is None:
+        from gaia_tools.load import _xmatch_cds
+        if rmdups:
+            ma,mai= _xmatch_cds(data,xmatch,dupsFilename,**kwargs)
+        else:
+            ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+        data= data[mai]
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
-        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+        try:
+            indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+            indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+        except TypeError:
+            indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
+            indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
         data= data[True^indx]
+        if not xmatch is None: ma= ma[True^indx]
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
         data= data[indx]
+        if not xmatch is None: ma= ma[indx]
     if main:
         indx= mainIndx(data)
         data= data[indx]
+        if not xmatch is None: ma= ma[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
+        if not xmatch is None: ma= ma[True^numpy.isnan(data[aktag])]
         data= data[True^numpy.isnan(data[aktag])]
+        if not xmatch is None: ma= ma[(data[aktag] > -50.)]
         data= data[(data[aktag] > -50.)]
     if exclude_star_bad:
+        if not xmatch is None: ma= ma[(data['ASPCAPFLAG'] & 2**23) == 0]
         data= data[(data['ASPCAPFLAG'] & 2**23) == 0]
     if exclude_star_warn:
+        if not xmatch is None: ma= ma[(data['ASPCAPFLAG'] & 2**7) == 0]
         data= data[(data['ASPCAPFLAG'] & 2**7) == 0]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
@@ -198,6 +220,7 @@ def allStar(rmcommissioning=True,
                              data['RA'],data['DEC'],
                              2./3600.,maxmatch=1)
         data= data[m2]
+        if not xmatch is None: ma= ma[m2]
         dist= dist[m1]
         distredux= path._redux_dr()
         if distredux.lower() == 'v302' or distredux.lower() == path._DR10REDUX:
@@ -254,7 +277,10 @@ def allStar(rmcommissioning=True,
                                                  ('ALPHAFE', float)])
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
         data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
-    return data
+    if not xmatch is None:
+        return (data,ma)
+    else:
+        return data
         
 def allVisit(rmcommissioning=True,
              main=False,
@@ -292,8 +318,12 @@ def allVisit(rmcommissioning=True,
     if raw: return data
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
-        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+        try:
+            indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+            indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+        except TypeError:
+            indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
+            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])           
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -397,7 +427,7 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False,dr=None):
+def rcsample(main=False,dr=None,xmatch=None,**kwargs):
     """
     NAME:
        rcsample
@@ -406,21 +436,32 @@ def rcsample(main=False,dr=None):
     INPUT:
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+       xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
+        +gaia_tools.xmatch.cds keywords 
     OUTPUT:
-       rcsample data
+       rcsample data[,xmatched table]
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
+       2018-05-09 - Add xmatch - Bovy (UofT) 
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
     #read rcsample file
     data= fitsread(path.rcsamplePath(dr=dr))
+    if not xmatch is None:
+        from gaia_tools.load import _xmatch_cds
+        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+        data= data[mai]
     #Some cuts
     if main:
         indx= mainIndx(data)
         data= data[indx]
-    return data
+        if not xmatch is None: ma= ma[indx]
+    if not xmatch is None:
+        return (data,ma)
+    else:
+        return data
         
 def obslog(year=None):
     """
@@ -838,8 +879,12 @@ def remove_duplicates(data):
                                   2./3600.,maxmatch=0, #all matches
                                   htmrev2=htmrev2,minid=minid,maxid=maxid)
         #If some matches are commissioning data or have bad ak, rm from consideration
-        comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
-        comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+        try:
+            comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+            comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+        except TypeError
+            comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
+            comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
         goodak= (True^numpy.isnan(data['AK_TARG'][nm2]))\
             *(data['AK_TARG'][nm2] > -50.)
         hisnr= numpy.argmax(data['SNR'][nm2]*(True^comindx)*goodak) #effect. make com zero SNR
