@@ -1874,6 +1874,7 @@ class apogeeCombinedSelect:
         if year is None:
             self.apo1year = 3
             self.apo2year = 5
+        self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         apo1sel = apogee1Select(year=self.apo1year, sample=sample)
         apo2sel = apogee2Select(year=self.apo2year, sample=sample)
