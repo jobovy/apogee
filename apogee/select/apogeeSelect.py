@@ -998,8 +998,8 @@ class apogeeSelect:
         if numpy.all(numpy.isnan(photH)):
             return -1
         j1, j2, i= 0, 0, 0
-        id1= range(len(photH)+len(specH))
-        id2= range(len(photH)+len(specH))
+        id1= numpy.arange(len(photH)+len(specH))
+        id2= numpy.arange(len(photH)+len(specH))
         while j1 < len(photH) and j2 < len(specH):
             d1= photH[j1]
             d2= specH[j2]
@@ -1812,6 +1812,55 @@ class apogee2Select(apogeeSelect):
         self._nspec_long= nspec_long
         return None
 
+    def _location_Hcdfs(self,location,cohort):
+        """Internal function that creates the cumulative H-band distribution
+        for a given field/cohort
+        location: location_id
+        cohort: short, medium, long, or all"""
+        locIndx= self._locations == location
+        #Load photometry and spectroscopy for this plate
+        thisphotdata= self._photdata['%i' % location]
+        thisspecdata= self._specdata['%i' % location]
+        if cohort.lower() == 'all':
+            pindx= (thisphotdata['H'] >= self._short_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._long_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._short_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._long_hmax[locIndx])
+        elif cohort.lower() == 'short':
+            pindx= (thisphotdata['H'] >= self._short_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._short_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._short_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._short_hmax[locIndx])
+        elif cohort.lower() == 'medium':
+            pindx= (thisphotdata['H'] > self._medium_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._medium_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._medium_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._medium_hmax[locIndx])
+        elif cohort.lower() == 'long':
+            pindx= (thisphotdata['H'] > self._long_hmin[locIndx])\
+                *(thisphotdata['H'] <= self._long_hmax[locIndx])
+            sindx= (thisspecdata['H'] >= self._long_hmin[locIndx])\
+                *(thisspecdata['H'] <= self._long_hmax[locIndx])
+        thisphotdata= thisphotdata[pindx]
+        thisspecdata= thisspecdata[sindx]
+        if numpy.sum(sindx) == 0.:
+            return (numpy.nan,numpy.nan,numpy.nan,numpy.nan)
+        #Calculate selection function weights for the photometry
+        w= numpy.zeros(len(thisphotdata['H']))
+        for ii in range(len(w)):
+            w[ii]= self(location,thisphotdata['H'][ii],thisphotdata['J0'][ii]-thisphotdata['K0'][ii])
+        #Calculate KS test statistic
+        sortindx_phot= numpy.argsort(thisphotdata['H'])
+        sortindx_spec= numpy.argsort(thisspecdata['H'])
+        sortphot= thisphotdata[sortindx_phot]
+        sortspec= thisspecdata[sortindx_spec]
+        w= w[sortindx_phot]
+        fn1= numpy.cumsum(w)/numpy.sum(w)
+        fn2= numpy.ones(len(sortindx_spec))
+        fn2= numpy.cumsum(fn2)
+        fn2/= fn2[-1]
+        return (sortphot['H'],sortspec['H'],fn1,fn2)
+
 class apogeeCombinedSelect:
     """ Class that combines APOGEE 1 and 2 raw selection functions """
     def __init__(self,sample='main',
@@ -2202,8 +2251,8 @@ class apogeeCombinedSelect:
         if numpy.all(numpy.isnan(photH)):
             return -1
         j1, j2, i= 0, 0, 0
-        id1= range(len(photH)+len(specH))
-        id2= range(len(photH)+len(specH))
+        id1= numpy.arange(len(photH)+len(specH))
+        id2= numpy.arange(len(photH)+len(specH))
         while j1 < len(photH) and j2 < len(specH):
             d1= photH[j1]
             d2= specH[j2]
