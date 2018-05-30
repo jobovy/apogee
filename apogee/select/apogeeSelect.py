@@ -340,7 +340,7 @@ class apogeeSelect:
         """
         locIndx= self._locations == location_id
         radii= self._loc_design_radius[locIndx]
-        radii= radii[True-numpy.isnan(radii)]
+        radii= radii[True^numpy.isnan(radii)]
         if len(set(radii)) > 1:
             warnings.warn("Different designs for this field have different radii; returning the first of these...")
         return radii[0]
@@ -473,7 +473,7 @@ class apogeeSelect:
                 Hs= numpy.linspace(self._long_hmin[ii],
                                    self._long_hmax[ii],
                                    nHs)
-            dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True-numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
+            dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
             ds= 10.**(dm/5.-2.) #in kpc
             tl= self._apogeeField['GLON'][ii]
             tb= self._apogeeField['GLAT'][ii]
@@ -862,11 +862,11 @@ class apogeeSelect:
         progress= numpy.zeros(len(self._locations))
         for ii in range(len(self._locations)):
             if cohort == 'short':
-                progress[ii]= numpy.mean(self._short_completion[ii,True-numpy.isnan(self._short_completion[ii,:])])
+                progress[ii]= numpy.mean(self._short_completion[ii,True^numpy.isnan(self._short_completion[ii,:])])
             elif cohort == 'medium':
-                progress[ii]= numpy.mean(self._medium_completion[ii,True-numpy.isnan(self._medium_completion[ii,:])])
+                progress[ii]= numpy.mean(self._medium_completion[ii,True^numpy.isnan(self._medium_completion[ii,:])])
             if cohort == 'long':
-                progress[ii]= numpy.mean(self._long_completion[ii,True-numpy.isnan(self._long_completion[ii,:])])
+                progress[ii]= numpy.mean(self._long_completion[ii,True^numpy.isnan(self._long_completion[ii,:])])
         bovy_plot.bovy_plot(self._apogeeField['GLON'],
                             self._apogeeField['GLAT'],
                             c=progress,s=ms,
@@ -2139,7 +2139,7 @@ class apogeeCombinedSelect:
             return (self._apogee2Field['GLON'][locIndx],
                     self._apogee2Field['GLAT'][locIndx])
         else:
-            return (np.nan, np.nan)
+            return (numpy.nan, numpy.nan)
 
     def radius(self,location_id):
         """
@@ -2156,7 +2156,7 @@ class apogeeCombinedSelect:
         """
         locIndx= self._locations == location_id
         radii= self._loc_design_radius[locIndx]
-        radii= radii[True-numpy.isnan(radii)]
+        radii= radii[True^numpy.isnan(radii)]
         if len(set(radii)) > 1:
             warnings.warn("Different designs for this field have different radii; returning the first of these...")
         return radii[0]
@@ -2213,6 +2213,42 @@ class apogeeCombinedSelect:
         """
         locIndx= self._locations == location_id
         return self.__dict__['_%s_hmax' % cohort][locIndx]
+
+    def JKminmax(self, location_id, bin=0):
+        """
+        NAME:
+          JKminmax
+        PURPOSE:
+           return the color limits for a given location and color bin
+        INPUT:
+           location_id - field location ID
+           bin= int - bin index (default = 0)
+        OUTPUT:
+           JKminmax (tuple)
+        HISTORY:
+           2018-05-21 - Written - Mackereth (LJMU)
+        """
+        locIndx= self._locations == location_id
+        min = self._color_bins_jkmin[locIndx,bin]
+        max = self._color_bins_jkmax[locIndx,bin]
+        return (min,max)
+
+    def NColorBins(self, location_id):
+        """
+        NAME:
+          NColorBins
+        PURPOSE:
+           return the number of color bins at a given location
+        INPUT:
+           location_id - field location ID
+        OUTPUT:
+           N Bins
+        HISTORY:
+           2018-05-21 - Written - Mackereth (LJMU)
+        """
+        locIndx= self._locations == location_id
+        nbin = self._number_of_bins[locIndx]
+        return int(nbin)
 
     def check_consistency(self,location,cohort='all'):
         """
@@ -2764,6 +2800,10 @@ class apogeeEffectiveSelect:
            2015-03-06 - Start - Bovy (IAS)
         """
         self._apoSel= apoSel
+        if isinstance(apoSel, (apogee2Select,apogeeCombinedSelect)):
+            self._iscolorbinned = True
+        else:
+            self._iscolorbinned = False
         if isinstance(MH,(int,float)):
             self._MH= numpy.array([MH])
         elif isinstance(MH,list):
@@ -2805,8 +2845,14 @@ class apogeeEffectiveSelect:
         cohorts= ['short','medium','long']
         hmins= dict((c,self._apoSel.Hmin(location,cohort=c)) for c in cohorts)
         hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
-        selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.))
-                      for c in cohorts)
+
+        if self._iscolorbinned:
+            jkminmax = [self._apoSel.JKminmax(location,bin=i) for i in range(self._apoSel.NColorBins(location))]
+            jkmid = [(jkminmax[i][0][0]+jkminmax[i][1][0])/2. for i in range(len(jkminmax))]
+            selfunc= dict((c,numpy.sum([self._apoSel(location,(hmins[c]+hmaxs[c])/2.,[jkmid[i]]) for i in range(len(jkmid))])) for c in cohorts)
+        else:
+            selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.))
+                        for c in cohorts)
         totarea= numpy.sum(pixarea)
         for cohort in cohorts:
             if numpy.isnan(hmins[cohort]):
