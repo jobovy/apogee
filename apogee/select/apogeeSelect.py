@@ -2214,10 +2214,10 @@ class apogeeCombinedSelect:
         locIndx= self._locations == location_id
         return self.__dict__['_%s_hmax' % cohort][locIndx]
 
-    def JKminmax(self, location_id, bin=0):
+    def JKmin(self, location_id, bin=0):
         """
         NAME:
-          JKminmax
+          JKmin
         PURPOSE:
            return the color limits for a given location and color bin
         INPUT:
@@ -2229,9 +2229,26 @@ class apogeeCombinedSelect:
            2018-05-21 - Written - Mackereth (LJMU)
         """
         locIndx= self._locations == location_id
-        min = self._color_bins_jkmin[locIndx,bin]
-        max = self._color_bins_jkmax[locIndx,bin]
-        return (min,max)
+        min = self._color_bins_jkmin[locIndx,bin][0]
+        return min
+
+    def JKmax(self, location_id, bin=0):
+        """
+        NAME:
+          JKmax
+        PURPOSE:
+           return the color limits for a given location and color bin
+        INPUT:
+           location_id - field location ID
+           bin= int - bin index (default = 0)
+        OUTPUT:
+           JKminmax (tuple)
+        HISTORY:
+           2018-05-21 - Written - Mackereth (LJMU)
+        """
+        locIndx= self._locations == location_id
+        max = self._color_bins_jkmax[locIndx,bin][0]
+        return max
 
     def NColorBins(self, location_id):
         """
@@ -2784,7 +2801,7 @@ class apogeeCombinedSelect:
 
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
-    def __init__(self,apoSel,MH=-1.49,dmap3d=None):
+    def __init__(self,apoSel,MH=-1.49,JK0=None,dmap3d=None):
         """
         NAME:
            __init__
@@ -2810,6 +2827,12 @@ class apogeeEffectiveSelect:
             self._MH= numpy.array(MH)
         else:
             self._MH= MH
+        if isinstance(JK0,(int,float)):
+            self._JK0= numpy.array([JK0])
+        elif isinstance(MH,list):
+            self._JK0= numpy.array(JK0)
+        else:
+            self._JK0= JK0
         # Parse dust map
         if dmap3d is None:
             if not _MWDUSTLOADED:
@@ -2818,7 +2841,7 @@ class apogeeEffectiveSelect:
         self._dmap3d= dmap3d
         return None
 
-    def __call__(self,location,dist,MH=None):
+    def __call__(self,location,dist,MH=None, JK0=None):
         """
         NAME:
            __call__
@@ -2834,6 +2857,7 @@ class apogeeEffectiveSelect:
            2015-03-06 - Written - Bovy (IAS)
         """
         if MH is None: MH= self._MH
+        if JK0 is None: JK0= self._JK0
         distmod= 5.*numpy.log10(dist)+10.
         # Extract the distribution of A_H at this distance from the dust map
         lcen, bcen= self._apoSel.glonGlat(location)
@@ -2847,9 +2871,12 @@ class apogeeEffectiveSelect:
         hmaxs= dict((c,self._apoSel.Hmax(location,cohort=c)) for c in cohorts)
 
         if self._iscolorbinned:
-            jkminmax = [self._apoSel.JKminmax(location,bin=i) for i in range(self._apoSel.NColorBins(location))]
-            jkmid = [(jkminmax[i][0][0]+jkminmax[i][1][0])/2. for i in range(len(jkminmax))]
-            selfunc= dict((c,numpy.sum([self._apoSel(location,(hmins[c]+hmaxs[c])/2.,[jkmid[i]]) for i in range(len(jkmid))])) for c in cohorts)
+            jkbins = [self._apoSel.JKmin(location,bin=i) for i in range(self._apoSel.NColorBins(location))]
+            print(jkbins)
+            jkbins.extend([999.,])
+            jkmid = [(jkbins[i]+jkbins[i+1])/2. for i in range(len(jkbins)-1)]
+            print(jkmid)
+            selfunc= dict((c,[self._apoSel(location,(hmins[c]+hmaxs[c])/2.,[jkmid[i]]) for i in range(len(jkmid))]) for c in cohorts)
         else:
             selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.))
                         for c in cohorts)
@@ -2857,12 +2884,23 @@ class apogeeEffectiveSelect:
         for cohort in cohorts:
             if numpy.isnan(hmins[cohort]):
                 continue
-            for mh in MH:
-                indx= (hmins[cohort]-mh-distmod < ah)\
-                    *(hmaxs[cohort]-mh-distmod > ah)
-                for ii in range(len(dist)):
-                    out[ii]+= selfunc[cohort]\
-                        *numpy.sum(pixarea[indx[:,ii]])/totarea
+            if self._iscolorbinned:
+                for ii in range(len(MH)):
+                    mh = MH[ii,0]
+                    indx= (hmins[cohort]-mh-distmod < ah)\
+                        *(hmaxs[cohort]-mh-distmod > ah)
+                    cbin = numpy.searchsorted(jkbins,MH[ii,1])
+                    print(cbin)
+                    for ii in range(len(dist)):
+                        out[ii]+= selfunc[cohort][cbin]\
+                            *numpy.sum(pixarea[indx[:,ii]])/totarea
+            else:
+                for mh in MH:
+                    indx= (hmins[cohort]-mh-distmod < ah)\
+                        *(hmaxs[cohort]-mh-distmod > ah)
+                    for ii in range(len(dist)):
+                        out[ii]+= selfunc[cohort]\
+                            *numpy.sum(pixarea[indx[:,ii]])/totarea
         return out/len(MH)
 
 def _append_field_recarray(recarray, name, new):
