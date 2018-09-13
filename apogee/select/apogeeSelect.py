@@ -1869,6 +1869,18 @@ class apogeeCombinedSelect:
                  sftype='constant',
                  minnspec=3,
                  frac4complete=1.):
+        def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
+            selfunc = {}
+            #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
+            for ii,loc in enumerate(apo1locs):
+                #short
+                selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
+                #medium
+                selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
+                #long
+                selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
+            selfunc.update(apo2sel._selfunc)
+            return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
         if year is None:
@@ -2906,16 +2918,3 @@ def _append_field_recarray(recarray, name, new):
 
 def _squeeze(o,omin,omax):
     return (o-omin)/(omax-omin)
-
-def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
-    selfunc = {}
-    #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
-    for ii,loc in enumerate(apo1locs):
-        #short
-        selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
-        #medium
-        selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
-        #long
-        selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-    selfunc.update(apo2sel._selfunc)
-    return selfunc
