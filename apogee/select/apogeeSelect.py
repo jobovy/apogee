@@ -1882,7 +1882,7 @@ class apogeeCombinedSelect:
         self._locations = numpy.concatenate([apo1sel._locations, apo2sel._locations])
         self._apo1_locations = apo1sel._locations
         self._apo2_locations = apo2sel._locations
-        self._selfunc = _combine_selfuncs(apo1sel, apo2sel)
+        self._selfunc = _combine_selfuncs(apo1sel, self._apo1_locations, apo2sel)
         self._short_hmin = numpy.concatenate([apo1sel._short_hmin, apo2sel._short_hmin])
         self._medium_hmin = numpy.concatenate([apo1sel._medium_hmin, apo2sel._medium_hmin])
         self._long_hmin = numpy.concatenate([apo1sel._long_hmin, apo2sel._long_hmin])
@@ -2907,10 +2907,10 @@ def _append_field_recarray(recarray, name, new):
 def _squeeze(o,omin,omax):
     return (o-omin)/(omax-omin)
 
-def _combine_selfuncs(apo1sel, apo2sel):
+def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
     selfunc = {}
     #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
-    for ii,loc in enumerate(self._apo1_locations):
+    for ii,loc in enumerate(apo1_locs):
         #short
         selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
         #medium
