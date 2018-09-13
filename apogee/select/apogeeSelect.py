@@ -1882,28 +1882,7 @@ class apogeeCombinedSelect:
         self._locations = numpy.concatenate([apo1sel._locations, apo2sel._locations])
         self._apo1_locations = apo1sel._locations
         self._apo2_locations = apo2sel._locations
-        def _combine_selfuncs():
-            selfunc = {}
-            #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
-            for ii,loc in enumerate(self._apo1_locations):
-                #short
-                selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
-                #medium
-                selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
-                #long
-                selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-            selfunc.update(apo2sel._selfunc)
-            return selfunc
-        self._selfunc = _combine_selfuncs()
-        #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
-        #for ii,loc in enumerate(self._apo1_locations):
-            #short
-            #self._selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
-            #medium
-            #self._selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
-            #long
-            #self._selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-        #self._selfunc.update(apo2sel._selfunc)
+        self._selfunc = _combine_selfuncs(apo1sel, apo2sel)
         self._short_hmin = numpy.concatenate([apo1sel._short_hmin, apo2sel._short_hmin])
         self._medium_hmin = numpy.concatenate([apo1sel._medium_hmin, apo2sel._medium_hmin])
         self._long_hmin = numpy.concatenate([apo1sel._long_hmin, apo2sel._long_hmin])
@@ -2030,7 +2009,6 @@ class apogeeCombinedSelect:
             return out[0]
         else:
             return out
-
 
 
     def nphot(self,location_id,cohort='short', color_bin=0):
@@ -2928,3 +2906,16 @@ def _append_field_recarray(recarray, name, new):
 
 def _squeeze(o,omin,omax):
     return (o-omin)/(omax-omin)
+
+def _combine_selfuncs(apo1sel, apo2sel):
+    selfunc = {}
+    #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
+    for ii,loc in enumerate(self._apo1_locations):
+        #short
+        selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
+        #medium
+        selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
+        #long
+        selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
+    selfunc.update(apo2sel._selfunc)
+    return selfunc
