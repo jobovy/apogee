@@ -2876,10 +2876,8 @@ class apogeeEffectiveSelect:
 
         if self._iscolorbinned:
             jkbins = [self._apoSel.JKmin(location,bin=i) for i in range(self._apoSel.NColorBins(location))]
-            print(jkbins)
             jkbins.extend([999.,])
             jkmid = [(jkbins[i]+jkbins[i+1])/2. for i in range(len(jkbins)-1)]
-            print(jkmid)
             selfunc= dict((c,[self._apoSel(location,(hmins[c]+hmaxs[c])/2.,[jkmid[i]]) for i in range(len(jkmid))]) for c in cohorts)
         else:
             selfunc= dict((c,self._apoSel(location,(hmins[c]+hmaxs[c])/2.))
@@ -2893,8 +2891,7 @@ class apogeeEffectiveSelect:
                     mh = MH[ii]
                     indx= (hmins[cohort]-mh-distmod < ah)\
                         *(hmaxs[cohort]-mh-distmod > ah)
-                    cbin = numpy.searchsorted(jkbins,JK0[ii])
-                    print(cbin)
+                    cbin = numpy.where(JK0[ii] > jkbins )[0][0]
                     for jj in range(len(dist)):
                         out[jj]+= selfunc[cohort][cbin]\
                             *numpy.sum(pixarea[indx[:,jj]])/totarea
