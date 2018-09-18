@@ -2895,9 +2895,9 @@ class apogeeEffectiveSelect:
                         *(hmaxs[cohort]-mh-distmod > ah)
                     cbin = numpy.searchsorted(jkbins,JK0[ii])
                     print(cbin)
-                    for ii in range(len(dist)):
-                        out[ii]+= selfunc[cohort][cbin]\
-                            *numpy.sum(pixarea[indx[:,ii]])/totarea
+                    for jj in range(len(dist)):
+                        out[jj]+= selfunc[cohort][cbin]\
+                            *numpy.sum(pixarea[indx[:,jj]])/totarea
             else:
                 for mh in MH:
                     indx= (hmins[cohort]-mh-distmod < ah)\
