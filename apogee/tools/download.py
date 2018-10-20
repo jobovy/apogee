@@ -125,6 +125,28 @@ def rcsample(dr=None):
     _download_file(downloadPath,filePath,dr,verbose=False)
     return None
 
+def astroNN(dr=None):
+    """
+    NAME:
+       astroNN
+    PURPOSE:
+       download the astroNN file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2018-10-20 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.astroNNPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:

@@ -21,7 +21,7 @@ import sys
 import copy
 import warnings
 import numpy
-from . import _apStarPixelLimits,_aspcapPixelLimits
+from . import _apStarPixelLimits,_aspcapPixelLimits, elemIndx
 
 try:
     import esutil
@@ -105,6 +105,7 @@ def allStar(rmcommissioning=True,
             ak=True,
             akvers='targ',
             rmnovisits=False,
+            use_astroNN=False,
             adddist=False,
             distredux=None,
             rmdups=False,
@@ -124,6 +125,7 @@ def allStar(rmcommissioning=True,
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
@@ -137,12 +139,37 @@ def allStar(rmcommissioning=True,
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
        2018-05-09 - Add xmatch - Bovy (UofT) 
+       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
         download.allStar(mjd=mjd)
     #read allStar file
     data= fitsread(path.allStarPath(mjd=mjd))
+    #Add astroNN? astroNN file matched line-by-line to allStar, so match here
+    if use_astroNN:
+        astroNNdata= astroNN()
+        for tag,indx in zip(['TEFF','LOGG'],[0,1]):
+            data[tag]= astroNNdata['astroNN'][:,indx]
+            data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
+        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                            range(2,22)):
+            data['X_H'][:,elemIndx(tag.upper())]=\
+                astroNNdata['astroNN'][:,indx]
+            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
+                astroNNdata['astroNN_error'][:,indx]
+            if tag.upper() != 'FE':
+                data['{}_FE'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
+                data['{}_FE_ERR'.format(tag.upper())]=\
+                    numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
+                               +astroNNdata['astroNN_error'][:,19]**2.)
+            else:
+                data['FE_H'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]
+                data['FE_H_ERR'.format(tag.upper())]=\
+                    astroNNdata['astroNN_error'][:,indx]
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -462,6 +489,25 @@ def rcsample(main=False,dr=None,xmatch=None,**kwargs):
         return (data,ma)
     else:
         return data
+
+def astroNN(dr=None):
+    """
+    NAME:
+       astroNN
+    PURPOSE:
+       read the astroNN file
+    INPUT:
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+    OUTPUT:
+       astroNN data
+    HISTORY:
+       2018-10-20 - Written - Bovy (UofT)
+    """
+    filePath= path.astroNNPath(dr=dr)
+    if not os.path.exists(filePath):
+        download.astroNN(dr=dr)
+    #read astroNN file
+    return fitsread(path.astroNNPath(dr=dr))
         
 def obslog(year=None):
     """
