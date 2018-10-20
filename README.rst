@@ -251,6 +251,21 @@ re-use. Use as::
 
 	allStar= apread.allStar(rmcommissioning=True,rmdups=True)
 
+If you are using DR14 and want to use the (less noisy) parameters and abundances derived using the `astroNN <https://github.com/henrysky/astroNN_spectra_paper_figures>`__ method of `Leung & Bovy (2018) <https://arxiv.org/abs/1808.04428>`__, do::
+
+   allStar= apread.allStar(use_astroNN=True)
+
+which can also be combined with any other ``allStar`` option. The ``astroNN`` results are swapped in for the regular ASPCAP results, so switching between the two is as simple as changing the read of the file.
+
+We can read the red-clump catalog from `Bovy et al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__  using (any of its releases)::
+
+   apokasc= apread.rcsample()
+
+This can also take the ``use_astroNN=True`` option to swap in the astroNN parameters and abundances.
+
+This reads the APOKASC catalog and matches and combines it with the allStar
+catalog.
+
 We can read the APOKASC catalog using::
 
    apokasc= apread.apokasc()
