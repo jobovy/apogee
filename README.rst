@@ -133,7 +133,7 @@ VARIABLES**)
 
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
 * **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path`` (also available in ``apogee.tools.read`` for convenience).
-* **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a)
+* **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a); note that this does not load the public catalog and is only for internal SDSS use.
 
 In order to use this code, you will need to set these environment variables
 on your machine with commands like `export SDSS_LOCAL_SAS_MIRROR="/desired/path/to/SDSS/data"`
@@ -262,16 +262,6 @@ We can read the red-clump catalog from `Bovy et al. (2014) <http://adsabs.harvar
    apokasc= apread.rcsample()
 
 This can also take the ``use_astroNN=True`` option to swap in the astroNN parameters and abundances.
-
-This reads the APOKASC catalog and matches and combines it with the allStar
-catalog.
-
-We can read the APOKASC catalog using::
-
-   apokasc= apread.apokasc()
-
-This reads the APOKASC catalog and matches and combines it with the allStar
-catalog.
 
 We can also read spectra as follows::
 
