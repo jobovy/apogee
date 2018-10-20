@@ -147,29 +147,9 @@ def allStar(rmcommissioning=True,
     #read allStar file
     data= fitsread(path.allStarPath(mjd=mjd))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
-    if use_astroNN:
+    if use_astroNN or kwargs.get('astroNN',False):
         astroNNdata= astroNN()
-        for tag,indx in zip(['TEFF','LOGG'],[0,1]):
-            data[tag]= astroNNdata['astroNN'][:,indx]
-            data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
-        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
-                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
-                            range(2,22)):
-            data['X_H'][:,elemIndx(tag.upper())]=\
-                astroNNdata['astroNN'][:,indx]
-            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
-                astroNNdata['astroNN_error'][:,indx]
-            if tag.upper() != 'FE':
-                data['{}_FE'.format(tag.upper())]=\
-                    astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
-                data['{}_FE_ERR'.format(tag.upper())]=\
-                    numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
-                               +astroNNdata['astroNN_error'][:,19]**2.)
-            else:
-                data['FE_H'.format(tag.upper())]=\
-                    astroNNdata['astroNN'][:,indx]
-                data['FE_H_ERR'.format(tag.upper())]=\
-                    astroNNdata['astroNN_error'][:,indx]
+        data= _swap_in_astroNN(data,astroNNdata)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -454,7 +434,7 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False,dr=None,xmatch=None,**kwargs):
+def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
     """
     NAME:
        rcsample
@@ -464,18 +444,29 @@ def rcsample(main=False,dr=None,xmatch=None,**kwargs):
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR) 
         +gaia_tools.xmatch.cds keywords 
     OUTPUT:
        rcsample data[,xmatched table]
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
        2018-05-09 - Add xmatch - Bovy (UofT) 
+       2018-10-20 - Added use_astroNN - Bovy (UofT) 
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
     #read rcsample file
     data= fitsread(path.rcsamplePath(dr=dr))
+    # Swap in astroNN results?
+    if use_astroNN or kwargs.get('astroNN',False):
+        astroNNdata= astroNN()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _swap_in_astroNN(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
@@ -940,3 +931,48 @@ def remove_duplicates(data):
         tindx[hisnr]= False
         tdata['RA'][nm2[tindx]]= -9999
     return tdata[tdata['RA'] != -9999]
+
+def _xmatch(cat1,cat2,maxdist=2,
+            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC'):
+    """Internal version, basically copied and simplified from 
+    gaia_tools.xmatch, but put here to avoid adding gaia_tools as 
+    a dependency"""
+    try:
+        import astropy.coordinates as acoords
+        from astropy import units as u
+    except:
+        raise ImportError('The functionality that you are using requires astropy to be installed; please install astropy and run again')
+    mc1= acoords.SkyCoord(cat1[colRA1],cat1[colDec1],
+                          unit=(u.degree, u.degree),frame='icrs')
+    mc2= acoords.SkyCoord(cat2[colRA2],cat2[colDec2],
+                          unit=(u.degree, u.degree),frame='icrs')
+    idx,d2d,d3d = mc1.match_to_catalog_sky(mc2)
+    m1= numpy.arange(len(cat1))
+    mindx= d2d < maxdist*u.arcsec
+    m1= m1[mindx]
+    m2= idx[mindx]
+    return (m1,m2,d2d[mindx])
+
+def _swap_in_astroNN(data,astroNNdata):
+    for tag,indx in zip(['TEFF','LOGG'],[0,1]):
+        data[tag]= astroNNdata['astroNN'][:,indx]
+        data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
+    for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                         'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                        range(2,22)):
+        data['X_H'][:,elemIndx(tag.upper())]=\
+            astroNNdata['astroNN'][:,indx]
+        data['X_H_ERR'][:,elemIndx(tag.upper())]=\
+            astroNNdata['astroNN_error'][:,indx]
+        if tag.upper() != 'FE':
+            data['{}_FE'.format(tag.upper())]=\
+                astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
+            data['{}_FE_ERR'.format(tag.upper())]=\
+                numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
+                           +astroNNdata['astroNN_error'][:,19]**2.)
+        else:
+            data['FE_H'.format(tag.upper())]=\
+                astroNNdata['astroNN'][:,indx]
+            data['FE_H_ERR'.format(tag.upper())]=\
+                astroNNdata['astroNN_error'][:,indx]
+    return data
