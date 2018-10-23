@@ -469,7 +469,11 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
         data= _swap_in_astroNN(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
-        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+        if use_astroNN or kwargs.get('astroNN',False):
+            matchFilePath= filePath.replace('rc-','rc-astroNN-')
+        else:
+            matchFilePath= filePath
+        ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
         data= data[mai]
     #Some cuts
     if main:
