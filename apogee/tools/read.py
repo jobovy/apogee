@@ -34,10 +34,12 @@ try:
     import fitsio
     fitsread= fitsio.read
     fitswrite=fitsio.write
+    headerread=fitsio.read_header
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread= pyfits.getdata
     fitswrite=pyfits.writeto
+    headerread=pyfits.getheader
 import tqdm
 from apogee.tools import path, paramIndx, download
 from apogee.tools.path import change_dr # make this available here
@@ -714,34 +716,39 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
     data= fitsread(filePath,ext,header=header)
     return data
 
-def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
+def apVisit(plateid, mjd, fiberid, ext=1, dr=None, header=False):
     """
     NAME: apVisit
-    PURPOSE: Read a single apVisit file for a given location, MJD, and fiber
+    PURPOSE: Read a single apVisit file for a given plate, MJD, and fiber
     INPUT:
-       loc_id = 4-digit location ID (field for 1m targets)
-       mjd = 5-digit MJD
-       fiberid = 3-digit fiber ID
-       ext= (1) extension to load
-       header= (True) if True, also return the header
-       dr= return the path corresponding to this data release (general default)
+       plateid = 4-digit plate ID (field for 1m targets), float
+       mjd = 5-digit MJD, float
+       fiberid = 3-digit fiber ID, float
+       ext = (1) extension to load
+       header = (False) if True, return ONLY the header for the specified extension
+       dr = return the path corresponding to this data release (general default)
     OUTPUT: 
        header=False:
-            1D array with apVisit fluxes (ext=1)
-            1D array with apVisit flux errors (ext=2)
-            corresponding wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
-            go here to learn about other extensions:
+            1D array with apVisit fluxes (ext=1), or
+            1D array with apVisit flux errors (ext=2), or
+            1D wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
+            etc.
+            go here to learn about other extension choices:
             https://data.sdss.org/datamodel/files/APOGEE_REDUX/APRED_VERS/TELESCOPE/PLATE_ID/MJD5/apVisit.html
        header=True:
-            (3D array with three portions of whichever extension you specified, header)
-    HISTORY: 2016-11 - Meredith Rawls
+            header for the specified extension only (see link above)
+    HISTORY: 2016-11 - added by Meredith Rawls
+             2019-01 - long overdue plateid vs. locid bugfix
+                       added readheader function which doesn't fail for ext=0
        TODO: automatically find all apVisit files for a given apogee ID and download them
     """
-    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
+    filePath = path.apVisitPath(plateid, mjd, fiberid, dr=dr)
     if not os.path.exists(filePath):
-        download.apVisit(loc_id, mjd, fiberid, dr=dr)
-    data = fitsread(filePath, ext, header=header)
-    if header == False: # stitch three chips together in increasing wavelength order
+        download.apVisit(plateid, mjd, fiberid, dr=dr)
+    if header:
+        data = headerread(filePath, ext)
+    if not header: # stitch three chips together in increasing wavelength order
+        data = fitsread(filePath, ext)
         data = data.flatten()
         data = numpy.flipud(data)
     return data
