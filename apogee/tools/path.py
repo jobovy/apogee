@@ -133,8 +133,12 @@ def allStarPath(dr=None,_old=False,mjd=58104):
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
-            return os.path.join(specASPCAPPath,'t9','l31c',
-                                'allStar-t9-l31c-%i.fits' % mjd)
+            if mjd >= 58297:
+                return os.path.join(specASPCAPPath,'r10','l31c',
+                                    'allStar-r10-l31c-%i.fits' % mjd)
+            else:
+                return os.path.join(specASPCAPPath,'t9','l31c',
+                                    'allStar-t9-l31c-%i.fits' % mjd)
 
 def allVisitPath(dr=None,_old=False,mjd=58104):
     """
