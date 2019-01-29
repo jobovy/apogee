@@ -559,16 +559,17 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                             loc_id.strip(),
                             'apStar-t9-%s.fits' % apogee_id.strip())
 
-def apVisitPath(plateid, mjd, fiberid, dr=None):
+def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     """
     NAME:
        apVisitPath
     PURPOSE:
        returns the path of the apVisit file
     INPUT:
-       plateid = 4-digit plate ID (field for 1m targets)
+       plateid = 4-digit plate ID
        mjd = 5-digit MJD
        fiberid = 3-digit fiber ID
+       telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
     OUTPUT:
        path string
@@ -576,10 +577,11 @@ def apVisitPath(plateid, mjd, fiberid, dr=None):
        2016-11 - Meredith Rawls
        2016-11-29 - Bovy (UofT) - Edited inputs
        2019-01 - Rawls fixed string/int and misnomer of plate as loc bugs
+       2019-01-28 - Added telescope keyword - Bovy (UofT)
     TODO: 
        automatically find all apVisit files for a given apogee ID and download them
     """
-    plateid = int(plateid)
+    plateid = str(int(plateid)).strip()
     mjd = str(int(mjd)).strip()
     if not isinstance(fiberid, str):
         fiberid= '%03i' % fiberid
@@ -590,45 +592,17 @@ def apVisitPath(plateid, mjd, fiberid, dr=None):
         return os.path.join(specReduxPath, 'r3', 's3', plateid, mjd,
                             'apVisit-s3-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '12':
-        if isinstance(plateid, str): #1m
-            return os.path.join(specReduxPath, 'r5', 'apo1m', plateid, mjd,
-                                'apVisit-r5-%s-%s-%s.fits' % (plateid, mjd, fiberid))
-        elif plateid == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the plate ID')
-        else:
-            plateid = str(plateid).strip()
-            return os.path.join(specReduxPath, 'r5', 'apo25m', plateid, mjd,
-                                'apVisit-r5-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r5', telescope , plateid, mjd,
+                            'apVisit-r5-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '13':
-        if isinstance(plateid, str): #1m
-            return os.path.join(specReduxPath, 'r6', 'apo1m', plateid, mjd,
-                                'apVisit-r6-%s-%s-%s.fits' % (plateid, mjd, fiberid))
-        elif plateid == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the plate ID')
-        else:
-            plateid = str(plateid).strip()
-            return os.path.join(specReduxPath, 'r6', 'apo25m', plateid, mjd,
-                                'apVisit-r6-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r6', telescope , plateid, mjd,
+                            'apVisit-r6-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '14':
-        if isinstance(plateid, str): #1m
-            return os.path.join(specReduxPath, 'r8', 'apo1m', plateid, mjd,
-                                'apVisit-r8-%s-%s-%s.fits' % (plateid, mjd, fiberid))
-        elif plateid == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the plate ID')
-        else:
-            plateid = str(plateid).strip()
-            return os.path.join(specReduxPath, 'r8', 'apo25m', plateid, mjd,
-                                'apVisit-r8-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r8', telescope , plateid, mjd,
+                            'apVisit-r8-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == 'current':
-        if isinstance(plateid, str): #1m
-            return os.path.join(specReduxPath, 'current', 'apo1m', plateid, mjd,
-                                'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
-        elif plateid == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the plate ID')
-        else:
-            plateid = str(plateid).strip()
-            return os.path.join(specReduxPath, 'current', 'apo25m', plateid, mjd,
-                                'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+        return os.path.join(specReduxPath, 'current', telescope , plateid, mjd,
+                            'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
 
 def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
                   cfe=0.,nfe=0.,afe=0.,vmicro=2.,

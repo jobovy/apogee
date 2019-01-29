@@ -716,7 +716,8 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
     data= fitsread(filePath,ext,header=header)
     return data
 
-def apVisit(plateid, mjd, fiberid, ext=1, dr=None, header=False):
+def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
+            dr=None, header=False):
     """
     NAME: apVisit
     PURPOSE: Read a single apVisit file for a given plate, MJD, and fiber
@@ -726,6 +727,7 @@ def apVisit(plateid, mjd, fiberid, ext=1, dr=None, header=False):
        fiberid = 3-digit fiber ID, float
        ext = (1) extension to load
        header = (False) if True, return ONLY the header for the specified extension
+       telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
     OUTPUT: 
        header=False:
@@ -740,11 +742,13 @@ def apVisit(plateid, mjd, fiberid, ext=1, dr=None, header=False):
     HISTORY: 2016-11 - added by Meredith Rawls
              2019-01 - long overdue plateid vs. locid bugfix
                        added readheader function which doesn't fail for ext=0
+       2019-01-28 - Added telescope keyword - Bovy (UofT)
        TODO: automatically find all apVisit files for a given apogee ID and download them
     """
-    filePath = path.apVisitPath(plateid, mjd, fiberid, dr=dr)
+    filePath = path.apVisitPath(plateid, mjd, fiberid,
+                                telescope=telescope,dr=dr)
     if not os.path.exists(filePath):
-        download.apVisit(plateid, mjd, fiberid, dr=dr)
+        download.apVisit(plateid, mjd, fiberid, telescope=telescope,dr=dr)
     if header:
         data = headerread(filePath, ext)
     if not header: # stitch three chips together in increasing wavelength order
