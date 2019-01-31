@@ -152,9 +152,9 @@ def kernel_biweight(x,y,log=False):
     else:
         out[indx]= 3./numpy.pi*(1.-r2[indx])**2.
     if log:
-        out[True-indx]= -numpy.finfo(numpy.dtype(numpy.float64)).max
+        out[True^indx]= -numpy.finfo(numpy.dtype(numpy.float64)).max
     else:
-        out[True-indx]= 0.
+        out[True^indx]= 0.
     return numpy.reshape(out,(x.shape[0],x.shape[2]))
 
 def kernel_gauss(x,y,log=False):

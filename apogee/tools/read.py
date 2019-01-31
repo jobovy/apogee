@@ -21,7 +21,7 @@ import sys
 import copy
 import warnings
 import numpy
-from . import _apStarPixelLimits,_aspcapPixelLimits
+from . import _apStarPixelLimits,_aspcapPixelLimits, elemIndx
 
 try:
     import esutil
@@ -34,10 +34,12 @@ try:
     import fitsio
     fitsread= fitsio.read
     fitswrite=fitsio.write
+    headerread=fitsio.read_header
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread= pyfits.getdata
     fitswrite=pyfits.writeto
+    headerread=pyfits.getheader
 import tqdm
 from apogee.tools import path, paramIndx, download
 from apogee.tools.path import change_dr # make this available here
@@ -106,11 +108,13 @@ def allStar(rmcommissioning=True,
             akvers='targ',
             survey='all',
             rmnovisits=False,
+            use_astroNN=False,
             adddist=False,
             distredux=None,
             rmdups=False,
             raw=False,
-            mjd=58104):
+            mjd=58104,
+            xmatch=None,**kwargs):
     """
     NAME:
        allStar
@@ -125,22 +129,31 @@ def allStar(rmcommissioning=True,
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        survey= ('all') When reading an APOGEE-2 allStar file, select stars from both APOGEE-1 and -2 ('all'), just APOGEE-1 ('apogee1'), or just APOGEE-2 ('apogee-2') [Note: both 'apogee1' and 'apogee2' exclude stars from the APO-1m]
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
+       xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
+        +gaia_tools.xmatch.cds keywords 
     OUTPUT:
-       allStar data
+       allStar data[,xmatched table]
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
+       2018-05-09 - Add xmatch - Bovy (UofT) 
+       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
         download.allStar(mjd=mjd)
     #read allStar file
     data= fitsread(path.allStarPath(mjd=mjd))
+    #Add astroNN? astroNN file matched line-by-line to allStar, so match here
+    if use_astroNN or kwargs.get('astroNN',False):
+        astroNNdata= astroNN()
+        data= _swap_in_astroNN(data,astroNNdata)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -155,14 +168,27 @@ def allStar(rmcommissioning=True,
             fitswrite(dupsFilename,data,clobber=True)
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.flush()
+    if not xmatch is None:
+        from gaia_tools.load import _xmatch_cds
+        if rmdups:
+            ma,mai= _xmatch_cds(data,xmatch,dupsFilename,**kwargs)
+        else:
+            ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+        data= data[mai]
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
-        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+        try:
+            indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+            indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID']])
+        except TypeError:
+            indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
+            indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
         data= data[True^indx]
+        if not xmatch is None: ma= ma[True^indx]
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
         data= data[indx]
+<<<<<<< HEAD
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         if survey.lower() == 'apogee1':
             indx= (data['SURVEY'] == b'apogee        ') \
@@ -172,19 +198,27 @@ def allStar(rmcommissioning=True,
                    + (data['SURVEY'] == b'apogee2-manga ') \
                    + (data['SURVEY'] == b'manga-apogee2 ')
         data= data[indx]
+=======
+        if not xmatch is None: ma= ma[indx]
+>>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
     if main:
         indx= mainIndx(data)
         data= data[indx]
+        if not xmatch is None: ma= ma[indx]
     if akvers.lower() == 'targ':
         aktag= 'AK_TARG'
     elif akvers.lower() == 'wise':
         aktag= 'AK_WISE'
     if ak:
+        if not xmatch is None: ma= ma[True^numpy.isnan(data[aktag])]
         data= data[True^numpy.isnan(data[aktag])]
+        if not xmatch is None: ma= ma[(data[aktag] > -50.)]
         data= data[(data[aktag] > -50.)]
     if exclude_star_bad:
+        if not xmatch is None: ma= ma[(data['ASPCAPFLAG'] & 2**23) == 0]
         data= data[(data['ASPCAPFLAG'] & 2**23) == 0]
     if exclude_star_warn:
+        if not xmatch is None: ma= ma[(data['ASPCAPFLAG'] & 2**7) == 0]
         data= data[(data['ASPCAPFLAG'] & 2**7) == 0]
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
@@ -209,6 +243,7 @@ def allStar(rmcommissioning=True,
                              data['RA'],data['DEC'],
                              2./3600.,maxmatch=1)
         data= data[m2]
+        if not xmatch is None: ma= ma[m2]
         dist= dist[m1]
         distredux= path._redux_dr()
         if distredux.lower() == 'v302' or distredux.lower() == path._DR10REDUX:
@@ -265,8 +300,16 @@ def allStar(rmcommissioning=True,
                                                  ('ALPHAFE', float)])
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
         data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+<<<<<<< HEAD
     return data
 
+=======
+    if not xmatch is None:
+        return (data,ma)
+    else:
+        return data
+        
+>>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
 def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
@@ -303,8 +346,12 @@ def allVisit(rmcommissioning=True,
     if raw: return data
     #Some cuts
     if rmcommissioning:
-        indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
-        indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+        try:
+            indx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+            indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
+        except TypeError:
+            indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
+            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])           
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -408,7 +455,7 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False,dr=None):
+def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
     """
     NAME:
        rcsample
@@ -417,22 +464,72 @@ def rcsample(main=False,dr=None):
     INPUT:
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+       xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR) 
+        +gaia_tools.xmatch.cds keywords 
     OUTPUT:
-       rcsample data
+       rcsample data[,xmatched table]
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
+       2018-05-09 - Add xmatch - Bovy (UofT) 
+       2018-10-20 - Added use_astroNN - Bovy (UofT) 
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
     #read rcsample file
     data= fitsread(path.rcsamplePath(dr=dr))
+    # Swap in astroNN results?
+    if use_astroNN or kwargs.get('astroNN',False):
+        astroNNdata= astroNN()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _swap_in_astroNN(data,astroNNdata)
+    if not xmatch is None:
+        from gaia_tools.load import _xmatch_cds
+        if use_astroNN or kwargs.get('astroNN',False):
+            matchFilePath= filePath.replace('rc-','rc-astroNN-')
+        else:
+            matchFilePath= filePath
+        ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
+        data= data[mai]
     #Some cuts
     if main:
         indx= mainIndx(data)
         data= data[indx]
+<<<<<<< HEAD
     return data
 
+=======
+        if not xmatch is None: ma= ma[indx]
+    if not xmatch is None:
+        return (data,ma)
+    else:
+        return data
+
+def astroNN(dr=None):
+    """
+    NAME:
+       astroNN
+    PURPOSE:
+       read the astroNN file
+    INPUT:
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+    OUTPUT:
+       astroNN data
+    HISTORY:
+       2018-10-20 - Written - Bovy (UofT)
+    """
+    filePath= path.astroNNPath(dr=dr)
+    if not os.path.exists(filePath):
+        download.astroNN(dr=dr)
+    #read astroNN file
+    return fitsread(path.astroNNPath(dr=dr))
+        
+>>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
 def obslog(year=None):
     """
     NAME:
@@ -682,11 +779,13 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
     data= fitsread(filePath,ext,header=header)
     return data
 
-def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
+def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
+            dr=None, header=False):
     """
     NAME: apVisit
-    PURPOSE: Read a single apVisit file for a given location, MJD, and fiber
+    PURPOSE: Read a single apVisit file for a given plate, MJD, and fiber
     INPUT:
+<<<<<<< HEAD
        loc_id = 4-digit location ID (field for 1m targets)
        mjd = 5-digit MJD
        fiberid = 3-digit fiber ID
@@ -694,22 +793,39 @@ def apVisit(loc_id, mjd, fiberid, ext=1, dr=None, header=True):
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
     OUTPUT:
+=======
+       plateid = 4-digit plate ID (field for 1m targets), float
+       mjd = 5-digit MJD, float
+       fiberid = 3-digit fiber ID, float
+       ext = (1) extension to load
+       header = (False) if True, return ONLY the header for the specified extension
+       telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
+       dr = return the path corresponding to this data release (general default)
+    OUTPUT: 
+>>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
        header=False:
-            1D array with apVisit fluxes (ext=1)
-            1D array with apVisit flux errors (ext=2)
-            corresponding wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
-            go here to learn about other extensions:
+            1D array with apVisit fluxes (ext=1), or
+            1D array with apVisit flux errors (ext=2), or
+            1D wavelength grid (ext=4) **WARNING** SORTED FROM HIGH TO LOW WAVELENGTH !!!
+            etc.
+            go here to learn about other extension choices:
             https://data.sdss.org/datamodel/files/APOGEE_REDUX/APRED_VERS/TELESCOPE/PLATE_ID/MJD5/apVisit.html
        header=True:
-            (3D array with three portions of whichever extension you specified, header)
-    HISTORY: 2016-11 - Meredith Rawls
+            header for the specified extension only (see link above)
+    HISTORY: 2016-11 - added by Meredith Rawls
+             2019-01 - long overdue plateid vs. locid bugfix
+                       added readheader function which doesn't fail for ext=0
+       2019-01-28 - Added telescope keyword - Bovy (UofT)
        TODO: automatically find all apVisit files for a given apogee ID and download them
     """
-    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
+    filePath = path.apVisitPath(plateid, mjd, fiberid,
+                                telescope=telescope,dr=dr)
     if not os.path.exists(filePath):
-        download.apVisit(loc_id, mjd, fiberid, dr=dr)
-    data = fitsread(filePath, ext, header=header)
-    if header == False: # stitch three chips together in increasing wavelength order
+        download.apVisit(plateid, mjd, fiberid, telescope=telescope,dr=dr)
+    if header:
+        data = headerread(filePath, ext)
+    if not header: # stitch three chips together in increasing wavelength order
+        data = fitsread(filePath, ext)
         data = data.flatten()
         data = numpy.flipud(data)
     return data
@@ -896,8 +1012,12 @@ def remove_duplicates(data):
                                   2./3600.,maxmatch=0, #all matches
                                   htmrev2=htmrev2,minid=minid,maxid=maxid)
         #If some matches are commissioning data or have bad ak, rm from consideration
-        comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
-        comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+        try:
+            comindx= numpy.array(['apogee.n.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+            comindx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['APSTAR_ID'][nm2]])
+        except TypeError:
+            comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
+            comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
         goodak= (True^numpy.isnan(data['AK_TARG'][nm2]))\
             *(data['AK_TARG'][nm2] > -50.)
         hisnr= numpy.argmax(data['SNR'][nm2]*(True^comindx)*goodak) #effect. make com zero SNR
@@ -907,3 +1027,48 @@ def remove_duplicates(data):
         tindx[hisnr]= False
         tdata['RA'][nm2[tindx]]= -9999
     return tdata[tdata['RA'] != -9999]
+
+def _xmatch(cat1,cat2,maxdist=2,
+            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC'):
+    """Internal version, basically copied and simplified from 
+    gaia_tools.xmatch, but put here to avoid adding gaia_tools as 
+    a dependency"""
+    try:
+        import astropy.coordinates as acoords
+        from astropy import units as u
+    except:
+        raise ImportError('The functionality that you are using requires astropy to be installed; please install astropy and run again')
+    mc1= acoords.SkyCoord(cat1[colRA1],cat1[colDec1],
+                          unit=(u.degree, u.degree),frame='icrs')
+    mc2= acoords.SkyCoord(cat2[colRA2],cat2[colDec2],
+                          unit=(u.degree, u.degree),frame='icrs')
+    idx,d2d,d3d = mc1.match_to_catalog_sky(mc2)
+    m1= numpy.arange(len(cat1))
+    mindx= d2d < maxdist*u.arcsec
+    m1= m1[mindx]
+    m2= idx[mindx]
+    return (m1,m2,d2d[mindx])
+
+def _swap_in_astroNN(data,astroNNdata):
+    for tag,indx in zip(['TEFF','LOGG'],[0,1]):
+        data[tag]= astroNNdata['astroNN'][:,indx]
+        data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
+    for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                         'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                        range(2,22)):
+        data['X_H'][:,elemIndx(tag.upper())]=\
+            astroNNdata['astroNN'][:,indx]
+        data['X_H_ERR'][:,elemIndx(tag.upper())]=\
+            astroNNdata['astroNN_error'][:,indx]
+        if tag.upper() != 'FE':
+            data['{}_FE'.format(tag.upper())]=\
+                astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
+            data['{}_FE_ERR'.format(tag.upper())]=\
+                numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
+                           +astroNNdata['astroNN_error'][:,19]**2.)
+        else:
+            data['FE_H'.format(tag.upper())]=\
+                astroNNdata['astroNN'][:,indx]
+            data['FE_H_ERR'.format(tag.upper())]=\
+                astroNNdata['astroNN_error'][:,indx]
+    return data

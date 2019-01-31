@@ -86,7 +86,7 @@ def waveregions(elem,asIndex=False,pad=0,dr=None):
     # Load the window
     win= read(elem,apStarWavegrid=True,dr=dr)
     # Calculate number of contiguous regions, assume this is not at the edge
-    mask= ((win > 0.)*(True-numpy.isnan(win))).astype('int')
+    mask= ((win > 0.)*(True^numpy.isnan(win))).astype('int')
     dmaskp= numpy.roll(mask,-1)-mask
     dmaskn= numpy.roll(mask,1)-mask
     # Calculate the distance between adjacent windows and combine them if close

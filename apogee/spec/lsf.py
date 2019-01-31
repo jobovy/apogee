@@ -181,7 +181,7 @@ def eval(x,fiber='combo',sparse=False):
         dx[-3]= dx[-3-hires]
         xs= numpy.tile(x,(len(hireswav),1))\
             *numpy.tile(dx,(len(x),1)).T # nwav,nx       
-        gd= True-numpy.isnan(pix)
+        gd= True^numpy.isnan(pix)
         # Read LSF file for this chip
         lsfpars= apread.apLSF(chip,ext=0)
         # Loop through the fibers

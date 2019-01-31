@@ -18,10 +18,10 @@ def median(spec,mask=None):
        2015-01-26 - Written - Bovy (IAS@KITP)
     """
     if mask is None:
-        mask= True-numpy.isnan(spec)
+        mask= True^numpy.isnan(spec)
     else:
         mask= mask.astype('bool')
-        mask*= True-numpy.isnan(spec)
+        mask*= True^numpy.isnan(spec)
     out= numpy.zeros(spec.shape[1])+numpy.nan
     for ii in range(spec.shape[1]):
         out[ii]= numpy.median(spec[mask[:,ii],ii])

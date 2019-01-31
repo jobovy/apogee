@@ -125,6 +125,28 @@ def rcsample(dr=None):
     _download_file(downloadPath,filePath,dr,verbose=False)
     return None
 
+def astroNN(dr=None):
+    """
+    NAME:
+       astroNN
+    PURPOSE:
+       download the astroNN file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2018-10-20 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.astroNNPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:
@@ -181,23 +203,26 @@ def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
-def apVisit(loc_id, mjd, fiberid, dr=None):
+def apVisit(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     """
     NAME: apVisit
     PURPOSE: download a single apVisit file
     INPUT:
-       loc_id = 4-digit location ID (field for 1m targets)
+       plateid = 4-digit plate ID
        mjd = 5-digit MJD
        fiberid = 3-digit fiber ID
+       telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
     OUTPUT: (none; just downloads)
     HISTORY: 2016-11 - Meredith Rawls
+       2019-01-28 - Added telescope keyword, clarified that it's plateid that's needed - Bovy (UofT)
        TODO: automatically find all apVisit files for a given apogee ID and download them
     """
     if dr is None:
         dr = path._default_dr()
     # First make sure the file doesn't exist
-    filePath = path.apVisitPath(loc_id, mjd, fiberid, dr=dr)
+    filePath = path.apVisitPath(plateid, mjd, fiberid,
+                                telescope=telescope,dr=dr)
     if os.path.exists(filePath):
         return None
     # Create the file path
@@ -609,6 +634,8 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
         except subprocess.CalledProcessError as e:
             if not downloading: #Assume KeyboardInterrupt
                 raise
+            elif 'exit status 5' in str(e):
+                raise IOError("Download failed because of wget SSL certification error; you can turn off SSL certification checking by setting the option\n\ncheck_certificate = off\n\nin the file $HOME/.wgetrc (create this if it does not exist)")
             elif ntries > _MAX_NTRIES:
                 raise IOError('File %s does not appear to exist on the server (as %s) ...' % (os.path.basename(filePath),downloadPath))
             elif not 'exit status 4' in str(e):

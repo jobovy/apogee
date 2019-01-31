@@ -23,7 +23,7 @@ import numpy
 try:
     import fitsio
     fitsread = fitsio.read
-    fitswrite = fitsio.wrte
+    fitswrite = fitsio.write
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread = pyfits.getdata
@@ -319,10 +319,10 @@ def make_rcsample(parser):
     data['PMDEC_ERR'][m2]= pmdata['PMDEC_ERR'][m1]
     data['PMMATCH'][m2]= pmdata['PMMATCH'][m1].astype(numpy.int32)
     pmindx= data['PMMATCH'] == 1
-    data['PMRA'][True-pmindx]= -9999.99
-    data['PMDEC'][True-pmindx]= -9999.99
-    data['PMRA_ERR'][True-pmindx]= -9999.99
-    data['PMDEC_ERR'][True-pmindx]= -9999.99
+    data['PMRA'][True^pmindx]= -9999.99
+    data['PMDEC'][True^pmindx]= -9999.99
+    data['PMRA_ERR'][True^pmindx]= -9999.99
+    data['PMDEC_ERR'][True^pmindx]= -9999.99
     #Calculate Galactocentric velocities
     data= esutil.numpy_util.add_fields(data,[('GALVR', numpy.float),
                                              ('GALVT', numpy.float),
@@ -347,9 +347,9 @@ def make_rcsample(parser):
     data['GALVR']= vRvTvZ[:,0]
     data['GALVT']= vRvTvZ[:,1]
     data['GALVZ']= vRvTvZ[:,2]
-    data['GALVR'][True-pmindx]= -9999.99
-    data['GALVT'][True-pmindx]= -9999.99
-    data['GALVZ'][True-pmindx]= -9999.99
+    data['GALVR'][True^pmindx]= -9999.99
+    data['GALVT'][True^pmindx]= -9999.99
+    data['GALVZ'][True^pmindx]= -9999.99
     #Get HSOY proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms_ppmxl.fits'
     if os.path.exists(pmfile):
@@ -431,10 +431,10 @@ def make_rcsample(parser):
     data['PMDEC_ERR_HSOY'][m2]= pmdata['PMDEC_ERR'][m1]
     data['PMMATCH_HSOY'][m2]= pmdata['PMMATCH'][m1].astype(numpy.int32)
     pmindx= data['PMMATCH_HSOY'] == 1
-    data['PMRA_HSOY'][True-pmindx]= -9999.99
-    data['PMDEC_HSOY'][True-pmindx]= -9999.99
-    data['PMRA_ERR_HSOY'][True-pmindx]= -9999.99
-    data['PMDEC_ERR_HSOY'][True-pmindx]= -9999.99
+    data['PMRA_HSOY'][True^pmindx]= -9999.99
+    data['PMDEC_HSOY'][True^pmindx]= -9999.99
+    data['PMRA_ERR_HSOY'][True^pmindx]= -9999.99
+    data['PMDEC_ERR_HSOY'][True^pmindx]= -9999.99
     #Calculate Galactocentric velocities
     data= esutil.numpy_util.add_fields(data,[('GALVR_HSOY', numpy.float),
                                              ('GALVT_HSOY', numpy.float),
@@ -460,9 +460,9 @@ def make_rcsample(parser):
     data['GALVR_HSOY']= vRvTvZ[:,0]
     data['GALVT_HSOY']= vRvTvZ[:,1]
     data['GALVZ_HSOY']= vRvTvZ[:,2]
-    data['GALVR_HSOY'][True-pmindx]= -9999.99
-    data['GALVT_HSOY'][True-pmindx]= -9999.99
-    data['GALVZ_HSOY'][True-pmindx]= -9999.99
+    data['GALVR_HSOY'][True^pmindx]= -9999.99
+    data['GALVT_HSOY'][True^pmindx]= -9999.99
+    data['GALVZ_HSOY'][True^pmindx]= -9999.99
     #Save
     fitswrite(savefilename,data,clobber=True)
     return None
