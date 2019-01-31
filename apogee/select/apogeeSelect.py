@@ -1101,8 +1101,8 @@ class apogeeSelect:
             if obslog[ii]['NObs_Ver_Done'] < obslog[ii]['NObs_Ver_Plan']:
                 indx[ii]= False
         obslog= obslog[indx]
-        self.§= obslog['Plate']
-        self._obslog= obslog
+        self._plates = obslog['Plate']
+        self._obslog = obslog
         nplates= len(self._plates)
         #Read the plate and design files
         if self._year == 1:
