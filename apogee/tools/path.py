@@ -559,74 +559,50 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                             loc_id.strip(),
                             'apStar-t9-%s.fits' % apogee_id.strip())
 
-def apVisitPath(loc_id, mjd, fiberid, dr=None):
+def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     """
     NAME:
        apVisitPath
     PURPOSE:
        returns the path of the apVisit file
     INPUT:
-       loc_id = 4-digit location ID (field for 1m targets)
+       plateid = 4-digit plate ID
        mjd = 5-digit MJD
        fiberid = 3-digit fiber ID
+       telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
     OUTPUT:
        path string
     HISTORY:
        2016-11 - Meredith Rawls
        2016-11-29 - Bovy (UofT) - Edited inputs
+       2019-01 - Rawls fixed string/int and misnomer of plate as loc bugs
+       2019-01-28 - Added telescope keyword - Bovy (UofT)
     TODO: 
        automatically find all apVisit files for a given apogee ID and download them
     """
-    mjd = str(mjd).strip()
-    if not isinstance(fiberid,str):
+    plateid = str(int(plateid)).strip()
+    mjd = str(int(mjd)).strip()
+    if not isinstance(fiberid, str):
         fiberid= '%03i' % fiberid
     if dr is None:
         dr = _default_dr()
     specReduxPath = apogeeSpectroReduxDirPath(dr=dr)
     if dr == '10':
-        return os.path.join(specReduxPath, 'r3', 's3', loc_id, mjd,
-                            'apVisit-s3-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r3', 's3', plateid, mjd,
+                            'apVisit-s3-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '12':
-        if isinstance(loc_id, str): #1m
-            return os.path.join(specReduxPath, 'r5', 'apo1m', loc_id, mjd,
-                                'apVisit-r5-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
-        elif loc_id == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            loc_id = str(loc_id).strip()
-            return os.path.join(specReduxPath, 'r5', 'apo25m', loc_id, mjd,
-                                'apVisit-r5-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r5', telescope , plateid, mjd,
+                            'apVisit-r5-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '13':
-        if isinstance(loc_id, str): #1m
-            return os.path.join(specReduxPath, 'r6', 'apo1m', loc_id, mjd,
-                                'apVisit-r6-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
-        elif loc_id == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            loc_id = str(loc_id).strip()
-            return os.path.join(specReduxPath, 'r6', 'apo25m', loc_id, mjd,
-                                'apVisit-r6-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r6', telescope , plateid, mjd,
+                            'apVisit-r6-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == '14':
-        if isinstance(loc_id, str): #1m
-            return os.path.join(specReduxPath, 'r8', 'apo1m', loc_id, mjd,
-                                'apVisit-r8-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
-        elif loc_id == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            loc_id = str(loc_id).strip()
-            return os.path.join(specReduxPath, 'r8', 'apo25m', loc_id, mjd,
-                                'apVisit-r8-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        return os.path.join(specReduxPath, 'r8', telescope , plateid, mjd,
+                            'apVisit-r8-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == 'current':
-        if isinstance(loc_id, str): #1m
-            return os.path.join(specReduxPath, 'current', 'apo1m', loc_id, mjd,
-                                'apVisit-current-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
-        elif loc_id == 1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            loc_id = str(loc_id).strip()
-            return os.path.join(specReduxPath, 'current', 'apo25m', loc_id, mjd,
-                                'apVisit-current-%s-%s-%s.fits' % (loc_id, mjd, fiberid))
+        return os.path.join(specReduxPath, 'current', telescope , plateid, mjd,
+                            'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
 
 def modelSpecPath(lib='GK',teff=4500,logg=2.5,metals=0.,
                   cfe=0.,nfe=0.,afe=0.,vmicro=2.,

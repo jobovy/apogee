@@ -301,28 +301,26 @@ but using ``change_dr`` allows you to change the data release without
 having to specify it for every function (and also allows you to change
 it for functions that do not support the ``dr=`` keyword).
 
-We can also read individual apVisit files, provided the location ID, MJD, and fiber are known.
+We can also read individual apVisit files, provided the plate ID, MJD, and fiber are known.
 Otherwise, it functions similarly to how you would read in an apStar file. If you are interested
-in a particular target and don't know the location ID, MJD and fiber *a priori*, `this website 
-<http://dr12.sdss3.org/basicIRSpectra>`__ can be of great use. 
-Simply enter the apogee ID into the right-hand side and select the "Visits" tab from the search results page.
+in a particular target and don't know the plate ID, MJD, and fiber *a priori*, the `SDSS Science
+Archive Server (SAS) <https://dr14.sdss.org/infrared/spectrum/search>`__
+for your DR of choice can be of great use. At present, up to DR14 is supported.
 
-It is recommended to set `header=False` when reading in apVisit files if you want a 1D flux array.
-Note that apVisit data is *not* on the standard apogee wavelength grid, and `ext=4` must be used to
+Note that apVisit data is **not** on the standard apogee wavelength grid, and `ext=4` must be used to
 retrieve the wavelength data that corresponds with the fluxes. An example::
 
     import apogee.tools.read as apread
-    # the three arguments are location ID, MJD, and fiber ID
-    spec = apread.apVisit(7439, 56763, 207, ext=1, header=False)
-    specerr = apread.apVisit(7439, 56763, 207, ext=2, header=False)
-    wave = apread.apVisit(7439, 56763, 207, ext=4, header=False)
-    header = apread.apVisit(7439, 56763, 207, ext=1, header=True)[1]
+    plateId = 7439
+    mjd = 56763
+    fiberId = 207
+    spec = apread.apVisit(plateId, mjd, fiberId, ext=1)
+    specerr = apread.apVisit(plateId, mjd, fiberId, ext=2)
+    wave = apread.apVisit(plateId, mjd, fiberId, ext=4)
+    header = apread.apVisit(plateId, mjd, fiberId, ext=0, header=True)
     
-Note that reading in flux or wavelength information simultaneously with the header will yield a dataset
-that is not sorted by increasing flux order, and is separated into three arrays for the blue/green/red chips::
-
-    weird_format_spec = apread.apVisit(7439, 56763, 207, ext=1, header=True)[0]
-    weird_format_wave = apread.apVisit(7439, 56763, 207, ext=4, header=True)[0]
+Note that you may access either data **OR** header information with a single call
+to `apread.apVisit`. Take care when specifying which FITS extension you want.
 
 If you wish to continuum normalize an apVisit spectrum, you can! The procedure is slightly different
 from normalizing a series of apStar spectra (see the section on "The APOGEE LSF and continuum normalization"
