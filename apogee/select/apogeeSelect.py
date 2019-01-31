@@ -1101,7 +1101,7 @@ class apogeeSelect:
             if obslog[ii]['NObs_Ver_Done'] < obslog[ii]['NObs_Ver_Plan']:
                 indx[ii]= False
         obslog= obslog[indx]
-        self._plates= obslog['Plate']
+        self.§= obslog['Plate']
         self._obslog= obslog
         nplates= len(self._plates)
         #Read the plate and design files
@@ -1677,7 +1677,7 @@ class apogee2Select(apogeeSelect):
             if sample.lower() == 'rcsample':
                 indx=(jko >= 0.5)*(jko < 0.8)
             else:
-                indx= jko >= 0.5
+                indx= jko >= 0.3
             #print(field_name, numpy.log10(len(tapogeeObject)), numpy.log10(numpy.sum(indx)))
             tapogeeObject= tapogeeObject[indx]
             #Cut to relevant magnitude range
@@ -1753,7 +1753,7 @@ class apogee2Select(apogeeSelect):
         if sample.lower() == 'rcsample':
             indx=(jko >= 0.5)*(jko < 0.8)
         else:
-            indx= jko >= 0.5
+            indx= jko >= 0.3
         allStar= allStar[indx]
         statIndx= self.determine_statistical(allStar)
         allStar= allStar[statIndx]
@@ -1866,6 +1866,7 @@ class apogeeCombinedSelect:
     def __init__(self,sample='main',
                  locations=None,
                  year=None,
+                 mjd=None,
                  sftype='constant',
                  minnspec=3,
                  frac4complete=1.):
