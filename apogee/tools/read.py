@@ -136,14 +136,14 @@ def allStar(rmcommissioning=True,
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
-        +gaia_tools.xmatch.cds keywords 
+        +gaia_tools.xmatch.cds keywords
     OUTPUT:
        allStar data[,xmatched table]
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
-       2018-05-09 - Add xmatch - Bovy (UofT) 
-       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
+       2018-05-09 - Add xmatch - Bovy (UofT)
+       2018-10-20 - Add use_astroNN option - Bovy (UofT)
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
@@ -188,7 +188,7 @@ def allStar(rmcommissioning=True,
     if rmnovisits:
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
         data= data[indx]
-<<<<<<< HEAD
+        if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         if survey.lower() == 'apogee1':
             indx= (data['SURVEY'] == b'apogee        ') \
@@ -198,9 +198,7 @@ def allStar(rmcommissioning=True,
                    + (data['SURVEY'] == b'apogee2-manga ') \
                    + (data['SURVEY'] == b'manga-apogee2 ')
         data= data[indx]
-=======
         if not xmatch is None: ma= ma[indx]
->>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
     if main:
         indx= mainIndx(data)
         data= data[indx]
@@ -300,16 +298,11 @@ def allStar(rmcommissioning=True,
                                                  ('ALPHAFE', float)])
         data['METALS']= data['PARAM'][:,paramIndx('metals')]
         data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
-<<<<<<< HEAD
-    return data
-
-=======
     if not xmatch is None:
         return (data,ma)
     else:
         return data
-        
->>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
+
 def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
@@ -351,7 +344,7 @@ def allVisit(rmcommissioning=True,
             indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
-            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])           
+            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -465,14 +458,14 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR) 
-        +gaia_tools.xmatch.cds keywords 
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
+        +gaia_tools.xmatch.cds keywords
     OUTPUT:
        rcsample data[,xmatched table]
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
-       2018-05-09 - Add xmatch - Bovy (UofT) 
-       2018-10-20 - Added use_astroNN - Bovy (UofT) 
+       2018-05-09 - Add xmatch - Bovy (UofT)
+       2018-10-20 - Added use_astroNN - Bovy (UofT)
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
@@ -500,10 +493,6 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
     if main:
         indx= mainIndx(data)
         data= data[indx]
-<<<<<<< HEAD
-    return data
-
-=======
         if not xmatch is None: ma= ma[indx]
     if not xmatch is None:
         return (data,ma)
@@ -528,8 +517,7 @@ def astroNN(dr=None):
         download.astroNN(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNPath(dr=dr))
-        
->>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
+
 def obslog(year=None):
     """
     NAME:
@@ -785,15 +773,6 @@ def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
     NAME: apVisit
     PURPOSE: Read a single apVisit file for a given plate, MJD, and fiber
     INPUT:
-<<<<<<< HEAD
-       loc_id = 4-digit location ID (field for 1m targets)
-       mjd = 5-digit MJD
-       fiberid = 3-digit fiber ID
-       ext= (1) extension to load
-       header= (True) if True, also return the header
-       dr= return the path corresponding to this data release (general default)
-    OUTPUT:
-=======
        plateid = 4-digit plate ID (field for 1m targets), float
        mjd = 5-digit MJD, float
        fiberid = 3-digit fiber ID, float
@@ -801,8 +780,7 @@ def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
        header = (False) if True, return ONLY the header for the specified extension
        telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
-    OUTPUT: 
->>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
+    OUTPUT:
        header=False:
             1D array with apVisit fluxes (ext=1), or
             1D array with apVisit flux errors (ext=2), or
@@ -1030,8 +1008,8 @@ def remove_duplicates(data):
 
 def _xmatch(cat1,cat2,maxdist=2,
             colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC'):
-    """Internal version, basically copied and simplified from 
-    gaia_tools.xmatch, but put here to avoid adding gaia_tools as 
+    """Internal version, basically copied and simplified from
+    gaia_tools.xmatch, but put here to avoid adding gaia_tools as
     a dependency"""
     try:
         import astropy.coordinates as acoords

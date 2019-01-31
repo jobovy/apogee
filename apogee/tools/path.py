@@ -603,13 +603,9 @@ def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     HISTORY:
        2016-11 - Meredith Rawls
        2016-11-29 - Bovy (UofT) - Edited inputs
-<<<<<<< HEAD
-    TODO:
-=======
        2019-01 - Rawls fixed string/int and misnomer of plate as loc bugs
        2019-01-28 - Added telescope keyword - Bovy (UofT)
-    TODO: 
->>>>>>> 7afd615e0451e5c630994416fa398ab419d73ed9
+    TODO:
        automatically find all apVisit files for a given apogee ID and download them
     """
     plateid = str(int(plateid)).strip()
