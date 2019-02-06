@@ -547,8 +547,8 @@ def obslog(year=None):
                                     ('ra','float'),
                                     ('dec','float'),
                                     ('A_ver','S14'),
-                                    ('NObs_Ver_Plan','int'),
                                     ('NObs_Ver_Done','int'),
+                                    ('NObs_Ver_Plan','int'),
                                     ('Total_SN','float'),
                                     ('ObsHistory','S50')],
                            'skip_footer':0}
