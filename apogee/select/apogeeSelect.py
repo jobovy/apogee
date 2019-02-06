@@ -1884,9 +1884,12 @@ class apogeeCombinedSelect:
             return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
-        if year is None:
+        if year is None or 5:
             self.apo1year = 3
             self.apo2year = 5
+        elif year is 6:
+            self.apo1year = 3
+            self.apo2year = 6
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         apo1sel = apogee1Select(year=self.apo1year, sample=sample)
