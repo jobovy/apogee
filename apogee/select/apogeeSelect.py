@@ -1113,6 +1113,8 @@ class apogeeSelect:
             self._dr= '12'
         elif self._year == 5: # there's no year = 4, bc no DR
             self._dr= '14'
+        elif self._year == 6:
+            self._dr = '16'
         #Match up plates with designs
         apogeePlate= apread.apogeePlate(dr=self._dr)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
@@ -1742,7 +1744,11 @@ class apogee2Select(apogeeSelect):
     def _load_spec_data(self,sample='rcsample'):
         """Internal function to load the full spectroscopic data set and
         cut it down to the statistical sample"""
-        allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2')
+        if self._year > 5:
+            allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2', mjd=58360)
+        else:
+            allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2')
+
         #Only keep stars in locations for which we are loading the
         #selection function
         indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations
@@ -1884,10 +1890,10 @@ class apogeeCombinedSelect:
             return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
-        if year is None or 5:
+        if year is None or == 5:
             self.apo1year = 3
             self.apo2year = 5
-        elif year is 6:
+        elif year == 6:
             self.apo1year = 3
             self.apo2year = 6
         self._minnspec = minnspec
