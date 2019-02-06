@@ -1890,7 +1890,7 @@ class apogeeCombinedSelect:
             return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
-        if year is None or == 5:
+        if year is None or year == 5:
             self.apo1year = 3
             self.apo2year = 5
         elif year == 6:
