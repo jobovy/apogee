@@ -147,6 +147,29 @@ def astroNN(dr=None):
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
+def astroNNDistances(dr=None):
+    """
+    NAME:
+       astroNNDistances
+    PURPOSE:
+       download the astroNN distances file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2018-02-15 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.astroNNDistancesPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath= 'https://github.com/henrysky/astroNN_gaia_dr2_paper/raw/'\
+        'master/apogee_dr14_nn_dist.fits'
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:

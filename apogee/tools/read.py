@@ -21,6 +21,7 @@ import sys
 import copy
 import warnings
 import numpy
+import numpy.lib.recfunctions
 from . import _apStarPixelLimits,_aspcapPixelLimits, elemIndx
 
 try:
@@ -106,6 +107,8 @@ def allStar(rmcommissioning=True,
             akvers='targ',
             rmnovisits=False,
             use_astroNN=False,
+            use_astroNN_abundances=False,
+            use_astroNN_distances=False,          
             adddist=False,
             distredux=None,
             rmdups=False,
@@ -125,7 +128,9 @@ def allStar(rmcommissioning=True,
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR) and astroNN distances (Leung & Bovy 2019b)
+       use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances
+       use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
@@ -140,6 +145,7 @@ def allStar(rmcommissioning=True,
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
        2018-05-09 - Add xmatch - Bovy (UofT) 
        2018-10-20 - Add use_astroNN option - Bovy (UofT) 
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
@@ -147,9 +153,12 @@ def allStar(rmcommissioning=True,
     #read allStar file
     data= fitsread(path.allStarPath(mjd=mjd))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
-    if use_astroNN or kwargs.get('astroNN',False):
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
         astroNNdata= astroNN()
         data= _swap_in_astroNN(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        astroNNdata= astroNNDistances()
+        data= _add_astroNN_distances(data,astroNNdata)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -434,7 +443,10 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
+def rcsample(main=False,dr=None,xmatch=None,
+             use_astroNN=False,use_astroNN_abundances=False,
+             use_astroNN_distances=False,          
+             **kwargs):
     """
     NAME:
        rcsample
@@ -444,7 +456,9 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR) 
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR) and astroNN distances (Leung & Bovy 2019b)
+       use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances
+       use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances
         +gaia_tools.xmatch.cds keywords 
     OUTPUT:
        rcsample data[,xmatched table]
@@ -452,6 +466,7 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
        2013-10-08 - Written - Bovy (IAS)
        2018-05-09 - Add xmatch - Bovy (UofT) 
        2018-10-20 - Added use_astroNN - Bovy (UofT) 
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
@@ -459,7 +474,7 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
     #read rcsample file
     data= fitsread(path.rcsamplePath(dr=dr))
     # Swap in astroNN results?
-    if use_astroNN or kwargs.get('astroNN',False):
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
         astroNNdata= astroNN()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
@@ -467,10 +482,22 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _swap_in_astroNN(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        astroNNdata= astroNNDistances()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _add_astroNN_distances(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if use_astroNN or kwargs.get('astroNN',False):
             matchFilePath= filePath.replace('rc-','rc-astroNN-')
+        elif use_astroNN_abundances:
+            matchFilePath= filePath.replace('rc-','rc-astroNN-abundances-')
+        elif use_astroNN_distances:
+            matchFilePath= filePath.replace('rc-','rc-astroNN-distances-')
         else:
             matchFilePath= filePath
         ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
@@ -503,6 +530,24 @@ def astroNN(dr=None):
         download.astroNN(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNPath(dr=dr))
+        
+def astroNNDistances(dr=None):
+    """
+    NAME:
+       astroNNDistances
+    PURPOSE:
+       read the astroNNDistances file
+    INPUT:
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+    OUTPUT:
+       astroNN distances data
+    HISTORY:
+       2018-02-15 - Written - Bovy (UofT)
+    """
+    if not os.path.exists(path.astroNNDistancesPath(dr=dr)):
+        download.astroNNDistances(dr=dr)
+    #read astroNN file
+    return fitsread(path.astroNNDistancesPath(dr=dr))
         
 def obslog(year=None):
     """
@@ -980,3 +1025,13 @@ def _swap_in_astroNN(data,astroNNdata):
             data['FE_H_ERR'.format(tag.upper())]=\
                 astroNNdata['astroNN_error'][:,indx]
     return data
+
+def _add_astroNN_distances(data,astroNNDistancesdata):
+    fields_to_append= ['dist','dist_model_error','dist_error',
+                       'weighted_dist','weighted_dist_error']
+    return numpy.lib.recfunctions.append_fields(\
+        data,
+        fields_to_append,
+        [astroNNDistancesdata[f] for f in fields_to_append],
+        [astroNNDistancesdata[f].dtype for f in fields_to_append],
+        usemask=False)
