@@ -159,12 +159,15 @@ def allStar(rmcommissioning=True,
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
     # [ages file not matched line-by-line]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
+        _warn_astroNN_abundances()
         astroNNdata= astroNN()
         data= _swap_in_astroNN(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        _warn_astroNN_distances()
         astroNNdata= astroNNDistances()
         data= _add_astroNN_distances(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
+        _warn_astroNN_ages()
         astroNNdata= astroNNAges()
         data= _add_astroNN_ages(data,astroNNdata)
     if raw: return data
@@ -488,6 +491,7 @@ def rcsample(main=False,dr=None,xmatch=None,
     data= fitsread(path.rcsamplePath(dr=dr))
     # Swap in astroNN results?
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
+        _warn_astroNN_abundances()
         astroNNdata= astroNN()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
@@ -496,6 +500,7 @@ def rcsample(main=False,dr=None,xmatch=None,
         astroNNdata= astroNNdata[m2]
         data= _swap_in_astroNN(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        _warn_astroNN_distances()
         astroNNdata= astroNNDistances()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
@@ -504,6 +509,7 @@ def rcsample(main=False,dr=None,xmatch=None,
         astroNNdata= astroNNdata[m2]
         data= _add_astroNN_distances(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
+        _warn_astroNN_ages()
         astroNNdata= astroNNAges()
         data= _add_astroNN_ages(data,astroNNdata)       
     if not xmatch is None:
@@ -1116,3 +1122,12 @@ def _add_astroNN_ages(data,astroNNAgesdata):
     for f in fields_to_append:
         data[f][indx1]= astroNNAgesdata[f][indx2]
     return data
+
+def _warn_astroNN_abundances():
+    warnings.warn("Swapping in stellar parameters and abundances from Leung & Bovy (2019a)")
+
+def _warn_astroNN_distances():
+    warnings.warn("Adding distances from Leung & Bovy (2019b)")
+
+def _warn_astroNN_ages():
+    warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")
