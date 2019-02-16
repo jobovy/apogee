@@ -258,7 +258,7 @@ of `Leung & Bovy (2019a) <https://arxiv.org/abs/1808.04428>`__, the
 distances to APOGEE stars determined using a neural-network approach
 trained on Gaia by Leung & Bovy (2019b; in prep.), and the ages from
 `Mackereth, Bovy, Leung, et al. (2019)
-<http://arxiv.org/abs/1901.04502>`__do::
+<http://arxiv.org/abs/1901.04502>`__ do::
 
    allStar= apread.allStar(use_astroNN=True)
 
