@@ -170,6 +170,29 @@ def astroNNDistances(dr=None):
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
+def astroNNAges(dr=None):
+    """
+    NAME:
+       astroNNAges
+    PURPOSE:
+       download the astroNN ages file
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2018-02-16 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= path._default_dr()
+    # First make sure the file doesn't exist
+    filePath= path.astroNNAgesPath(dr=dr)
+    if os.path.exists(filePath): return None
+    # Create the file path
+    downloadPath= 'http://www.astro.ljmu.ac.uk/~astjmack/APOGEEGaiaAges/'\
+                  'astroNNBayes_ages_goodDR14.fits'
+    _download_file(downloadPath,filePath,dr,verbose=True)
+    return None
+
 def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:
