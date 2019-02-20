@@ -1088,9 +1088,9 @@ class apogeeSelect:
                 indx[ii]= False
             if origobslog[ii]['Plate'] in _COMPLATES:
                 indx[ii]= False
-            if origobslog[ii]['Plate'] == 8632:
+            if origobslog[ii]['Plate'] == 8632 or origobslog[ii]['Plate'] == 10001:
                 import warnings
-                warnings.warn('Removing plate 8632 because not in apogee2Plate...')
+                warnings.warn('Removing plate 8632 and 10001 because not in apogee2Plate...')
                 indx[ii]= False
         origobslog= origobslog[indx]
         indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
