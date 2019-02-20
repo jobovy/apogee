@@ -259,7 +259,7 @@ which can also be combined with any other ``allStar`` option. The ``astroNN`` re
 
 We can read the red-clump catalog from `Bovy et al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__  using (any of its releases)::
 
-   apokasc= apread.rcsample()
+   aporc= apread.rcsample()
 
 This can also take the ``use_astroNN=True`` option to swap in the astroNN parameters and abundances.
 
