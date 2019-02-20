@@ -2391,7 +2391,7 @@ class apogeeCombinedSelect:
                      onedhistsbins=None,
                      onedhistsspecbins=None,
                      cntrSmooth=None,
-                     speccolor='r',reweightcolor='b',color_bin=0):
+                     speccolor='r',reweightcolor='b'):
         """
         NAME:
            plotColorMag
@@ -2487,7 +2487,7 @@ class apogeeCombinedSelect:
             specys= numpy.array(specys)
         if x == 'JK0':
             xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
-            xrange= [0.4,1.4]
+            xrange= [0.2,1.4]
         if y == 'H':
             ylabel=r'$H\, (\mathrm{mag})$'
             yrange=[6.,14.]
