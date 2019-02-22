@@ -20,7 +20,9 @@ import os
 import sys
 import copy
 import warnings
+from operator import itemgetter
 import numpy
+import numpy.lib.recfunctions
 from . import _apStarPixelLimits,_aspcapPixelLimits, elemIndx
 
 try:
@@ -109,6 +111,9 @@ def allStar(rmcommissioning=True,
             survey='all',
             rmnovisits=False,
             use_astroNN=False,
+            use_astroNN_abundances=False,
+            use_astroNN_distances=False,
+            use_astroNN_ages=False,
             adddist=False,
             distredux=None,
             rmdups=False,
@@ -129,7 +134,10 @@ def allStar(rmcommissioning=True,
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        survey= ('all') When reading an APOGEE-2 allStar file, select stars from both APOGEE-1 and -2 ('all'), just APOGEE-1 ('apogee1'), or just APOGEE-2 ('apogee-2') [Note: both 'apogee1' and 'apogee2' exclude stars from the APO-1m]
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. (2019)
+       use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
+       use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
+       use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
@@ -144,6 +152,8 @@ def allStar(rmcommissioning=True,
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
        2018-05-09 - Add xmatch - Bovy (UofT)
        2018-10-20 - Add use_astroNN option - Bovy (UofT)
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
+       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
     """
     filePath= path.allStarPath(mjd=mjd)
     if not os.path.exists(filePath):
@@ -151,9 +161,19 @@ def allStar(rmcommissioning=True,
     #read allStar file
     data= fitsread(path.allStarPath(mjd=mjd))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
-    if use_astroNN or kwargs.get('astroNN',False):
+    # [ages file not matched line-by-line]
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
+        _warn_astroNN_abundances()
         astroNNdata= astroNN()
         data= _swap_in_astroNN(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        _warn_astroNN_distances()
+        astroNNdata= astroNNDistances()
+        data= _add_astroNN_distances(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
+        _warn_astroNN_ages()
+        astroNNdata= astroNNAges()
+        data= _add_astroNN_ages(data,astroNNdata)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -171,9 +191,12 @@ def allStar(rmcommissioning=True,
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if rmdups:
-            ma,mai= _xmatch_cds(data,xmatch,dupsFilename,**kwargs)
+            matchFilePath= dupsFilename
         else:
-            ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+            matchFilePath= filePath
+        if use_astroNN_ages:
+            matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
     if rmcommissioning:
@@ -448,7 +471,10 @@ def apokasc(rmcommissioning=True,
     kascdata['FCFE']= data['FPARAM'][:,4]
     return kascdata
 
-def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
+def rcsample(main=False,dr=None,xmatch=None,
+             use_astroNN=False,use_astroNN_abundances=False,
+             use_astroNN_distances=False,use_astroNN_ages=False,
+             **kwargs):
     """
     NAME:
        rcsample
@@ -458,7 +484,10 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
        main= (default: False) if True, only select stars in the main survey
        dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2018) parameters (get placed in, e.g., TEFF and TEFF_ERR)
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. (2019)
+       use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
+       use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
+       use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
         +gaia_tools.xmatch.cds keywords
     OUTPUT:
        rcsample data[,xmatched table]
@@ -466,6 +495,8 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
        2013-10-08 - Written - Bovy (IAS)
        2018-05-09 - Add xmatch - Bovy (UofT)
        2018-10-20 - Added use_astroNN - Bovy (UofT)
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
+       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
     """
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
@@ -473,7 +504,8 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
     #read rcsample file
     data= fitsread(path.rcsamplePath(dr=dr))
     # Swap in astroNN results?
-    if use_astroNN or kwargs.get('astroNN',False):
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
+        _warn_astroNN_abundances()
         astroNNdata= astroNN()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
@@ -481,10 +513,29 @@ def rcsample(main=False,dr=None,xmatch=None,use_astroNN=False,**kwargs):
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _swap_in_astroNN(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
+        _warn_astroNN_distances()
+        astroNNdata= astroNNDistances()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _add_astroNN_distances(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
+        _warn_astroNN_ages()
+        astroNNdata= astroNNAges()
+        data= _add_astroNN_ages(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if use_astroNN or kwargs.get('astroNN',False):
             matchFilePath= filePath.replace('rc-','rc-astroNN-')
+        elif use_astroNN_abundances:
+            matchFilePath= filePath.replace('rc-','rc-astroNN-abundances-')
+        elif use_astroNN_distances:
+            matchFilePath= filePath.replace('rc-','rc-astroNN-distances-')
+        elif use_astroNN_ages:
+            matchFilePath= filePath.replace('rc-','rc-astroNN-ages-')
         else:
             matchFilePath= filePath
         ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
@@ -517,6 +568,42 @@ def astroNN(dr=None):
         download.astroNN(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNPath(dr=dr))
+
+def astroNNDistances(dr=None):
+    """
+    NAME:
+       astroNNDistances
+    PURPOSE:
+       read the astroNN distances file
+    INPUT:
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+    OUTPUT:
+       astroNN distances data
+    HISTORY:
+       2018-02-15 - Written - Bovy (UofT)
+    """
+    if not os.path.exists(path.astroNNDistancesPath(dr=dr)):
+        download.astroNNDistances(dr=dr)
+    #read astroNN file
+    return fitsread(path.astroNNDistancesPath(dr=dr))
+
+def astroNNAges(dr=None):
+    """
+    NAME:
+       astroNNAges
+    PURPOSE:
+       read the astroNN ages file
+    INPUT:
+       dr= data reduction to load the catalog for (automatically set based on APOGEE_REDUX if not given explicitly)
+    OUTPUT:
+       astroNN ages data
+    HISTORY:
+       2018-02-16 - Written - Bovy (UofT)
+    """
+    if not os.path.exists(path.astroNNAgesPath(dr=dr)):
+        download.astroNNAges(dr=dr)
+    #read astroNN file
+    return fitsread(path.astroNNAgesPath(dr=dr))
 
 def obslog(year=None):
     """
@@ -1050,3 +1137,67 @@ def _swap_in_astroNN(data,astroNNdata):
             data['FE_H_ERR'.format(tag.upper())]=\
                 astroNNdata['astroNN_error'][:,indx]
     return data
+
+def _add_astroNN_distances(data,astroNNDistancesdata):
+    fields_to_append= ['dist','dist_model_error','dist_error',
+                       'weighted_dist','weighted_dist_error']
+    if True:
+        # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
+        newdtype= data.dtype.descr+\
+            [(f,'<f8') for f in fields_to_append]
+        newdata= numpy.empty(len(data),dtype=newdtype)
+        for name in data.dtype.names:
+            newdata[name]= data[name]
+        for f in fields_to_append:
+            newdata[f]= astroNNDistancesdata[f]
+        return newdata
+    else:
+        return numpy.lib.recfunctions.append_fields(\
+            data,
+            fields_to_append,
+            [astroNNDistancesdata[f] for f in fields_to_append],
+            [astroNNDistancesdata[f].dtype for f in fields_to_append],
+            usemask=False)
+
+def _add_astroNN_ages(data,astroNNAgesdata):
+    fields_to_append= ['astroNN_age','astroNN_age_total_std',
+                       'astroNN_age_predictive_std','astroNN_age_model_std']
+    if True:
+        # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
+        newdtype= data.dtype.descr+\
+            [(f,'<f8') for f in fields_to_append]
+        newdata= numpy.empty(len(data),dtype=newdtype)
+        for name in data.dtype.names:
+            newdata[name]= data[name]
+        for f in fields_to_append:
+            newdata[f]= numpy.zeros(len(data))-9999.
+        data= newdata
+    else:
+        # This, for some reason, is the slow part (see numpy/numpy#7811
+        data= numpy.lib.recfunctions.append_fields(\
+            data,
+            fields_to_append,
+            [numpy.zeros(len(data))-9999. for f in fields_to_append],
+            usemask=False)
+    # Only match primary targets
+    hash1= dict(zip(data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+                    numpy.arange(len(data))[(data['EXTRATARG'] & 2**4) == 0]))
+    hash2= dict(zip(astroNNAgesdata['APOGEE_ID'],
+                    numpy.arange(len(astroNNAgesdata))))
+    common= numpy.intersect1d(\
+        data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+        astroNNAgesdata['APOGEE_ID'])
+    indx1= list(itemgetter(*common)(hash1))
+    indx2= list(itemgetter(*common)(hash2))
+    for f in fields_to_append:
+        data[f][indx1]= astroNNAgesdata[f][indx2]
+    return data
+
+def _warn_astroNN_abundances():
+    warnings.warn("Swapping in stellar parameters and abundances from Leung & Bovy (2019a)")
+
+def _warn_astroNN_distances():
+    warnings.warn("Adding distances from Leung & Bovy (2019b)")
+
+def _warn_astroNN_ages():
+    warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")

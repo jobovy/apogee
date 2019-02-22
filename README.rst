@@ -251,11 +251,24 @@ re-use. Use as::
 
 	allStar= apread.allStar(rmcommissioning=True,rmdups=True)
 
-If you are using DR14 and want to use the (less noisy) parameters and abundances derived using the `astroNN <https://github.com/henrysky/astroNN_spectra_paper_figures>`__ method of `Leung & Bovy (2018) <https://arxiv.org/abs/1808.04428>`__, do::
+If you are using DR14 and want to use the (less noisy) parameters and
+abundances derived using the `astroNN
+<https://github.com/henrysky/astroNN_spectra_paper_figures>`__ method
+of `Leung & Bovy (2019a) <https://arxiv.org/abs/1808.04428>`__, the
+distances to APOGEE stars determined using a neural-network approach
+trained on Gaia by Leung & Bovy (2019b; in prep.), and the ages from
+`Mackereth, Bovy, Leung, et al. (2019)
+<http://arxiv.org/abs/1901.04502>`__ do::
 
    allStar= apread.allStar(use_astroNN=True)
 
-which can also be combined with any other ``allStar`` option. The ``astroNN`` results are swapped in for the regular ASPCAP results, so switching between the two is as simple as changing the read of the file.
+which can also be combined with any other ``allStar`` option. The
+``astroNN`` results are swapped in for the regular ASPCAP results, so
+switching between the two is as simple as changing the read of the
+file. The recommended distances are ``weighted_dist`` (pc) and the
+ages are ``astroNN_age``.  You can load only the astroNN abundances,
+only the distances, or only the ages using ``use_astroNN_abundances``,
+``use_astroNN_distances``, and ``use_astroNN_ages, respectively.
 
 We can read the red-clump catalog from `Bovy et al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__  using (any of its releases)::
 
