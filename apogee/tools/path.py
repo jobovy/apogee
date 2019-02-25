@@ -279,6 +279,54 @@ def astroNNPath(dr=None):
         return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
                             'astroNN_apogee_dr14_catalog.fits')
 
+def astroNNDistancesPath(dr=None):
+    """
+    NAME:
+       astroNNDistancesPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2019-02-15 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= _default_dr()
+    if int(dr) != 14:
+        raise ValueError('astroNN distances catalog for DR =/= 14 not available')
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '14':
+        return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
+                            'apogee_dr14_nn_dist.fits')
+
+def astroNNAgesPath(dr=None):
+    """
+    NAME:
+       astroNNAgesPath
+    PURPOSE:
+       returns the path of the relevant file
+    INPUT:
+       dr= return the path corresponding to this data release
+    OUTPUT:
+       path string
+    REQUIREMENTS:
+       environment variables APOGEE_DATA pointing to the data directory
+       APOGEE_REDUX with the current reduction version (e.g., v0.91)
+    HISTORY:
+       2019-02-16 - Written - Bovy (UofT)
+    """
+    if dr is None: dr= _default_dr()
+    if int(dr) != 14:
+        raise ValueError('astroNN ages catalog for DR =/= 14 not available')
+    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if dr == '14':
+        return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
+                            'astroNNBayes_ages_goodDR14.fits')
+
 def obslogPath(year=None):
     """
     NAME:
