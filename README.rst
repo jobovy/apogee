@@ -268,7 +268,7 @@ switching between the two is as simple as changing the read of the
 file. The recommended distances are ``weighted_dist`` (pc) and the
 ages are ``astroNN_age``.  You can load only the astroNN abundances,
 only the distances, or only the ages using ``use_astroNN_abundances``,
-``use_astroNN_distances``, and ``use_astroNN_ages, respectively.
+``use_astroNN_distances``, and ``use_astroNN_ages``, respectively.
 
 We can read the red-clump catalog from `Bovy et al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__  using (any of its releases)::
 
