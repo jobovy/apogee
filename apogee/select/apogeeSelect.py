@@ -39,7 +39,558 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4326,4327,4328,4329]
 _ERASESTR= "                                                                                "
 
-class apogeeSelect:
+
+class apogeeSelectPlotsMixin:
+    """Mixin class to contain the plotting functions for the various selection functions"""
+    def plot_selfunc_xy(self,cohort='all',
+                        mh=-1.49,
+                        type='xy',
+                        vmin=None,vmax=None):
+
+        """
+        NAME:
+           plot_selfunc_xy
+        PURPOSE:
+           plot the selection function as a function of X,Y, or R,Z
+           cohort
+        INPUT:
+           cohort= ('all') cohort to consider
+           mh= (-1.49) absolute magnitude to use to go to distance
+           vmin, vmax= colorbar range
+           type= ('xy') type of plot to make:
+              - xy: X vs. Y
+              - rz: R vs. Z
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-11 - Written - Bovy (IAS)
+        """
+        nHs= 201
+        Xs= numpy.zeros((len(self._locations),nHs))+numpy.nan
+        Ys= numpy.zeros((len(self._locations),nHs))+numpy.nan
+        select= numpy.zeros((len(self._locations),nHs))+numpy.nan
+        for ii in range(len(self._locations)):
+            if cohort.lower() == 'all':
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_long[ii] >= self._minnspec:
+                    #There is a long cohort
+                    Hs= numpy.linspace(self._short_hmin[ii],
+                                       self._long_hmax[ii],
+                                       nHs)
+                elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
+                        and self._nspec_medium[ii] >= self._minnspec:
+                    #There is a medium cohort
+                    Hs= numpy.linspace(self._short_hmin[ii],
+                                       self._medium_hmax[ii],
+                                       nHs)
+                else:
+                    #There is only a short cohort
+                    Hs= numpy.linspace(self._short_hmin[ii],
+                                       self._short_hmax[ii],
+                                       nHs)
+            elif cohort.lower() == 'short':
+                Hs= numpy.linspace(self._short_hmin[ii],
+                                   self._short_hmax[ii],
+                                   nHs)
+            elif cohort.lower() == 'medium':
+                Hs= numpy.linspace(self._medium_hmin[ii],
+                                   self._medium_hmax[ii],
+                                   nHs)
+            elif cohort.lower() == 'long':
+                Hs= numpy.linspace(self._long_hmin[ii],
+                                   self._long_hmax[ii],
+                                   nHs)
+            dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
+            ds= 10.**(dm/5.-2.) #in kpc
+            tl= self._apogeeField['GLON'][ii]
+            tb= self._apogeeField['GLAT'][ii]
+            if tb > -9. and tb < 9. and type.lower() == 'xy': #perturb
+                tl+= tb/2.
+            XYZ= bovy_coords.lbd_to_XYZ(tl*numpy.ones(nHs),
+                                        tb*numpy.ones(nHs),
+                                        ds,degree=True)
+            if type.lower() == 'xy':
+                Xs[ii,:]= XYZ[:,0]
+                Ys[ii,:]= XYZ[:,1]
+            elif type.lower() == 'rz':
+                Xs[ii,:]= ((8.-XYZ[:,0])**2.+XYZ[:,1]**2.)**0.5
+                Ys[ii,:]= XYZ[:,2]+0.025
+            #Evaluate selection function
+            select[ii,:]= self(self._locations[ii],Hs)
+        select*= 100.
+        #Plot all fields
+        select[(select == 0.)]= numpy.nan
+        if vmin is None:
+            omin= numpy.nanmin(select)
+        else:
+            omin= vmin
+        if vmax is None:
+            omax= numpy.nanmax(select)
+        else:
+            omax= vmax
+        colormap = cm.jet
+        plotthis= colormap(_squeeze(select,omin,omax))
+        if type.lower() == 'xy':
+            bovy_plot.bovy_print(fig_width=6.,fig_height=3.888888)
+            bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
+                                xrange=[8.99,-8.99],yrange=[8.99,-5.],
+                                xlabel=r'$X\, (\mathrm{kpc})$',
+                                ylabel=r'$Y\, (\mathrm{kpc})$')
+        else:
+            bovy_plot.bovy_print(fig_width=6.)
+            bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
+                                xrange=[0.,18.],yrange=[-4.,4.],
+                                xlabel=r'$R\, (\mathrm{kpc})$',
+                                ylabel=r'$Z\, (\mathrm{kpc})$')
+        for ii in range(len(self._locations)):
+            for jj in range(nHs-1):
+                if numpy.isnan(select[ii,jj]): continue
+                pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],[Ys[ii,jj],Ys[ii,jj+1]],
+                            '-',color=plotthis[ii,jj])
+        #Add colorbar
+        mapp = cm.ScalarMappable(cmap=cm.jet)
+        mapp.set_array(select)
+        mapp.set_clim(vmin=omin,vmax=omax)
+        cbar= pyplot.colorbar(mapp,fraction=0.2)
+        cbar.set_clim((omin,omax))
+        cbar.set_label(r'$\mathrm{selection\, fraction}\, (\%)$')
+        #Add arrow pointing to the Galactic Center
+        from matplotlib.patches import FancyArrowPatch
+        _legendsize= 16
+        if type.lower() == 'xy':
+            xarr, dx= 6.2, 2.2
+            arr= FancyArrowPatch(posA=(xarr,0.),
+                                 posB=(xarr+dx,0.),
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
+                                 shrinkA=2.0, shrinkB=2.0,
+                                 mutation_scale=20.0,
+                                 mutation_aspect=None,fc='k')
+            ax = pyplot.gca()
+            ax.add_patch(arr)
+            bovy_plot.bovy_text(xarr+7.*dx/8.,-0.25,r'$\mathrm{GC}$',
+                                size=_legendsize)
+            xcen, ycen, dr, t= 10., 0., 4., 14.*numpy.pi/180.
+            arr= FancyArrowPatch(posA=(xcen-dr*numpy.cos(t),
+                                       ycen+dr*numpy.sin(t)),
+                                 posB=(xcen-dr*numpy.cos(-t),ycen+dr*numpy.sin(-t)),
+                                 arrowstyle='<-',
+                                 connectionstyle='arc3,rad=%4.2f' % (2.*t),
+                                 shrinkA=2.0, shrinkB=2.0,
+                                 mutation_scale=20.0,
+                                 mutation_aspect=None,fc='k')
+            ax.add_patch(arr)
+        else:
+            xarr, dx=1.5, -1.
+            arr= FancyArrowPatch(posA=(xarr+0.05,0.),
+                                 posB=(xarr+dx*10./8.,0.),
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
+                                 shrinkA=2.0, shrinkB=2.0,
+                                 mutation_scale=20.0,
+                                 mutation_aspect=None,fc='k')
+            ax = pyplot.gca()
+            ax.add_patch(arr)
+            bovy_plot.bovy_text(xarr+7.*dx/8.,-0.45,r'$\mathrm{GC}$',
+                                size=_legendsize)
+            arr= FancyArrowPatch(posA=(1.5,-0.05),
+                                 posB=(1.5,.75),
+                                 arrowstyle='->',
+                                 connectionstyle='arc3,rad=%4.2f' % (0.),
+                                 shrinkA=2.0, shrinkB=2.0,
+                                 mutation_scale=20.0,
+                                 mutation_aspect=None,fc='k')
+            ax = pyplot.gca()
+            ax.add_patch(arr)
+            bovy_plot.bovy_text(1.59,0.2,r'$\mathrm{NGP}$',
+                                size=_legendsize)
+        return None
+
+    def plot_selfunc_lb(self,cohort='short',
+                        xrange=[0.,360.],
+                        yrange=[-90.,90.],
+                        ms=30.,
+                        type='selfunc',
+                        vmin=None,vmax=None):
+
+        """
+        NAME:
+           plot_selfunc_lb
+        PURPOSE:
+           plot the selection function as a function of l,b for a specific
+           cohort
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           vmin, vmax= colorbar range
+           type= ('selfunc') type of plot to make:
+              - selfunc: the selection function
+              - nphot: number of photometric potential targets
+              - nspec: number of spectroscopic objects
+              - hmin: minimum H of cohort
+              - hmax: maximum H of cohort
+              - ks: KS probability that the spectro data was drawn from the
+                    underlying photo sample x selection function
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-11 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        plotSF= numpy.zeros(len(self._locations))
+        if type.lower() == 'selfunc':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self._selfunc['%i%s' % (self._locations[ii],
+                                                    cohort[0])](self.__dict__['_%s_hmax' % cohort])*100.
+            clabel=r'$\mathrm{%s\ cohort\ selection\ fraction\, (\%%)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 100.
+        elif type.lower() == 'nphot':
+            plotSF= self.__dict__['_nphot_%s' % cohort]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'nspec':
+            plotSF= self.__dict__['_nspec_%s' % cohort]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'hmin':
+            plotSF= self.__dict__['_%s_hmin' % cohort]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
+        elif type.lower() == 'hmax':
+            plotSF= self.__dict__['_%s_hmax' % cohort]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
+        elif type.lower() == 'ks':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self.check_consistency(self._locations[ii],cohort=cohort)
+            clabel=r'$\mathrm{KS\ probability\ that\ spec.\ is\ drawn}$'+'\n'+r'$\mathrm{from\ phot.} \times \mathrm{sel.\ func.\ (%s\ cohort)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 1.
+        bovy_plot.bovy_print(fig_width=8.)
+        bovy_plot.bovy_plot(self._apogeeField['GLON'],
+                            self._apogeeField['GLAT'],
+                            c=plotSF,s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            vmin=vmin,vmax=vmax,crange=[vmin,vmax],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=clabel,
+                            zorder=10)
+        return None
+
+    def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
+                     spec=True,reweight=True,
+                     bins=None,specbins=None,
+                     onedhistsbins=None,
+                     onedhistsspecbins=None,
+                     cntrSmooth=None,
+                     speccolor='r',reweightcolor='b'):
+        """
+        NAME:
+           plotColorMag
+        PURPOSE:
+           plot the distribution of photometric/spectroscopic objects in
+           color and magnitude
+        INPUT:
+           x= ('JK0') what to plot on the X-axis
+           y= ('H') what to plot on the Y-axis
+           location= location_id(s), or 'all'
+           cohort= ('all') cohorts to plot
+           spec= if True, overlay spectroscopic objects as white contours
+           reweight= if True, also plot the re-weighted photometric
+                     histograms in 1D
+           bins= number of bins to use in the histograms
+           specbins= number of bins to use in the spectroscopic histograms
+           onedhistsbins= number of bins to use in the 1D histograms
+           onedhistsspecbins= number of bins to use in the 1D histograms (spec.)
+           cntrSmooth= cntrSmooth keyword of scatterplot
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        if isinstance(location,str) and location.lower() == 'all':
+            location= self._locations
+        elif isinstance(location,str) and location.lower() == 'short':
+            cohort= 'short'
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short >= self._minnspec)]
+        elif isinstance(location,str) and location.lower() == 'medium':
+            cohort= 'medium'
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium >= self._minnspec)]
+        elif isinstance(location,str) and location.lower() == 'long':
+            cohort= 'long'
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long >= self._minnspec)]
+        if isinstance(location,(numpy.int16,int)): #Scalar input
+            location= [location]
+        #Gather data from all requested locations and cohorts
+        photxs= []
+        photys= []
+        if spec:
+            specxs= []
+            specys= []
+        if reweight:
+            w= []
+        for ii in range(len(location)):
+            tphotdata= self._photdata['%i' % location[ii]]
+            locIndx= self._locations == location[ii]
+            if cohort.lower() == 'short':
+                indx= (tphotdata['H'] >= self._short_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._short_hmax[locIndx])
+            elif cohort.lower() == 'medium':
+                indx= (tphotdata['H'] > self._medium_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._medium_hmax[locIndx])
+            elif cohort.lower() == 'long':
+                indx= (tphotdata['H'] > self._long_hmin[locIndx])\
+                    *(tphotdata['H'] <= self._long_hmax[locIndx])
+            else:
+                indx= numpy.ones(len(tphotdata),dtype='bool')
+            tphotdata= tphotdata[indx]
+            if x == 'JK0':
+                photxs.extend(tphotdata['J0']-tphotdata['K0'])
+            if y == 'H':
+                photys.extend(tphotdata['H'])
+            #weights
+            if reweight:
+                if isinstance(self, (apogee2Select,apogeeCombinedSelect)):
+                    w.extend(self(location[ii],tphotdata['H'],tphotdata['J0']-tphotdata['K0']))
+                else:
+                    w.extend(self(location[ii],tphotdata['H']))
+            #spec
+            if spec:
+                tspecdata= self._specdata['%i' % location[ii]]
+                if cohort.lower() == 'short':
+                    indx= (tspecdata['H'] >= self._short_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._short_hmax[locIndx])
+                elif cohort.lower() == 'medium':
+                    indx= (tspecdata['H'] > self._medium_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._medium_hmax[locIndx])
+                elif cohort.lower() == 'long':
+                    indx= (tspecdata['H'] > self._long_hmin[locIndx])\
+                        *(tspecdata['H'] <= self._long_hmax[locIndx])
+                else:
+                    indx= numpy.ones(len(tspecdata),dtype='bool')
+                tspecdata= tspecdata[indx]
+                if x == 'JK0':
+                    specxs.extend(tspecdata['J0']-tspecdata['K0'])
+                if y == 'H':
+                    specys.extend(tspecdata['H'])
+        photxs= numpy.array(photxs)
+        photys= numpy.array(photys)
+        if reweight:
+            w= numpy.array(w)
+        if spec:
+            specxs= numpy.array(specxs)
+            specys= numpy.array(specys)
+        if x == 'JK0':
+            xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
+            xrange= [0.4,1.4]
+        if y == 'H':
+            ylabel=r'$H\, (\mathrm{mag})$'
+            yrange=[6.,14.]
+        if matplotlib.pyplot.get_backend().lower() == 'macosx':
+            #Bug in matplotlib
+            xlabel= None
+            ylabel= None
+        #Plot
+        if bins is None:
+            bins= int(numpy.ceil(0.3*numpy.sqrt(len(photxs))))
+        if onedhistsbins is None: onedhistsbins= bins
+        if spec and specbins is None:
+            specbins= int(numpy.ceil(0.3*numpy.sqrt(len(specxs))))
+        if spec and onedhistsspecbins is None: onedhistsspecbins= specbins
+        if len(photxs) > 100000: symb= 'w,'
+        else: symb= 'k,'
+        if spec:
+            #First plot spectroscopic sample
+            cdict = {'red': ((.0, 1.0, 1.0),
+                             (1.0, 1.0, 1.0)),
+                     'green': ((.0, 1.0, 1.0),
+                               (1.0, 1.0, 1.0)),
+                     'blue': ((.0, 1.0, 1.0),
+                              (1.0, 1.0, 1.0))}
+            allwhite = matplotlib.colors.LinearSegmentedColormap('allwhite',cdict,256)
+            speclevels= list(special.erf(0.5*numpy.arange(1,4)))
+            speclevels.append(1.01)#HACK TO REMOVE OUTLIERS
+            bovy_plot.scatterplot(specxs,specys,symb,onedhists=True,
+                                  levels=speclevels,
+                                  onedhistec=speccolor,
+                                  cntrcolors=speccolor,
+                                  onedhistls='dashed',
+                                  cntrls='--',
+                                  cntrlw=2.,
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,
+                                  bins=specbins,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsspecbins)
+        if reweight:
+            bovy_plot.scatterplot(photxs,photys,symb,
+                                  weights=w,
+                                  onedhists=True,
+                                  xlabel=xlabel,ylabel=ylabel,
+                                  xrange=xrange,yrange=yrange,bins=bins,
+                                  overplot=spec,
+                                  levels=speclevels,
+                                  cntrcolors=reweightcolor,
+                                  onedhistec=reweightcolor,
+                                  cntrlw=2.,
+                                  onedhistls='dashdot',
+                                  cntrls='-.',
+                                  onedhistlw=1.5,
+                                  cmap=allwhite,
+                                  cntrSmooth=cntrSmooth,
+                                  onedhistsbins=onedhistsbins)
+        bovy_plot.scatterplot(photxs,photys,symb,onedhists=True,
+                              levels=speclevels,
+                              xlabel=xlabel,ylabel=ylabel,
+                              cntrlw=1.5,
+                              xrange=xrange,yrange=yrange,bins=bins,
+                              overplot=spec or reweight,
+                              cntrSmooth=cntrSmooth,
+                              onedhistsbins=onedhistsbins)
+        return None
+
+    def plot_obs_progress(self,cohort='short',
+                          xrange=[0.,360.],
+                          yrange=[-90.,90.],
+                          ms=30.,
+                          add_mean_label=False,
+                          add_cohort_label=False,
+                          incl_not_started=True,
+                          cmap='viridis'):
+        """
+        NAME:
+           plot_obs_progress
+        PURPOSE:
+           plot the observational progress of a specific cohort
+           This progress only includes *completed* plates
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           add_mean_label= (False) add a label with the mean completeness
+           add_cohort_label= (False) add a label with the cohort
+           incl_not_started= (True) include fields that haven't been started yet
+           cmap= ('viridis') colormap to use
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-05 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        progress= numpy.zeros(len(self._locations))
+        for ii in range(len(self._locations)):
+            if cohort == 'short':
+                progress[ii]= numpy.mean(self._short_completion[ii,True^numpy.isnan(self._short_completion[ii,:])])
+            elif cohort == 'medium':
+                progress[ii]= numpy.mean(self._medium_completion[ii,True^numpy.isnan(self._medium_completion[ii,:])])
+            if cohort == 'long':
+                progress[ii]= numpy.mean(self._long_completion[ii,True^numpy.isnan(self._long_completion[ii,:])])
+        bovy_plot.bovy_plot(self._apogeeField['GLON'],
+                            self._apogeeField['GLAT'],
+                            c=progress,s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            cmap=cmap,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
+                            zorder=10)
+        #Then plot *all* locations as zero progress, to include the ones that
+        #haven't been started yet
+        apF= apread.apogeeField(dr=self._dr)
+        apD= apread.apogeeDesign(dr=self._dr,ap1ize=True)
+        #Remove fields that don't have this cohort
+        has_cohort= numpy.ones(len(apF),dtype='bool')
+        for ii in range(len(apF)):
+            dindx= apD['LOCATION_ID'] == apF['LOCATION_ID'][ii]
+            if cohort == 'short':
+                if numpy.all(apD['SHORT_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'medium':
+                if numpy.all(apD['MEDIUM_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+            elif cohort == 'long':
+                if numpy.all(apD['LONG_COHORT_VERSION'][dindx] == 0):
+                    has_cohort[ii]= False
+        apF= apF[has_cohort]
+        apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
+        colormap = cm.get_cmap(cmap)
+        if incl_not_started:
+            bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
+                                s=ms,overplot=True,
+                                c=colormap(0.),
+                                edgecolor='none',
+                                scatter=True,
+                                vmin=0.,vmax=1.,
+                                crange=[0.,1.],
+                                zorder=1)
+        if add_mean_label:
+            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' %
+                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
+                                bottom_right=True,size=16.)
+        if add_cohort_label:
+            if cohort.lower() == 'short':
+                bovy_plot.bovy_text(r'$7.0 \leq H \leq 12.2$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'medium':
+                bovy_plot.bovy_text(r'$12.2 < H \leq 12.8$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'long':
+                bovy_plot.bovy_text(r'$12.8 < H \leq 13.3\ \mathrm{or}\ 13.8$',
+                                    bottom_right=True,size=16.)
+        return None
+
+    def plot_Hcdf(self,location,cohort='all',
+                  overplot=False,xrange=None,yrange=None,
+                  photcolor='k',speccolor='r'):
+        """
+        NAME:
+           plot_Hcdf
+        PURPOSE:
+           plot the H-band magnitude CDF for the photometric sample * selection
+           function model and for the spectroscopic sample
+        INPUT:
+           location - location_id
+           cohort= ('all') cohorts to show
+           overplot= of True, overplot
+           xrange=, yrange=
+           photcolor=, speccolor= color to use
+        OUTPUT:
+           plot
+        HISTORY:
+           2013-11-11 - Written - Bovy (IAS)
+        """
+        photr,specr,fn1,fn2= self._location_Hcdfs(location,cohort)
+        if numpy.all(numpy.isnan(photr)):
+            print("Location %i has no spectroscopic data in the statistical sample ..." % location)
+            print("Returning ...")
+            return None
+        if xrange is None: xrange= [numpy.amin([numpy.amin(photr),numpy.amin(specr)])-0.1,
+                                    numpy.amax([numpy.amax(photr),numpy.amax(specr)])+0.1]
+        if yrange is None: yrange= [0.,1.1]
+        bovy_plot.bovy_plot(photr,fn1,photcolor+'-',overplot=overplot,
+                            xlabel=r'$H\,(\mathrm{mag})$',
+                            ylabel=r'$\mathrm{cumulative\ distribution}$')
+        bovy_plot.bovy_plot(specr,fn2,speccolor+'-',overplot=True)
+        return None
+
+class apogeeSelect(apogeeSelectPlotsMixin):
     """Superclass defining general selection functions for APOGEE targets"""
     def __init__(self,sample='main',
                  locations=None,
@@ -415,517 +966,6 @@ class apogeeSelect:
         return self._apogeeField['FIELD_NAME'][locIndx][0]
 
 
-    def plot_selfunc_xy(self,cohort='all',
-                        mh=-1.49,
-                        type='xy',
-                        vmin=None,vmax=None):
-
-        """
-        NAME:
-           plot_selfunc_xy
-        PURPOSE:
-           plot the selection function as a function of X,Y, or R,Z
-           cohort
-        INPUT:
-           cohort= ('all') cohort to consider
-           mh= (-1.49) absolute magnitude to use to go to distance
-           vmin, vmax= colorbar range
-           type= ('xy') type of plot to make:
-              - xy: X vs. Y
-              - rz: R vs. Z
-        OUTPUT:
-           plot to output device
-        HISTORY:
-           2011-11-11 - Written - Bovy (IAS)
-        """
-        nHs= 201
-        Xs= numpy.zeros((len(self._locations),nHs))+numpy.nan
-        Ys= numpy.zeros((len(self._locations),nHs))+numpy.nan
-        select= numpy.zeros((len(self._locations),nHs))+numpy.nan
-        for ii in range(len(self._locations)):
-            if cohort.lower() == 'all':
-                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_long[ii] >= self._minnspec:
-                    #There is a long cohort
-                    Hs= numpy.linspace(self._short_hmin[ii],
-                                       self._long_hmax[ii],
-                                       nHs)
-                elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_medium[ii] >= self._minnspec:
-                    #There is a medium cohort
-                    Hs= numpy.linspace(self._short_hmin[ii],
-                                       self._medium_hmax[ii],
-                                       nHs)
-                else:
-                    #There is only a short cohort
-                    Hs= numpy.linspace(self._short_hmin[ii],
-                                       self._short_hmax[ii],
-                                       nHs)
-            elif cohort.lower() == 'short':
-                Hs= numpy.linspace(self._short_hmin[ii],
-                                   self._short_hmax[ii],
-                                   nHs)
-            elif cohort.lower() == 'medium':
-                Hs= numpy.linspace(self._medium_hmin[ii],
-                                   self._medium_hmax[ii],
-                                   nHs)
-            elif cohort.lower() == 'long':
-                Hs= numpy.linspace(self._long_hmin[ii],
-                                   self._long_hmax[ii],
-                                   nHs)
-            dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
-            ds= 10.**(dm/5.-2.) #in kpc
-            tl= self._apogeeField['GLON'][ii]
-            tb= self._apogeeField['GLAT'][ii]
-            if tb > -9. and tb < 9. and type.lower() == 'xy': #perturb
-                tl+= tb/2.
-            XYZ= bovy_coords.lbd_to_XYZ(tl*numpy.ones(nHs),
-                                        tb*numpy.ones(nHs),
-                                        ds,degree=True)
-            if type.lower() == 'xy':
-                Xs[ii,:]= XYZ[:,0]
-                Ys[ii,:]= XYZ[:,1]
-            elif type.lower() == 'rz':
-                Xs[ii,:]= ((8.-XYZ[:,0])**2.+XYZ[:,1]**2.)**0.5
-                Ys[ii,:]= XYZ[:,2]+0.025
-            #Evaluate selection function
-            select[ii,:]= self(self._locations[ii],Hs)
-        select*= 100.
-        #Plot all fields
-        select[(select == 0.)]= numpy.nan
-        if vmin is None:
-            omin= numpy.nanmin(select)
-        else:
-            omin= vmin
-        if vmax is None:
-            omax= numpy.nanmax(select)
-        else:
-            omax= vmax
-        colormap = cm.jet
-        plotthis= colormap(_squeeze(select,omin,omax))
-        if type.lower() == 'xy':
-            bovy_plot.bovy_print(fig_width=6.,fig_height=3.888888)
-            bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
-                                xrange=[8.99,-8.99],yrange=[8.99,-5.],
-                                xlabel=r'$X\, (\mathrm{kpc})$',
-                                ylabel=r'$Y\, (\mathrm{kpc})$')
-        else:
-            bovy_plot.bovy_print(fig_width=6.)
-            bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
-                                xrange=[0.,18.],yrange=[-4.,4.],
-                                xlabel=r'$R\, (\mathrm{kpc})$',
-                                ylabel=r'$Z\, (\mathrm{kpc})$')
-        for ii in range(len(self._locations)):
-            for jj in range(nHs-1):
-                if numpy.isnan(select[ii,jj]): continue
-                pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],[Ys[ii,jj],Ys[ii,jj+1]],
-                            '-',color=plotthis[ii,jj])
-        #Add colorbar
-        mapp = cm.ScalarMappable(cmap=cm.jet)
-        mapp.set_array(select)
-        mapp.set_clim(vmin=omin,vmax=omax)
-        cbar= pyplot.colorbar(mapp,fraction=0.2)
-        cbar.set_clim((omin,omax))
-        cbar.set_label(r'$\mathrm{selection\, fraction}\, (\%)$')
-        #Add arrow pointing to the Galactic Center
-        from matplotlib.patches import FancyArrowPatch
-        _legendsize= 16
-        if type.lower() == 'xy':
-            xarr, dx= 6.2, 2.2
-            arr= FancyArrowPatch(posA=(xarr,0.),
-                                 posB=(xarr+dx,0.),
-                                 arrowstyle='->',
-                                 connectionstyle='arc3,rad=%4.2f' % (0.),
-                                 shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0,
-                                 mutation_aspect=None,fc='k')
-            ax = pyplot.gca()
-            ax.add_patch(arr)
-            bovy_plot.bovy_text(xarr+7.*dx/8.,-0.25,r'$\mathrm{GC}$',
-                                size=_legendsize)
-            xcen, ycen, dr, t= 10., 0., 4., 14.*numpy.pi/180.
-            arr= FancyArrowPatch(posA=(xcen-dr*numpy.cos(t),
-                                       ycen+dr*numpy.sin(t)),
-                                 posB=(xcen-dr*numpy.cos(-t),ycen+dr*numpy.sin(-t)),
-                                 arrowstyle='<-',
-                                 connectionstyle='arc3,rad=%4.2f' % (2.*t),
-                                 shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0,
-                                 mutation_aspect=None,fc='k')
-            ax.add_patch(arr)
-        else:
-            xarr, dx=1.5, -1.
-            arr= FancyArrowPatch(posA=(xarr+0.05,0.),
-                                 posB=(xarr+dx*10./8.,0.),
-                                 arrowstyle='->',
-                                 connectionstyle='arc3,rad=%4.2f' % (0.),
-                                 shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0,
-                                 mutation_aspect=None,fc='k')
-            ax = pyplot.gca()
-            ax.add_patch(arr)
-            bovy_plot.bovy_text(xarr+7.*dx/8.,-0.45,r'$\mathrm{GC}$',
-                                size=_legendsize)
-            arr= FancyArrowPatch(posA=(1.5,-0.05),
-                                 posB=(1.5,.75),
-                                 arrowstyle='->',
-                                 connectionstyle='arc3,rad=%4.2f' % (0.),
-                                 shrinkA=2.0, shrinkB=2.0,
-                                 mutation_scale=20.0,
-                                 mutation_aspect=None,fc='k')
-            ax = pyplot.gca()
-            ax.add_patch(arr)
-            bovy_plot.bovy_text(1.59,0.2,r'$\mathrm{NGP}$',
-                                size=_legendsize)
-        return None
-
-    def plot_selfunc_lb(self,cohort='short',
-                        xrange=[0.,360.],
-                        yrange=[-90.,90.],
-                        ms=30.,
-                        type='selfunc',
-                        vmin=None,vmax=None):
-
-        """
-        NAME:
-           plot_selfunc_lb
-        PURPOSE:
-           plot the selection function as a function of l,b for a specific
-           cohort
-        INPUT:
-           cohort= ('short') cohort to consider
-           xrange, yrange= ranges in l and b for plot
-           ms= (30) marker size
-           vmin, vmax= colorbar range
-           type= ('selfunc') type of plot to make:
-              - selfunc: the selection function
-              - nphot: number of photometric potential targets
-              - nspec: number of spectroscopic objects
-              - hmin: minimum H of cohort
-              - hmax: maximum H of cohort
-              - ks: KS probability that the spectro data was drawn from the
-                    underlying photo sample x selection function
-        OUTPUT:
-           plot to output device
-        HISTORY:
-           2011-11-11 - Written - Bovy (IAS)
-        """
-        #Plot progress
-        plotSF= numpy.zeros(len(self._locations))
-        if type.lower() == 'selfunc':
-            for ii in range(len(self._locations)):
-                plotSF[ii]= self._selfunc['%i%s' % (self._locations[ii],
-                                                    cohort[0])](self.__dict__['_%s_hmax' % cohort])*100.
-            clabel=r'$\mathrm{%s\ cohort\ selection\ fraction\, (\%%)}$' % cohort
-            if vmin is None: vmin= 0.
-            if vmax is None: vmax= 100.
-        elif type.lower() == 'nphot':
-            plotSF= self.__dict__['_nphot_%s' % cohort]
-            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
-            if vmin is None: vmin= 0.
-            if vmax is None: vmax= numpy.nanmax(plotSF)
-        elif type.lower() == 'nspec':
-            plotSF= self.__dict__['_nspec_%s' % cohort]
-            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
-            if vmin is None: vmin= 0.
-            if vmax is None: vmax= numpy.nanmax(plotSF)
-        elif type.lower() == 'hmin':
-            plotSF= self.__dict__['_%s_hmin' % cohort]
-            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
-            if vmin is None: vmin= 7.
-            if vmax is None: vmax= 13.8
-        elif type.lower() == 'hmax':
-            plotSF= self.__dict__['_%s_hmax' % cohort]
-            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
-            if vmin is None: vmin= 7.
-            if vmax is None: vmax= 13.8
-        elif type.lower() == 'ks':
-            for ii in range(len(self._locations)):
-                plotSF[ii]= self.check_consistency(self._locations[ii],cohort=cohort)
-            clabel=r'$\mathrm{KS\ probability\ that\ spec.\ is\ drawn}$'+'\n'+r'$\mathrm{from\ phot.} \times \mathrm{sel.\ func.\ (%s\ cohort)}$' % cohort
-            if vmin is None: vmin= 0.
-            if vmax is None: vmax= 1.
-        bovy_plot.bovy_print(fig_width=8.)
-        bovy_plot.bovy_plot(self._apogeeField['GLON'],
-                            self._apogeeField['GLAT'],
-                            c=plotSF,s=ms,
-                            scatter=True,
-                            edgecolor='none',
-                            colorbar=True,
-                            vmin=vmin,vmax=vmax,crange=[vmin,vmax],
-                            xrange=xrange,yrange=yrange,
-                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
-                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
-                            clabel=clabel,
-                            zorder=10)
-        return None
-
-    def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
-                     spec=True,reweight=True,
-                     bins=None,specbins=None,
-                     onedhistsbins=None,
-                     onedhistsspecbins=None,
-                     cntrSmooth=None,
-                     speccolor='r',reweightcolor='b'):
-        """
-        NAME:
-           plotColorMag
-        PURPOSE:
-           plot the distribution of photometric/spectroscopic objects in
-           color and magnitude
-        INPUT:
-           x= ('JK0') what to plot on the X-axis
-           y= ('H') what to plot on the Y-axis
-           location= location_id(s), or 'all'
-           cohort= ('all') cohorts to plot
-           spec= if True, overlay spectroscopic objects as white contours
-           reweight= if True, also plot the re-weighted photometric
-                     histograms in 1D
-           bins= number of bins to use in the histograms
-           specbins= number of bins to use in the spectroscopic histograms
-           onedhistsbins= number of bins to use in the 1D histograms
-           onedhistsspecbins= number of bins to use in the 1D histograms (spec.)
-           cntrSmooth= cntrSmooth keyword of scatterplot
-        OUTPUT:
-           plot to output device
-        HISTORY:
-           2013-11-11 - Written - Bovy (IAS)
-        """
-        if isinstance(location,str) and location.lower() == 'all':
-            location= self._locations
-        elif isinstance(location,str) and location.lower() == 'short':
-            cohort= 'short'
-            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short >= self._minnspec)]
-        elif isinstance(location,str) and location.lower() == 'medium':
-            cohort= 'medium'
-            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium >= self._minnspec)]
-        elif isinstance(location,str) and location.lower() == 'long':
-            cohort= 'long'
-            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long >= self._minnspec)]
-        if isinstance(location,(numpy.int16,int)): #Scalar input
-            location= [location]
-        #Gather data from all requested locations and cohorts
-        photxs= []
-        photys= []
-        if spec:
-            specxs= []
-            specys= []
-        if reweight:
-            w= []
-        for ii in range(len(location)):
-            tphotdata= self._photdata['%i' % location[ii]]
-            locIndx= self._locations == location[ii]
-            if cohort.lower() == 'short':
-                indx= (tphotdata['H'] >= self._short_hmin[locIndx])\
-                    *(tphotdata['H'] <= self._short_hmax[locIndx])
-            elif cohort.lower() == 'medium':
-                indx= (tphotdata['H'] > self._medium_hmin[locIndx])\
-                    *(tphotdata['H'] <= self._medium_hmax[locIndx])
-            elif cohort.lower() == 'long':
-                indx= (tphotdata['H'] > self._long_hmin[locIndx])\
-                    *(tphotdata['H'] <= self._long_hmax[locIndx])
-            else:
-                indx= numpy.ones(len(tphotdata),dtype='bool')
-            tphotdata= tphotdata[indx]
-            if x == 'JK0':
-                photxs.extend(tphotdata['J0']-tphotdata['K0'])
-            if y == 'H':
-                photys.extend(tphotdata['H'])
-            #weights
-            if reweight:
-                w.extend(self(location[ii],tphotdata['H']))
-            #spec
-            if spec:
-                tspecdata= self._specdata['%i' % location[ii]]
-                if cohort.lower() == 'short':
-                    indx= (tspecdata['H'] >= self._short_hmin[locIndx])\
-                        *(tspecdata['H'] <= self._short_hmax[locIndx])
-                elif cohort.lower() == 'medium':
-                    indx= (tspecdata['H'] > self._medium_hmin[locIndx])\
-                        *(tspecdata['H'] <= self._medium_hmax[locIndx])
-                elif cohort.lower() == 'long':
-                    indx= (tspecdata['H'] > self._long_hmin[locIndx])\
-                        *(tspecdata['H'] <= self._long_hmax[locIndx])
-                else:
-                    indx= numpy.ones(len(tspecdata),dtype='bool')
-                tspecdata= tspecdata[indx]
-                if x == 'JK0':
-                    specxs.extend(tspecdata['J0']-tspecdata['K0'])
-                if y == 'H':
-                    specys.extend(tspecdata['H'])
-        photxs= numpy.array(photxs)
-        photys= numpy.array(photys)
-        if reweight:
-            w= numpy.array(w)
-        if spec:
-            specxs= numpy.array(specxs)
-            specys= numpy.array(specys)
-        if x == 'JK0':
-            xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
-            xrange= [0.4,1.4]
-        if y == 'H':
-            ylabel=r'$H\, (\mathrm{mag})$'
-            yrange=[6.,14.]
-        if matplotlib.pyplot.get_backend().lower() == 'macosx':
-            #Bug in matplotlib
-            xlabel= None
-            ylabel= None
-        #Plot
-        if bins is None:
-            bins= int(numpy.ceil(0.3*numpy.sqrt(len(photxs))))
-        if onedhistsbins is None: onedhistsbins= bins
-        if spec and specbins is None:
-            specbins= int(numpy.ceil(0.3*numpy.sqrt(len(specxs))))
-        if spec and onedhistsspecbins is None: onedhistsspecbins= specbins
-        if len(photxs) > 100000: symb= 'w,'
-        else: symb= 'k,'
-        if spec:
-            #First plot spectroscopic sample
-            cdict = {'red': ((.0, 1.0, 1.0),
-                             (1.0, 1.0, 1.0)),
-                     'green': ((.0, 1.0, 1.0),
-                               (1.0, 1.0, 1.0)),
-                     'blue': ((.0, 1.0, 1.0),
-                              (1.0, 1.0, 1.0))}
-            allwhite = matplotlib.colors.LinearSegmentedColormap('allwhite',cdict,256)
-            speclevels= list(special.erf(0.5*numpy.arange(1,4)))
-            speclevels.append(1.01)#HACK TO REMOVE OUTLIERS
-            bovy_plot.scatterplot(specxs,specys,symb,onedhists=True,
-                                  levels=speclevels,
-                                  onedhistec=speccolor,
-                                  cntrcolors=speccolor,
-                                  onedhistls='dashed',
-                                  cntrls='--',
-                                  cntrlw=2.,
-                                  onedhistlw=1.5,
-                                  cmap=allwhite,
-                                  xlabel=xlabel,ylabel=ylabel,
-                                  xrange=xrange,yrange=yrange,
-                                  bins=specbins,
-                                  cntrSmooth=cntrSmooth,
-                                  onedhistsbins=onedhistsspecbins)
-        if reweight:
-            bovy_plot.scatterplot(photxs,photys,symb,
-                                  weights=w,
-                                  onedhists=True,
-                                  xlabel=xlabel,ylabel=ylabel,
-                                  xrange=xrange,yrange=yrange,bins=bins,
-                                  overplot=spec,
-                                  levels=speclevels,
-                                  cntrcolors=reweightcolor,
-                                  onedhistec=reweightcolor,
-                                  cntrlw=2.,
-                                  onedhistls='dashdot',
-                                  cntrls='-.',
-                                  onedhistlw=1.5,
-                                  cmap=allwhite,
-                                  cntrSmooth=cntrSmooth,
-                                  onedhistsbins=onedhistsbins)
-        bovy_plot.scatterplot(photxs,photys,symb,onedhists=True,
-                              levels=speclevels,
-                              xlabel=xlabel,ylabel=ylabel,
-                              cntrlw=1.5,
-                              xrange=xrange,yrange=yrange,bins=bins,
-                              overplot=spec or reweight,
-                              cntrSmooth=cntrSmooth,
-                              onedhistsbins=onedhistsbins)
-        return None
-
-    def plot_obs_progress(self,cohort='short',
-                          xrange=[0.,360.],
-                          yrange=[-90.,90.],
-                          ms=30.,
-                          add_mean_label=False,
-                          add_cohort_label=False,
-                          incl_not_started=True,
-                          cmap='viridis'):
-        """
-        NAME:
-           plot_obs_progress
-        PURPOSE:
-           plot the observational progress of a specific cohort
-           This progress only includes *completed* plates
-        INPUT:
-           cohort= ('short') cohort to consider
-           xrange, yrange= ranges in l and b for plot
-           ms= (30) marker size
-           add_mean_label= (False) add a label with the mean completeness
-           add_cohort_label= (False) add a label with the cohort
-           incl_not_started= (True) include fields that haven't been started yet
-           cmap= ('viridis') colormap to use
-        OUTPUT:
-           plot to output device
-        HISTORY:
-           2011-11-05 - Written - Bovy (IAS)
-        """
-        #Plot progress
-        progress= numpy.zeros(len(self._locations))
-        for ii in range(len(self._locations)):
-            if cohort == 'short':
-                progress[ii]= numpy.mean(self._short_completion[ii,True^numpy.isnan(self._short_completion[ii,:])])
-            elif cohort == 'medium':
-                progress[ii]= numpy.mean(self._medium_completion[ii,True^numpy.isnan(self._medium_completion[ii,:])])
-            if cohort == 'long':
-                progress[ii]= numpy.mean(self._long_completion[ii,True^numpy.isnan(self._long_completion[ii,:])])
-        bovy_plot.bovy_plot(self._apogeeField['GLON'],
-                            self._apogeeField['GLAT'],
-                            c=progress,s=ms,
-                            scatter=True,
-                            edgecolor='none',
-                            colorbar=True,
-                            cmap=cmap,
-                            vmin=0.,vmax=1.,
-                            crange=[0.,1.],
-                            xrange=xrange,yrange=yrange,
-                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
-                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
-                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
-                            zorder=10)
-        #Then plot *all* locations as zero progress, to include the ones that
-        #haven't been started yet
-        apF= apread.apogeeField(dr=self._dr)
-        apD= apread.apogeeDesign(dr=self._dr,ap1ize=True)
-        #Remove fields that don't have this cohort
-        has_cohort= numpy.ones(len(apF),dtype='bool')
-        for ii in range(len(apF)):
-            dindx= apD['LOCATION_ID'] == apF['LOCATION_ID'][ii]
-            if cohort == 'short':
-                if numpy.all(apD['SHORT_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-            elif cohort == 'medium':
-                if numpy.all(apD['MEDIUM_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-            elif cohort == 'long':
-                if numpy.all(apD['LONG_COHORT_VERSION'][dindx] == 0):
-                    has_cohort[ii]= False
-        apF= apF[has_cohort]
-        apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
-        colormap = cm.get_cmap(cmap)
-        if incl_not_started:
-            bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
-                                s=ms,overplot=True,
-                                c=colormap(0.),
-                                edgecolor='none',
-                                scatter=True,
-                                vmin=0.,vmax=1.,
-                                crange=[0.,1.],
-                                zorder=1)
-        if add_mean_label:
-            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' %
-                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
-                                bottom_right=True,size=16.)
-        if add_cohort_label:
-            if cohort.lower() == 'short':
-                bovy_plot.bovy_text(r'$7.0 \leq H \leq 12.2$',
-                                    bottom_right=True,size=16.)
-            elif cohort.lower() == 'medium':
-                bovy_plot.bovy_text(r'$12.2 < H \leq 12.8$',
-                                    bottom_right=True,size=16.)
-            elif cohort.lower() == 'long':
-                bovy_plot.bovy_text(r'$12.8 < H \leq 13.3\ \mathrm{or}\ 13.8$',
-                                    bottom_right=True,size=16.)
-        return None
-
     def check_consistency(self,location,cohort='all'):
         """
         NAME:
@@ -955,40 +995,6 @@ class apogeeSelect:
         if scalarOut: return out[0]
         elif isinstance(location,numpy.ndarray): return numpy.array(out)
         else: return out
-
-    def plot_Hcdf(self,location,cohort='all',
-                  overplot=False,xrange=None,yrange=None,
-                  photcolor='k',speccolor='r'):
-        """
-        NAME:
-           plot_Hcdf
-        PURPOSE:
-           plot the H-band magnitude CDF for the photometric sample * selection
-           function model and for the spectroscopic sample
-        INPUT:
-           location - location_id
-           cohort= ('all') cohorts to show
-           overplot= of True, overplot
-           xrange=, yrange=
-           photcolor=, speccolor= color to use
-        OUTPUT:
-           plot
-        HISTORY:
-           2013-11-11 - Written - Bovy (IAS)
-        """
-        photr,specr,fn1,fn2= self._location_Hcdfs(location,cohort)
-        if numpy.all(numpy.isnan(photr)):
-            print("Location %i has no spectroscopic data in the statistical sample ..." % location)
-            print("Returning ...")
-            return None
-        if xrange is None: xrange= [numpy.amin([numpy.amin(photr),numpy.amin(specr)])-0.1,
-                                    numpy.amax([numpy.amax(photr),numpy.amax(specr)])+0.1]
-        if yrange is None: yrange= [0.,1.1]
-        bovy_plot.bovy_plot(photr,fn1,photcolor+'-',overplot=overplot,
-                            xlabel=r'$H\,(\mathrm{mag})$',
-                            ylabel=r'$\mathrm{cumulative\ distribution}$')
-        bovy_plot.bovy_plot(specr,fn2,speccolor+'-',overplot=True)
-        return None
 
     def _check_consistency_single(self,location,cohort):
         """check_consistency for a single field
@@ -1577,6 +1583,7 @@ class apogee2Select(apogeeSelect):
            statistical sample
         HISTORY:
            2013-11-10 - Written - Bovy (IAS)
+           2019-27-02 - Updated for APOGEE-2 - Mackereth (UoB)
         """
         #Read the allVisit file to match back to plates
         allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
@@ -1867,16 +1874,42 @@ class apogee2Select(apogeeSelect):
         fn2/= fn2[-1]
         return (sortphot['H'],sortspec['H'],fn1,fn2)
 
-class apogeeCombinedSelect:
+class apogeeCombinedSelect(apogeeSelectPlotsMixin):
     """ Class that combines APOGEE 1 and 2 raw selection functions """
     def __init__(self,sample='main',
+                 store_individual=True,
                  locations=None,
                  year=None,
                  mjd=None,
                  sftype='constant',
                  minnspec=3,
                  frac4complete=1.):
+        """
+        NAME:
+           __init__
+        PURPOSE:
+           load the selection function for this sample
+        INPUT:
+           sample= ('main') sample to consider:
+
+                   main: main (J-Ks)_0 > 0.5 sample
+                   rcsample: red clump subsample
+
+                   The selection functions of these are the same (since the RC
+                   sample is defined after observations), so main is typically
+                   the better choice, since it has better statistics)
+           locations= locations to load the selection function for
+           year= (None) load up to this year. If None - defaults to DR14
+           sftype= ('constant') selection function type:
+              - constant: selection function is # spec / # phot within a cohort
+           minnspec= (3) minimum number of spectra in a field/cohort to be included
+           frac4complete= (1.) fractional completeness of a cohort necessary to count as 'complete'
+        OUTPUT:
+        HISTORY:
+           2018-02-27 - Adapted from apogeeSelect - Mackereth (UoB)
+        """
         def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
+            """ utility function to combine apogee1 and apogee2 selection functions"""
             selfunc = {}
             #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
             for ii,loc in enumerate(apo1locs):
@@ -1898,9 +1931,14 @@ class apogeeCombinedSelect:
             self.apo2year = 6
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
-        apo1sel = apogee1Select(year=self.apo1year, sample=sample)
-        apo2sel = apogee2Select(year=self.apo2year, sample=sample)
+        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=locations)
+        apo2sel = apogee2Select(year=self.apo2year, sample=sample, locations=locations)
+        self.apo1dr = apo1sel._dr
+        self.apo2dr = apo2sel._dr
         #combine and store the locations (concatenate and add missing dimensions)
+        if store_individual:
+            self.apo1sel = apo1sel
+            self.apo2sel = apo2sel
         self._locations = numpy.concatenate([apo1sel._locations, apo2sel._locations])
         self._apo1_locations = apo1sel._locations
         self._apo2_locations = apo2sel._locations
@@ -2045,6 +2083,7 @@ class apogeeCombinedSelect:
            number of objects in 2MASS
         HISTORY:
            2014-01-15 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         locIndx= self._locations == location_id
         return int(self.__dict__['_nphot_%s' % cohort][locIndx,color_bin])
@@ -2061,6 +2100,7 @@ class apogeeCombinedSelect:
            number of objects in the statistical sample
         HISTORY:
            2014-01-15 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         locIndx= self._locations == location_id
         out= self.__dict__['_nspec_%s' % cohort][locIndx,color_bin]
@@ -2080,6 +2120,7 @@ class apogeeCombinedSelect:
            list of field (location_ids)
         HISTORY:
            2013-11-13 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         out= []
         for ii in range(len(self._locations)):
@@ -2415,6 +2456,7 @@ class apogeeCombinedSelect:
            plot to output device
         HISTORY:
            2013-11-11 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         if isinstance(location,str) and location.lower() == 'all':
             location= self._locations
@@ -2556,6 +2598,93 @@ class apogeeCombinedSelect:
                               onedhistsbins=onedhistsbins)
         return None
 
+    def plot_selfunc_lb(self,cohort='short',
+                        color_bin = None,
+                        xrange=[0.,360.],
+                        yrange=[-90.,90.],
+                        ms=30.,
+                        type='selfunc',
+                        vmin=None,vmax=None):
+
+        """
+        NAME:
+           plot_selfunc_lb
+        PURPOSE:
+           plot the selection function as a function of l,b for a specific
+           cohort
+        INPUT:
+           cohort= ('short') cohort to consider
+           color_bin = (None) color bin to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           vmin, vmax= colorbar range
+           type= ('selfunc') type of plot to make:
+              - selfunc: the selection function
+              - nphot: number of photometric potential targets
+              - nspec: number of spectroscopic objects
+              - hmin: minimum H of cohort
+              - hmax: maximum H of cohort
+              - ks: KS probability that the spectro data was drawn from the
+                    underlying photo sample x selection function
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-11 - Written - Bovy (IAS)
+        """
+        #Plot progress
+        plotSF= numpy.zeros(len(self._locations))
+        if color_bin is None:
+            warnings.warn('color_bin not set, assuming first bin for all fields')
+            color_bin = 0
+        if type.lower() == 'selfunc':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self._selfunc['%i%s' % (self._locations[ii],
+                                                    cohort[0])](self.__dict__['_%s_hmax' % cohort])[color_bin]*100.
+            clabel=r'$\mathrm{%s\ cohort\ selection\ fraction\, (\%%)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 100.
+        elif type.lower() == 'nphot':
+            plotSF= self.__dict__['_nphot_%s' % cohort][color_bin]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'nspec':
+            plotSF= self.__dict__['_nspec_%s' % cohort][color_bin]
+            clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= numpy.nanmax(plotSF)
+        elif type.lower() == 'hmin':
+            plotSF= self.__dict__['_%s_hmin' % cohort][color_bin]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
+        elif type.lower() == 'hmax':
+            plotSF= self.__dict__['_%s_hmax' % cohort][color_bin]
+            clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
+            if vmin is None: vmin= 7.
+            if vmax is None: vmax= 13.8
+        elif type.lower() == 'ks':
+            for ii in range(len(self._locations)):
+                plotSF[ii]= self.check_consistency(self._locations[ii],cohort=cohort)
+            clabel=r'$\mathrm{KS\ probability\ that\ spec.\ is\ drawn}$'+'\n'+r'$\mathrm{from\ phot.} \times \mathrm{sel.\ func.\ (%s\ cohort)}$' % cohort
+            if vmin is None: vmin= 0.
+            if vmax is None: vmax= 1.
+        bovy_plot.bovy_print(fig_width=8.)
+        glonglat = numpy.array([self.glonGlat(loc) for loc in self._locations])
+        bovy_plot.bovy_plot(glonglat[:,0],
+                            glonglat[:,1],
+                            c=plotSF.reshape(len(plotSF),1),s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            vmin=vmin,vmax=vmax,crange=[vmin,vmax],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=clabel,
+                            zorder=10)
+        return None
+
     def plot_selfunc_xy(self,cohort='all',color_bin=None,
                         mh=-1.49,
                         type='xy',
@@ -2569,6 +2698,7 @@ class apogeeCombinedSelect:
            cohort
         INPUT:
            cohort= ('all') cohort to consider
+           color_bin = ('None') color_bin to plot
            mh= (-1.49) absolute magnitude to use to go to distance
            vmin, vmax= colorbar range
            type= ('xy') type of plot to make:
@@ -2578,6 +2708,7 @@ class apogeeCombinedSelect:
            plot to output device
         HISTORY:
            2011-11-11 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         nHs= 201
         JKs = numpy.zeros((len(self._locations),nHs))+numpy.nan
@@ -2728,6 +2859,127 @@ class apogeeCombinedSelect:
                                 size=_legendsize)
         return None
 
+    def plot_obs_progress(self,cohort='short',
+                          xrange=[0.,360.],
+                          yrange=[-90.,90.],
+                          ms=30.,
+                          add_mean_label=False,
+                          add_cohort_label=False,
+                          incl_not_started=True,
+                          cmap='viridis'):
+        """
+        NAME:
+           plot_obs_progress
+        PURPOSE:
+           plot the observational progress of a specific cohort
+           This progress only includes *completed* plates
+        INPUT:
+           cohort= ('short') cohort to consider
+           xrange, yrange= ranges in l and b for plot
+           ms= (30) marker size
+           add_mean_label= (False) add a label with the mean completeness
+           add_cohort_label= (False) add a label with the cohort
+           incl_not_started= (True) include fields that haven't been started yet
+           cmap= ('viridis') colormap to use
+        OUTPUT:
+           plot to output device
+        HISTORY:
+           2011-11-05 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
+        """
+        #Plot progress
+        progress= numpy.zeros(len(self._locations))
+        for ii in range(len(self._locations)):
+            if cohort == 'short':
+                progress[ii]= numpy.mean(self._short_completion[ii,True^numpy.isnan(self._short_completion[ii,:])])
+            elif cohort == 'medium':
+                progress[ii]= numpy.mean(self._medium_completion[ii,True^numpy.isnan(self._medium_completion[ii,:])])
+            if cohort == 'long':
+                progress[ii]= numpy.mean(self._long_completion[ii,True^numpy.isnan(self._long_completion[ii,:])])
+        glonglat = numpy.array([self.glonGlat(loc) for loc in self._locations])
+        bovy_plot.bovy_plot(glonglat[:,0],
+                            glonglat[:,1],
+                            c=progress.reshape(len(progress),1),s=ms,
+                            scatter=True,
+                            edgecolor='none',
+                            colorbar=True,
+                            cmap=cmap,
+                            vmin=0.,vmax=1.,
+                            crange=[0.,1.],
+                            xrange=xrange,yrange=yrange,
+                            xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
+                            ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
+                            clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
+                            zorder=10)
+        #Then plot *all* locations as zero progress, to include the ones that
+        #haven't been started yet
+        ap1F= apread.apogeeField(dr=self.apo1dr)
+        ap2F = apread.apogeeField(dr=self.apo2dr)
+        ap1D= apread.apogeeDesign(dr=self.apo1dr,ap1ize=True)
+        ap2D= apread.apogeeDesign(dr=self.apo2dr,ap1ize=True)
+        #Remove fields that don't have this cohort
+        has_cohort1 = numpy.ones(len(ap1F),dtype='bool')
+        for ii in range(len(ap1F)):
+            dindx= ap1D['LOCATION_ID'] == ap1F['LOCATION_ID'][ii]
+            if cohort == 'short':
+                if numpy.all(ap1D['SHORT_COHORT_VERSION'][dindx] == 0):
+                    has_cohort1[ii]= False
+            elif cohort == 'medium':
+                if numpy.all(ap1D['MEDIUM_COHORT_VERSION'][dindx] == 0):
+                    has_cohort1[ii]= False
+            elif cohort == 'long':
+                if numpy.all(ap1D['LONG_COHORT_VERSION'][dindx] == 0):
+                    has_cohort1[ii]= False
+        has_cohort2 = numpy.ones(len(ap2F),dtype='bool')
+        for ii in range(len(ap2F)):
+            dindx= ap2D['LOCATION_ID'] == ap2F['LOCATION_ID'][ii]
+            if cohort == 'short':
+                if numpy.all(ap2D['SHORT_COHORT_VERSION'][dindx] == 0):
+                    has_cohort2[ii]= False
+            elif cohort == 'medium':
+                if numpy.all(ap2D['MEDIUM_COHORT_VERSION'][dindx] == 0):
+                    has_cohort2[ii]= False
+            elif cohort == 'long':
+                if numpy.all(ap2D['LONG_COHORT_VERSION'][dindx] == 0):
+                    has_cohort2[ii]= False
+        ap1F= ap1F[has_cohort1]
+        ap2F= ap2F[has_cohort2]
+        ap1Flb= bovy_coords.radec_to_lb(ap1F['RA'],ap1F['DEC'],degree=True)
+        ap2Flb= bovy_coords.radec_to_lb(ap2F['RA'],ap2F['DEC'],degree=True)
+        colormap = cm.get_cmap(cmap)
+        if incl_not_started:
+            bovy_plot.bovy_plot(ap1Flb[:,0],ap1Flb[:,1],
+                                s=ms,overplot=True,
+                                c=colormap(0.),
+                                edgecolor='none',
+                                scatter=True,
+                                vmin=0.,vmax=1.,
+                                crange=[0.,1.],
+                                zorder=1)
+            bovy_plot.bovy_plot(ap2Flb[:,0],ap2Flb[:,1],
+                                s=ms,overplot=True,
+                                c=colormap(0.),
+                                edgecolor='none',
+                                scatter=True,
+                                vmin=0.,vmax=1.,
+                                crange=[0.,1.],
+                                zorder=1)
+        if add_mean_label:
+            bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' %
+                                (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
+                                bottom_right=True,size=16.)
+        if add_cohort_label:
+            if cohort.lower() == 'short':
+                bovy_plot.bovy_text(r'$7.0 \leq H \leq 12.2$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'medium':
+                bovy_plot.bovy_text(r'$12.2 < H \leq 12.8$',
+                                    bottom_right=True,size=16.)
+            elif cohort.lower() == 'long':
+                bovy_plot.bovy_text(r'$12.8 < H \leq 13.3\ \mathrm{or}\ 13.8$',
+                                    bottom_right=True,size=16.)
+        return None
+
     def determine_statistical(self,specdata):
         """
         NAME:
@@ -2742,6 +2994,7 @@ class apogeeCombinedSelect:
            statistical sample
         HISTORY:
            2013-11-10 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         #Read the allVisit file to match back to plates
         allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
@@ -2829,6 +3082,7 @@ class apogeeEffectiveSelect:
            object
         HISTORY:
            2015-03-06 - Start - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         self._apoSel= apoSel
         if isinstance(apoSel, (apogee2Select,apogeeCombinedSelect)):
@@ -2869,6 +3123,7 @@ class apogeeEffectiveSelect:
            effective selection function
         HISTORY:
            2015-03-06 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         if MH is None: MH= self._MH
         if JK0 is None: JK0= self._JK0
