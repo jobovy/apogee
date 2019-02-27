@@ -119,7 +119,9 @@ def allStar(rmcommissioning=True,
             rmdups=False,
             raw=False,
             mjd=58104,
-            xmatch=None,**kwargs):
+            xmatch=None,
+            test=False,
+            **kwargs):
     """
     NAME:
        allStar
@@ -214,14 +216,16 @@ def allStar(rmcommissioning=True,
         if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         if survey.lower() == 'apogee1':
-            indx= (data['SURVEY'] == b'apogee        ') \
+            indx= (data['SURVEY'] == b'apogee') \
                 + (data['SURVEY'] == b'apogee-marvels')
         elif survey.lower() == 'apogee2':
-            indx= (data['SURVEY'] == b'apogee2       ') \
-                   + (data['SURVEY'] == b'apogee2-manga ') \
-                   + (data['SURVEY'] == b'manga-apogee2 ')
+            indx= (data['SURVEY'] == b'apogee2') \
+                   + (data['SURVEY'] == b'apogee2-manga') \
+                   + (data['SURVEY'] == b'manga-apogee2')
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
+    if test:
+        return data
     if main:
         indx= mainIndx(data)
         data= data[indx]
@@ -1025,11 +1029,16 @@ def mainIndx(data):
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
-        indx*= ((data['SURVEY'] == b'apogee        ')
-                  + (data['SURVEY'] == b'apogee-marvels'))
-        indx+= ((data['SURVEY'] == b'apogee2       ')
-                  + (data['SURVEY'] == b'apogee2-manga ')
-                  + (data['SURVEY'] == b'manga-apogee2 '))\
+        if type(data['SURVEY']) == numpy.chararray:
+            survey = np.array(data['SURVEY'].encode())
+        else:
+            survey = data['SURVEY']
+        indx *= ((survey == b'apogee')
+                  + (survey == b'apogee-marvels'))
+
+        indx+= ((survey == b'apogee2')
+                  + (survey == b'apogee2-manga')
+                  + (survey == b'manga-apogee2'))\
             *((data['APOGEE2_TARGET1'] & 2**14) != 0)
     return indx
 
