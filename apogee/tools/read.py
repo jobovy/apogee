@@ -221,6 +221,8 @@ def allStar(rmcommissioning=True,
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
+        #get rid of the pesky trailing whitespace...
+        data['SURVEY'] = [data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))]
         if survey.lower() == 'apogee1':
             indx= (data['SURVEY'] == b'apogee') \
                 + (data['SURVEY'] == b'apogee-marvels')
@@ -1035,7 +1037,10 @@ def mainIndx(data):
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
+        #ensure the whitespace is gone...
+        data['SURVEY'] = [data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))]
         if type(data['SURVEY']) == numpy.chararray:
+            #if the data have been read using astropy, make sure this field is the right format...
             survey = np.array(data['SURVEY'].encode())
         else:
             survey = data['SURVEY']
