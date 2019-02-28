@@ -191,8 +191,9 @@ def allStar(rmcommissioning=True,
             sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
             sys.stdout.flush()
             data= remove_duplicates(data)
-            #Cache this file for subsequent use of rmdups
-            fitswrite(dupsFilename,data,clobber=True)
+            #Cache this file for subsequent use of rmdups (only if not astroNN!)
+            if not astronn_used:
+                fitswrite(dupsFilename,data,clobber=True)
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.flush()
     if not xmatch is None:
