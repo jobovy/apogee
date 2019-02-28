@@ -180,7 +180,12 @@ def allStar(rmcommissioning=True,
     #Remove duplicates, cache
     if rmdups:
         dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
-        if os.path.exists(dupsFilename):
+        #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
+        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages:
+            astronn_used = True
+        else:
+            astronn_used = False
+        if os.path.exists(dupsFilename) and not astronn_used:
             data= fitsread(dupsFilename)
         else:
             sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")

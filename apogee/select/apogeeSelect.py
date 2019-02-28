@@ -3391,6 +3391,7 @@ class apogeeEffectiveSelect:
         INPUT:
            apoSel - an apogeeSelect object with the apogee selection function for the sample that you are interested in
            MH= (-1.49) absolute magnitude in H of the standard candle used or an array with samples of the absolute magnitude distribution for the tracer that you are using
+           JK0 = (None) dereddened J-K of the standard candle or an array with samples of the colour distribution of the tracer being used
            dmap3d= if given, a mwdust.Dustmap3D object that returns the H-band extinction in 3D; if not set use the Green15 Pan-STARRS map
         OUTPUT:
            object
@@ -3399,6 +3400,7 @@ class apogeeEffectiveSelect:
            2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         self._apoSel= apoSel
+        #check for color binning
         if isinstance(apoSel, (apogee2Select,apogeeCombinedSelect)):
             self._iscolorbinned = True
         else:
@@ -3413,6 +3415,8 @@ class apogeeEffectiveSelect:
             self._JK0= numpy.array([JK0])
         elif isinstance(MH,list):
             self._JK0= numpy.array(JK0)
+        elif self._JK0 is None:
+            self._JK0 = 0.6
         else:
             self._JK0= JK0
         # Parse dust map
