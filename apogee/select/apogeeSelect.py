@@ -2277,19 +2277,6 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         HISTORY:
            2018-02-27 - Adapted from apogeeSelect - Mackereth (UoB)
         """
-        def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
-            """ utility function to combine apogee1 and apogee2 selection functions"""
-            selfunc = {}
-            #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
-            for ii,loc in enumerate(apo1locs):
-                #short
-                selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
-                #medium
-                selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
-                #long
-                selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-            selfunc.update(apo2sel._selfunc)
-            return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
         if year is None or year == 5:
@@ -3452,6 +3439,31 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                          self._bin_completion[locIndx,cbin] >= self._frac4complete:
                 statIndx[ii]= True
         return statIndx*apread.mainIndx(specdata)
+
+    def __getstate__(self):
+        pdict= copy.copy(self.__dict__)
+        del pdict['_selfunc']
+        return pdict
+
+    def __setstate__(self,pdict):
+        self.__dict__= pdict
+        self._selfunc= _combine_selfuncs(self.apo1sel,self._apo1_locations,
+                                         self.apo2sel)
+        return None
+
+def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
+    """ utility function to combine apogee1 and apogee2 selection functions"""
+    selfunc = {}
+    #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
+    for ii,loc in enumerate(apo1locs):
+        #short
+        selfunc['%is' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%is' % copy](0.))
+        #medium
+        selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
+        #long
+        selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
+    selfunc.update(apo2sel._selfunc)
+    return selfunc
 
 class apogeeEffectiveSelect:
     """Class that contains effective selection functions for APOGEE targets"""
