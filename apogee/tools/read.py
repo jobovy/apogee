@@ -188,7 +188,7 @@ def allStar(rmcommissioning=True,
         if os.path.exists(dupsFilename) and not astronn_used:
             data= fitsread(dupsFilename)
         else:
-            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
+            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ... (file not cached if use_astroNN=True)\r")
             sys.stdout.flush()
             data= remove_duplicates(data)
             #Cache this file for subsequent use of rmdups (only if not astroNN!)
