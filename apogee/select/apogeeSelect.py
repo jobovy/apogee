@@ -156,10 +156,11 @@ class apogeeSelectPlotsMixin:
                                 xrange=[0.,18.],yrange=[-4.,4.],
                                 xlabel=r'$R\, (\mathrm{kpc})$',
                                 ylabel=r'$Z\, (\mathrm{kpc})$',gcf=gcf)
-        for ii in range(len(self._locations)):
+        for ii in range_func(len(self._locations)):
             for jj in range(nHs-1):
                 if numpy.isnan(select[ii,jj]): continue
-                pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],[Ys[ii,jj],Ys[ii,jj+1]],
+                pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],
+                            [Ys[ii,jj],Ys[ii,jj+1]],
                             '-',color=plotthis[ii,jj])
         #Add colorbar
         mapp = cm.ScalarMappable(cmap=cm.jet)
