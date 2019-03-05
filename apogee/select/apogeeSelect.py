@@ -1465,6 +1465,7 @@ class apogee1Select(apogeeSelect):
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
                 photdata['%i' % self._locations[ii]]= None
+                continue
             if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
                 thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             else: #this avoids a warning
@@ -1536,6 +1537,7 @@ class apogee1Select(apogeeSelect):
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
                 specdata['%i' % self._locations[ii]]= None
+                continue
             thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             indx= (allStar['LOCATION_ID'] == self._locations[ii])\
                 *(allStar['H'] >= thmin)\
@@ -1701,6 +1703,7 @@ class apogee2Select(apogeeSelect):
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
                 photdata['%i' % self._locations[ii]]= None
+                continue
             if not numpy.all(numpy.isnan(self._short_cohorts_hmin[ii,:])):
                 thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             else: #this avoids a warning
@@ -1785,6 +1788,7 @@ class apogee2Select(apogeeSelect):
                 thmax= self._short_cohorts_hmax[ii,numpy.nanargmax(self._short_completion[ii,:])]
             else:
                 specdata['%i' % self._locations[ii]]= None
+                continue
             thmin= numpy.nanmin(self._short_cohorts_hmin[ii,:])
             indx= (allStar['LOCATION_ID'] == self._locations[ii])\
                 *(allStar['H'] >= thmin)\
@@ -2245,8 +2249,18 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             self.apo2year = 6
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
-        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=locations)
-        apo2sel = apogee2Select(year=self.apo2year, sample=sample, locations=locations)
+        if not locations is None:
+            ap1_locations= [loc for loc in locations 
+                          if loc in apread.apogeeField(dr='12')['LOCATION_ID']]
+            ap2_locations= [loc for loc in locations 
+                          if loc in apread.apogeeField(dr='14')['LOCATION_ID']]
+        else:
+            ap1_locations= None
+            ap2_locations= None
+        apo1sel = apogee1Select(year=self.apo1year, sample=sample,
+                                locations=ap1_locations)
+        apo2sel = apogee2Select(year=self.apo2year, sample=sample,
+                                locations=ap2_locations)
         self.apo1dr = apo1sel._dr
         self.apo2dr = apo2sel._dr
         #combine and store the locations (concatenate and add missing dimensions)
