@@ -47,7 +47,7 @@ class apogeeSelectPlotsMixin:
                         mh=-1.49,
                         type='xy',
                         vmin=None,vmax=None,
-                        range_func=range):
+                        range_func=range,gcf=False):
 
         """
         NAME:
@@ -64,6 +64,7 @@ class apogeeSelectPlotsMixin:
               - xy: X vs. Y
               - rz: R vs. Z
            range_func= (range) set this to tqdm.trange to see progress
+           gcf= (False) if True, 'get the current figure' rather than setting up a new one
         OUTPUT:
            plot to output device
         HISTORY:
@@ -148,13 +149,13 @@ class apogeeSelectPlotsMixin:
             bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
                                 xrange=[8.99,-8.99],yrange=[8.99,-5.],
                                 xlabel=r'$X\, (\mathrm{kpc})$',
-                                ylabel=r'$Y\, (\mathrm{kpc})$')
+                                ylabel=r'$Y\, (\mathrm{kpc})$',gcf=gcf)
         else:
             bovy_plot.bovy_print(fig_width=6.)
             bovy_plot.bovy_plot([100.,100.],[100.,100.],'k,',
                                 xrange=[0.,18.],yrange=[-4.,4.],
                                 xlabel=r'$R\, (\mathrm{kpc})$',
-                                ylabel=r'$Z\, (\mathrm{kpc})$')
+                                ylabel=r'$Z\, (\mathrm{kpc})$',gcf=gcf)
         for ii in range(len(self._locations)):
             for jj in range(nHs-1):
                 if numpy.isnan(select[ii,jj]): continue
@@ -225,7 +226,8 @@ class apogeeSelectPlotsMixin:
                         yrange=[-90.,90.],
                         ms=30.,
                         type='selfunc',
-                        vmin=None,vmax=None):
+                        vmin=None,vmax=None,gcf=False,
+                        range_func=range):
 
         """
         NAME:
@@ -246,6 +248,8 @@ class apogeeSelectPlotsMixin:
               - hmax: maximum H of cohort
               - ks: KS probability that the spectro data was drawn from the
                     underlying photo sample x selection function
+           range_func= (range) set this to tqdm.trange to see progress
+           gcf= (False) if True, 'get the current figure' rather than setting up a new one
         OUTPUT:
            plot to output device
         HISTORY:
@@ -258,7 +262,7 @@ class apogeeSelectPlotsMixin:
             warnings.warn('color_bin not set, assuming first bin for all fields')
             color_bin = 0
         if type.lower() == 'selfunc':
-            for ii in range(len(self._locations)):
+            for ii in range_func(len(self._locations)):
                 plotSF[ii]= numpy.atleast_1d(\
                   self._selfunc['%i%s' % (self._locations[ii],
                                           cohort[0])]\
@@ -304,7 +308,7 @@ class apogeeSelectPlotsMixin:
                             xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
                             ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
                             clabel=clabel,
-                            zorder=10)
+                            zorder=10,gcf=gcf)
         return None
 
     def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
@@ -313,7 +317,8 @@ class apogeeSelectPlotsMixin:
                      onedhistsbins=None,
                      onedhistsspecbins=None,
                      cntrSmooth=None,
-                     speccolor='r',reweightcolor='b'):
+                     speccolor='r',reweightcolor='b',
+                     range_func=range):
         """
         NAME:
            plotColorMag
@@ -333,6 +338,7 @@ class apogeeSelectPlotsMixin:
            onedhistsbins= number of bins to use in the 1D histograms
            onedhistsspecbins= number of bins to use in the 1D histograms (spec.)
            cntrSmooth= cntrSmooth keyword of scatterplot
+           range_func= (range) set this to tqdm.trange to see progress
         OUTPUT:
            plot to output device
         HISTORY:
@@ -343,13 +349,13 @@ class apogeeSelectPlotsMixin:
             location= self._locations
         elif isinstance(location,str) and location.lower() == 'short':
             cohort= 'short'
-            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(self._nspec_short >= self._minnspec)]
+            location= self._locations[(numpy.nanmax(self._short_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_short, axis=1) >= self._minnspec)]
         elif isinstance(location,str) and location.lower() == 'medium':
             cohort= 'medium'
-            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(self._nspec_medium >= self._minnspec)]
+            location= self._locations[(numpy.nanmax(self._medium_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_medium, axis=1) >= self._minnspec)]
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
-            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long >= self._minnspec)]
+            location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_long, axis=1) >= self._minnspec)]
         if isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)): #Scalar input
             location= [location]
         #Gather data from all requested locations and cohorts
@@ -360,7 +366,7 @@ class apogeeSelectPlotsMixin:
             specys= []
         if reweight:
             w= []
-        for ii in range(len(location)):
+        for ii in range_func(len(location)):
             tphotdata= self._photdata['%i' % location[ii]]
             locIndx= self._locations == location[ii]
             if cohort.lower() == 'short':
@@ -492,7 +498,7 @@ class apogeeSelectPlotsMixin:
                           add_mean_label=False,
                           add_cohort_label=False,
                           incl_not_started=True,
-                          cmap='viridis'):
+                          cmap='viridis',gcf=False):
         """
         NAME:
            plot_obs_progress
@@ -507,6 +513,7 @@ class apogeeSelectPlotsMixin:
            add_cohort_label= (False) add a label with the cohort
            incl_not_started= (True) include fields that haven't been started yet
            cmap= ('viridis') colormap to use
+           gcf= (False) if True, 'get the current figure' rather than setting up a new one
         OUTPUT:
            plot to output device
         HISTORY:
@@ -535,7 +542,7 @@ class apogeeSelectPlotsMixin:
                             xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
                             ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
                             clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
-                            zorder=10)
+                            zorder=10,gcf=gcf)
         #Then plot *all* locations as zero progress, to include the ones that
         #haven't been started yet
         # Stack apogeeField recarrays, adjust
