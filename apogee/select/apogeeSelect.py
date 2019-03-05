@@ -3488,7 +3488,7 @@ class apogeeEffectiveSelect:
             self._JK0= numpy.array([JK0])
         elif isinstance(MH,list):
             self._JK0= numpy.array(JK0)
-        elif self._JK0 is None:
+        elif JK0 is None:
             self._JK0 = 0.6
         else:
             self._JK0= JK0
