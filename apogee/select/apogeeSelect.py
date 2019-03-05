@@ -2,6 +2,7 @@ import sys
 import copy
 import tqdm
 import numpy
+import numpy.lib.recfunctions
 from scipy import stats, special
 from galpy.util import bovy_plot, bovy_coords
 import matplotlib
@@ -42,10 +43,11 @@ _ERASESTR= "                                                                    
 
 class apogeeSelectPlotsMixin:
     """Mixin class to contain the plotting functions for the various selection functions"""
-    def plot_selfunc_xy(self,cohort='all',
+    def plot_selfunc_xy(self,cohort='all',color_bin=None,
                         mh=-1.49,
                         type='xy',
-                        vmin=None,vmax=None):
+                        vmin=None,vmax=None,
+                        range_func=range):
 
         """
         NAME:
@@ -55,30 +57,36 @@ class apogeeSelectPlotsMixin:
            cohort
         INPUT:
            cohort= ('all') cohort to consider
+           color_bin = ('None') color_bin to plot
            mh= (-1.49) absolute magnitude to use to go to distance
            vmin, vmax= colorbar range
            type= ('xy') type of plot to make:
               - xy: X vs. Y
               - rz: R vs. Z
+           range_func= (range) set this to tqdm.trange to see progress
         OUTPUT:
            plot to output device
         HISTORY:
            2011-11-11 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         nHs= 201
         Xs= numpy.zeros((len(self._locations),nHs))+numpy.nan
         Ys= numpy.zeros((len(self._locations),nHs))+numpy.nan
         select= numpy.zeros((len(self._locations),nHs))+numpy.nan
-        for ii in range(len(self._locations)):
+        for ii in range_func(len(self._locations)):
+            if not isinstance(self,apogee1Select) and color_bin is None:
+                warnings.warn('color_bin not set, assuming first bin for all fields')
+                color_bin = 0
             if cohort.lower() == 'all':
                 if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_long[ii] >= self._minnspec:
+                        and numpy.nansum(self._nspec_long[ii]) >= self._minnspec:
                     #There is a long cohort
                     Hs= numpy.linspace(self._short_hmin[ii],
                                        self._long_hmax[ii],
                                        nHs)
                 elif numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_medium[ii] >= self._minnspec:
+                        and numpy.nansum(self._nspec_medium[ii]) >= self._minnspec:
                     #There is a medium cohort
                     Hs= numpy.linspace(self._short_hmin[ii],
                                        self._medium_hmax[ii],
@@ -100,10 +108,15 @@ class apogeeSelectPlotsMixin:
                 Hs= numpy.linspace(self._long_hmin[ii],
                                    self._long_hmax[ii],
                                    nHs)
+            if isinstance(self,apogee1Select):
+                JKs= None
+            else:
+                JKs = numpy.ones(nHs)*(self._color_bins_jkmin[ii,color_bin]+self._color_bins_jkmax[ii,color_bin])/2.
             dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
             ds= 10.**(dm/5.-2.) #in kpc
-            tl= self._apogeeField['GLON'][ii]
-            tb= self._apogeeField['GLAT'][ii]
+            glonglat = self.glonGlat(self._locations[ii])
+            tl= glonglat[0]
+            tb= glonglat[1]
             if tb > -9. and tb < 9. and type.lower() == 'xy': #perturb
                 tl+= tb/2.
             XYZ= bovy_coords.lbd_to_XYZ(tl*numpy.ones(nHs),
@@ -116,7 +129,7 @@ class apogeeSelectPlotsMixin:
                 Xs[ii,:]= ((8.-XYZ[:,0])**2.+XYZ[:,1]**2.)**0.5
                 Ys[ii,:]= XYZ[:,2]+0.025
             #Evaluate selection function
-            select[ii,:]= self(self._locations[ii],Hs)
+            select[ii,:]= self(self._locations[ii],Hs,JKs)
         select*= 100.
         #Plot all fields
         select[(select == 0.)]= numpy.nan
@@ -207,6 +220,7 @@ class apogeeSelectPlotsMixin:
         return None
 
     def plot_selfunc_lb(self,cohort='short',
+                        color_bin=None,
                         xrange=[0.,360.],
                         yrange=[-90.,90.],
                         ms=30.,
@@ -236,33 +250,39 @@ class apogeeSelectPlotsMixin:
            plot to output device
         HISTORY:
            2011-11-11 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         #Plot progress
         plotSF= numpy.zeros(len(self._locations))
+        if not isinstance(self,apogee1Select) and color_bin is None:
+            warnings.warn('color_bin not set, assuming first bin for all fields')
+            color_bin = 0
         if type.lower() == 'selfunc':
             for ii in range(len(self._locations)):
-                plotSF[ii]= self._selfunc['%i%s' % (self._locations[ii],
-                                                    cohort[0])](self.__dict__['_%s_hmax' % cohort])*100.
+                plotSF[ii]= numpy.atleast_1d(\
+                  self._selfunc['%i%s' % (self._locations[ii],
+                                          cohort[0])]\
+                        (self.__dict__['_%s_hmax' % cohort]))[color_bin]*100.
             clabel=r'$\mathrm{%s\ cohort\ selection\ fraction\, (\%%)}$' % cohort
             if vmin is None: vmin= 0.
             if vmax is None: vmax= 100.
         elif type.lower() == 'nphot':
-            plotSF= self.__dict__['_nphot_%s' % cohort]
+            plotSF= numpy.atleast_1d(self.__dict__['_nphot_%s' % cohort])[color_bin]
             clabel=r'$\#\ \mathrm{of\ %s\ cohort\ potential\ targets}$' % cohort
             if vmin is None: vmin= 0.
             if vmax is None: vmax= numpy.nanmax(plotSF)
         elif type.lower() == 'nspec':
-            plotSF= self.__dict__['_nspec_%s' % cohort]
+            plotSF= numpy.atleast_1d(self.__dict__['_nspec_%s' % cohort])[color_bin]
             clabel=r'$\#\ \mathrm{of\ %s\ cohort\ spectroscopic\ objects}$' % cohort
             if vmin is None: vmin= 0.
             if vmax is None: vmax= numpy.nanmax(plotSF)
         elif type.lower() == 'hmin':
-            plotSF= self.__dict__['_%s_hmin' % cohort]
+            plotSF= numpy.atleast_1d(self.__dict__['_%s_hmin' % cohort])[color_bin]
             clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{min}}$" % cohort
             if vmin is None: vmin= 7.
             if vmax is None: vmax= 13.8
         elif type.lower() == 'hmax':
-            plotSF= self.__dict__['_%s_hmax' % cohort]
+            plotSF= numpy.atleast_1d(self.__dict__['_%s_hmax' % cohort])[color_bin]
             clabel=r"$\mathrm{%s\ cohort's}\ H_{\mathrm{max}}$" % cohort
             if vmin is None: vmin= 7.
             if vmax is None: vmax= 13.8
@@ -317,6 +337,7 @@ class apogeeSelectPlotsMixin:
            plot to output device
         HISTORY:
            2013-11-11 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         if isinstance(location,str) and location.lower() == 'all':
             location= self._locations
@@ -329,7 +350,7 @@ class apogeeSelectPlotsMixin:
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
             location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(self._nspec_long >= self._minnspec)]
-        if isinstance(location,(numpy.int16,int)): #Scalar input
+        if isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)): #Scalar input
             location= [location]
         #Gather data from all requested locations and cohorts
         photxs= []
@@ -392,7 +413,10 @@ class apogeeSelectPlotsMixin:
             specys= numpy.array(specys)
         if x == 'JK0':
             xlabel=r'$(J-K_\mathrm{s})_0\, (\mathrm{mag})$'
-            xrange= [0.4,1.4]
+            if isinstance(self,(apogee2Select,apogeeCombinedSelect)):
+                xrange= [0.2,1.4]
+            else:
+                xrange= [0.4,1.4]
         if y == 'H':
             ylabel=r'$H\, (\mathrm{mag})$'
             yrange=[6.,14.]
@@ -487,6 +511,7 @@ class apogeeSelectPlotsMixin:
            plot to output device
         HISTORY:
            2011-11-05 - Written - Bovy (IAS)
+           2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         #Plot progress
         progress= numpy.zeros(len(self._locations))
@@ -513,8 +538,33 @@ class apogeeSelectPlotsMixin:
                             zorder=10)
         #Then plot *all* locations as zero progress, to include the ones that
         #haven't been started yet
-        apF= apread.apogeeField(dr=self._dr)
-        apD= apread.apogeeDesign(dr=self._dr,ap1ize=True)
+        # Stack apogeeField recarrays, adjust
+        if isinstance(self,apogeeCombinedSelect):
+            # Combined, create combined apogeeField
+            ap1F= apread.apogeeField(dr='12')
+            ap2F= apread.apogeeField(dr='14')
+            ap2F4stack= ap2F[[name for name 
+                               in ap1F.dtype.names]]
+            ap1F4stack= ap1F.astype(ap2F4stack.dtype)
+            apF= numpy.lib.recfunctions.stack_arrays([ap1F4stack,ap2F4stack],
+                                                     asrecarray=True,
+                                                     usemask=False)
+        else:
+            apF= apread.apogeeField(dr=self._dr)
+        if hasattr(self,'_apogeeDesign'):
+            apD= self._apogeeDesign #apread.apogeeDesign(dr=self._dr,ap1ize=True)
+        else: # Combined, need to create
+            # Stack apogeeDesign recarrays, adjust
+            apDtags4plot= ['LOCATION_ID','SHORT_COHORT_VERSION',
+                           'MEDIUM_COHORT_VERSION','LONG_COHORT_VERSION']
+            _ap2D4stack= self._apogee2Design[[name for name 
+                                              in apDtags4plot]]
+            _ap1D4stack=self._apogee1Design[[name for name 
+                                             in apDtags4plot]]\
+                            .astype(_ap2D4stack.dtype)
+            apD= numpy.lib.recfunctions.stack_arrays(\
+                                    [_ap1D4stack,_ap2D4stack],
+                                    asrecarray=True,usemask=False)
         #Remove fields that don't have this cohort
         has_cohort= numpy.ones(len(apF),dtype='bool')
         for ii in range(len(apF)):
@@ -675,12 +725,13 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         """
         locIndx= self._locations == location
         #Handle input
+        scalarOut= True
         if isinstance(H,(int,float,numpy.float32,numpy.float64)): #Scalar input
             H= [H]
             if JK0 is not None:
                 JK0 = [JK0]
             scalarOut= True
-        elif isinstance(location,(numpy.int16,int)) \
+        elif isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)) \
                 and isinstance(H,(list,numpy.ndarray)) \
                 and self._sftype.lower() == 'constant': #special case this for speed
             if JK0 is not None and numpy.shape(H) != numpy.shape(JK0):
@@ -986,7 +1037,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         scalarOut= False
         if isinstance(location,str):
             location= self.list_fields(cohort=cohort)
-        if isinstance(location,(numpy.int16,int)): #Scalar input
+        if isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)): #Scalar input
             location= [location]
             scalarOut= True
         out= []
@@ -1931,7 +1982,7 @@ class apogee2Select(apogeeSelect):
         nbin = self._number_of_bins[locIndx]
         return int(nbin)
 
-    def plot_selfunc_lb(self,cohort='short',
+    def _plot_selfunc_lb(self,cohort='short',
                         color_bin = None,
                         xrange=[0.,360.],
                         yrange=[-90.,90.],
@@ -2018,7 +2069,7 @@ class apogee2Select(apogeeSelect):
                             zorder=10)
         return None
 
-    def plot_selfunc_xy(self,cohort='all',color_bin=None,
+    def _plot_selfunc_xy(self,cohort='all',color_bin=None,
                         mh=-1.49,
                         type='xy',
                         vmin=None,vmax=None):
@@ -2293,6 +2344,13 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         self._apogee2Design = apo2sel._apogeeDesign
         self._apogee1Field = apo1sel._apogeeField
         self._apogee2Field = apo2sel._apogeeField
+        # Stack apogeeField recarrays, adjust
+        _ap2F4stack= self._apogee2Field[[name for name 
+                                         in self._apogee1Field.dtype.names]]
+        _ap1F4stack=self._apogee1Field.astype(_ap2F4stack.dtype)
+        self._apogeeField= numpy.lib.recfunctions.stack_arrays(\
+                                    [_ap1F4stack,_ap2F4stack],
+                                    asrecarray=True,usemask=False)
         self._designs1Indx = apo1sel._designsIndx
         self._designs2Indx = apo2sel._designsIndx
         self._1plates = apo1sel._plates
@@ -2341,11 +2399,12 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         """
         locIndx= self._locations == location
         #Handle input
+        scalarOut= False
         if isinstance(H,(int,float,numpy.float32,numpy.float64)): #Scalar input
             H= [H]
             JK0 = [JK0]
             scalarOut= True
-        elif isinstance(location,(numpy.int16,int)) \
+        elif isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)) \
                 and isinstance(H,(list,numpy.ndarray)) \
                 and self._sftype.lower() == 'constant': #special case this for speed
             if numpy.shape(H) != numpy.shape(JK0):
@@ -2670,7 +2729,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         scalarOut= False
         if isinstance(location,str):
             location= self.list_fields(cohort=cohort)
-        if isinstance(location,(numpy.int16,int)): #Scalar input
+        if isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)): #Scalar input
             location= [location]
             scalarOut= True
         out= []
@@ -2754,7 +2813,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         return (sortphot['H'],sortspec['H'],fn1,fn2)
 
 
-    def plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
+    def _plotColorMag(self,x='JK0',y='H',location='all',cohort='all',
                      spec=True,reweight=True,
                      bins=None,specbins=None,
                      onedhistsbins=None,
@@ -2797,7 +2856,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         elif isinstance(location,str) and location.lower() == 'long':
             cohort= 'long'
             location= self._locations[(numpy.nanmax(self._long_completion,axis=1) >= self._frac4complete)*(numpy.nansum(self._nspec_long, axis=1) >= self._minnspec)]
-        if isinstance(location,(numpy.int16,int)): #Scalar input
+        if isinstance(location,(numpy.int16,int,numpy.int32,numpy.int64)): #Scalar input
             location= [location]
         #Gather data from all requested locations and cohorts
         photxs= []
@@ -2926,7 +2985,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                               onedhistsbins=onedhistsbins)
         return None
 
-    def plot_selfunc_lb(self,cohort='short',
+    def _plot_selfunc_lb(self,cohort='short',
                         color_bin = None,
                         xrange=[0.,360.],
                         yrange=[-90.,90.],
@@ -3013,7 +3072,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                             zorder=10)
         return None
 
-    def plot_selfunc_xy(self,cohort='all',color_bin=None,
+    def _plot_selfunc_xy(self,cohort='all',color_bin=None,
                         mh=-1.49,
                         type='xy',
                         vmin=None,vmax=None):
@@ -3187,7 +3246,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                                 size=_legendsize)
         return None
 
-    def plot_obs_progress(self,cohort='short',
+    def _plot_obs_progress(self,cohort='short',
                           xrange=[0.,360.],
                           yrange=[-90.,90.],
                           ms=30.,
