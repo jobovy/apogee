@@ -75,7 +75,7 @@ class apogeeSelectPlotsMixin:
         Xs= numpy.zeros((len(self._locations),nHs))+numpy.nan
         Ys= numpy.zeros((len(self._locations),nHs))+numpy.nan
         select= numpy.zeros((len(self._locations),nHs))+numpy.nan
-        for ii in range_func(len(self._locations)):
+        for ii in range(len(self._locations)):
             if not isinstance(self,apogee1Select) and color_bin is None:
                 warnings.warn('color_bin not set, assuming first bin for all fields')
                 color_bin = 0
@@ -1025,7 +1025,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         return self._apogeeField['FIELD_NAME'][locIndx][0]
 
 
-    def check_consistency(self,location,cohort='all'):
+    def check_consistency(self,location,cohort='all',range_func=range):
         """
         NAME:
            check_consistency
@@ -1036,6 +1036,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         INPUT:
            location - location_id: numbers, 'all', 'short', 'medium', 'long'
            cohort= type(s) of cohorts to consider ('all' by default, except for location='short', 'medium', or 'long'
+           range_func= (range) set this to tqdm.trange to see progress
         OUTPUT:
            KS probability or list/array of such numbers
         HISTORY:
@@ -1049,8 +1050,8 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             location= [location]
             scalarOut= True
         out= []
-        for loc in location:
-            out.append(self._check_consistency_single(loc,cohort))
+        for ii in range_func(len(location)):
+            out.append(self._check_consistency_single(location[ii],cohort))
         if scalarOut: return out[0]
         elif isinstance(location,numpy.ndarray): return numpy.array(out)
         else: return out
@@ -2444,7 +2445,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         nbin = self._number_of_bins[locIndx]
         return int(nbin)
 
-    def check_consistency(self,location,cohort='all'):
+    def check_consistency(self,location,cohort='all',range_func=range):
         """
         NAME:
            check_consistency
@@ -2455,6 +2456,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         INPUT:
            location - location_id: numbers, 'all', 'short', 'medium', 'long'
            cohort= type(s) of cohorts to consider ('all' by default, except for location='short', 'medium', or 'long'
+           range_func= (range) set this to tqdm.trange to see progress
         OUTPUT:
            KS probability or list/array of such numbers
         HISTORY:
@@ -2468,8 +2470,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             location= [location]
             scalarOut= True
         out= []
-        for loc in location:
-            out.append(self._check_consistency_single(loc,cohort))
+        for ii in range_func(len(location)):
+            out.append(self._check_consistency_single(location[ii],cohort))
         if scalarOut: return out[0]
         elif isinstance(location,numpy.ndarray): return numpy.array(out)
         else: return out
