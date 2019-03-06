@@ -157,11 +157,20 @@ class apogeeSelectPlotsMixin:
                                 xlabel=r'$R\, (\mathrm{kpc})$',
                                 ylabel=r'$Z\, (\mathrm{kpc})$',gcf=gcf)
         for ii in range_func(len(self._locations)):
-            for jj in range(nHs-1):
-                if numpy.isnan(select[ii,jj]): continue
-                pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],
-                            [Ys[ii,jj],Ys[ii,jj+1]],
-                            '-',color=plotthis[ii,jj])
+            if self._sftype.lower() == 'constant':
+                # SF is piecewise constant
+                uniqSF= numpy.unique(select[ii])
+                for usf in uniqSF:
+                    if numpy.isnan(usf): continue
+                    indx= select[ii] == usf
+                    pyplot.plot(Xs[ii,indx],Ys[ii,indx],
+                                '-',color=plotthis[ii,indx][0])
+            else:
+                for jj in range(nHs-1):
+                    if numpy.isnan(select[ii,jj]): continue
+                    pyplot.plot([Xs[ii,jj],Xs[ii,jj+1]],
+                                [Ys[ii,jj],Ys[ii,jj+1]],
+                                '-',color=plotthis[ii,jj])
         #Add colorbar
         mapp = cm.ScalarMappable(cmap=cm.jet)
         mapp.set_array(select)
