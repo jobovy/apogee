@@ -138,7 +138,7 @@ def allStar(rmcommissioning=True,
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
-       rmdups= (False) if True, remove duplicates (very slow)
+       rmdups= (False) if True, remove duplicates
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
@@ -175,26 +175,19 @@ def allStar(rmcommissioning=True,
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
-        if os.path.exists(dupsFilename):
-            data= fitsread(dupsFilename)
-        else:
-            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
-            sys.stdout.flush()
-            data= remove_duplicates(data)
-            #Cache this file for subsequent use of rmdups
-            fitswrite(dupsFilename,data,clobber=True)
-            sys.stdout.write('\r'+_ERASESTR+'\r')
-            sys.stdout.flush()
+        sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
+        sys.stdout.flush()
+        data= remove_duplicates(data)
+        sys.stdout.write('\r'+_ERASESTR+'\r')
+        sys.stdout.flush()
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if rmdups:
-            matchFilePath= dupsFilename
+            matchFilePath= path.allStarPath(mjd=mjd).replace('.fits',
+                                                             '-nodups.fits')
         else:
             matchFilePath= filePath
-        if use_astroNN_ages:
-            matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
-        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
+        ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
         data= data[mai]
     #Some cuts
     if rmcommissioning:
