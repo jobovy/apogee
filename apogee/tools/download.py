@@ -627,7 +627,7 @@ def apLSF(chip,dr=None):
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
-def obslog(year=None):
+def obslog(year=None, hemisphere=None):
     """
     NAME:
        obslog
@@ -641,7 +641,7 @@ def obslog(year=None):
        2015-05-01 - Written - Bovy (IAS)
     """
     # First make sure the file doesn't exist
-    filePath= path.obslogPath(year=year)
+    filePath= path.obslogPath(year=year, hemisphere=hemisphere)
     if os.path.exists(filePath): return None
     # Create the file path
     downloadPath= \

@@ -617,7 +617,7 @@ def astroNNAges(dr=None):
     #read astroNN file
     return fitsread(path.astroNNAgesPath(dr=dr))
 
-def obslog(year=None):
+def obslog(year=None, hemisphere=None):
     """
     NAME:
        obslog
@@ -630,9 +630,9 @@ def obslog(year=None):
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    obslogfilename= path.obslogPath(year=year)
+    obslogfilename= path.obslogPath(year=year, hemisphere=hemisphere)
     if not os.path.exists(obslogfilename):
-        download.obslog(year=year)
+        download.obslog(year=year, hemisphere=hemisphere)
     if year is None:
         if path._APOGEE_REDUX == 'v402': year= 2
         elif path._APOGEE_REDUX == 'v603' \

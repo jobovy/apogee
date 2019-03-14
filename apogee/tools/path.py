@@ -331,7 +331,7 @@ def astroNNAgesPath(dr=None):
         return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
                             'astroNNBayes_ages_goodDR14.fits')
 
-def obslogPath(year=None):
+def obslogPath(year=None, hemisphere=None):
     """
     NAME:
        obslogPath
@@ -363,9 +363,15 @@ def obslogPath(year=None):
     elif year == 5:
         return os.path.join(_APOGEE_DATA,
                             'obs-summary-year45.csv')
-    elif year == 6:
-        return os.path.join(_APOGEE_DATA,
-                            'obs-summary-year6.csv')
+    elif year == 7:
+        if hemisphere == 'north' or hemisphere == None:
+            return os.path.join(_APOGEE_DATA,
+                                'obs-summary-year6-north.csv')
+        elif hemisphere == 'south':
+            return os.path.join(_APOGEE_DATA,
+                                'obs-summary-year6-south.csv')
+        else:
+            raise IOError('Must set hemisphere to north or south for year 6... (hemisphere = None returns north!)')
 
 def apogeeTargetDirPath(dr=None):
     """

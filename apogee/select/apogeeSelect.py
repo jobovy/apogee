@@ -1194,7 +1194,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             self._dr= '12'
         elif self._year == 5: # there's no year = 4, bc no DR
             self._dr= '14'
-        elif self._year == 6:
+        elif self._year == 7:
             self._dr = '16'
         #Match up plates with designs
         apogeePlate= apread.apogeePlate(dr=self._dr)
@@ -2021,7 +2021,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                  mjd=None,
                  sftype='constant',
                  minnspec=3,
-                 frac4complete=1.):
+                 frac4complete=1.,
+                 _justprocessobslog=False):
         """
         NAME:
            __init__
@@ -2048,24 +2049,29 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         """
         self._sftype = sftype
         self._frac4complete = frac4complete
-        if year is None or year == 5:
+        if year is None or year < 7:
             self.apo1year = 3
             self.apo2year = 5
-        elif year == 6:
+        elif year == 7:
             self.apo1year = 3
-            self.apo2year = 6
+            self.apo2year = 7
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         if not locations is None:
             ap1_locations= [loc for loc in locations
                           if loc in apread.apogeeField(dr='12')['LOCATION_ID']]
-            ap2_locations= [loc for loc in locations
-                          if loc in apread.apogeeField(dr='14')['LOCATION_ID']]
+
+            if self.apo2year == 5:
+                ap2_locations= [loc for loc in locations
+                            if loc in apread.apogeeField(dr='14')['LOCATION_ID']]
+            if self.apo2year == 7:
+                ap2_locations= [loc for loc in locations
+                            if loc in apread.apogeeField(dr='16')['LOCATION_ID']]
         else:
             ap1_locations= None
             ap2_locations= None
         #load an APOGEE 1 and 2 selection function
-        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=ap1locations, _justprocessobslog=_justprocessobslog)
+        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=ap1_locations, _justprocessobslog=_justprocessobslog)
         #add dummy color bin info to apo1sel...
         apo1sel._number_of_bins = numpy.ones(len(apo1sel._locations))
         apo1sel._color_bins_jkmax = numpy.ones([len(apo1sel._locations), 5])*999.
@@ -2075,10 +2081,10 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         bincomp_apo1 = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
         bincomp_apo1[:,0] = 1.
         apo1sel._bin_completion = bincomp_apo1
-        apo2Nsel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2locations, hemisphere='north', _justprocessobslog=_justprocessobslog)
+        apo2Nsel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2_locations, hemisphere='north', _justprocessobslog=_justprocessobslog)
         aposels = [apo1sel, apo2Nsel]
         if self.apo2year > 5:
-            apo2Ssel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2locations, hemisphere='south', _justprocessobslog=_justprocessobslog)
+            apo2Ssel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2_locations, hemisphere='south', _justprocessobslog=_justprocessobslog)
             aposels.append(apo2Ssel)
         self.apo1dr = apo1sel._dr
         self.apo2dr = apo2Nsel._dr
