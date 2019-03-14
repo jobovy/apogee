@@ -37,6 +37,11 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
              4517,4518,4519,4520,4521,
              4325,#Not ever drilled, just test from here
              4326,4327,4328,4329]
+#Plates missing from apogee2Plate.... (need to figure out whats happening here...)
+_BADPLATES = [8632, 10001, 9468,  9469,  9470,  9478,  9479,  9659,  9662,  9688,  9807,
+        9861,  9980, 10008, 10009, 10010, 10011, 10012, 10013, 10014,
+       10018, 10019, 10020, 10097, 10099, 10304, 10343, 10344, 10346,
+       10375, 10635]
 _ERASESTR= "                                                                                "
 
 
@@ -599,7 +604,8 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                  minnspec=3,
                  frac4complete=1.,
                  _dontcutcolorplates=False,
-                 _justprocessobslog=False):
+                 _justprocessobslog=False,
+                 hemisphere=None):
         """
         NAME:
            __init__
@@ -633,7 +639,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         sys.stdout.flush()
         self._process_obslog(locations=locations,year=year,
                              frac4complete=frac4complete,
-                             dontcutcolorplates=_dontcutcolorplates)
+                             dontcutcolorplates=_dontcutcolorplates, hemisphere=hemisphere)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         if _justprocessobslog: return None
@@ -1071,7 +1077,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
 
 
     def _process_obslog(self,locations=None,year=None,frac4complete=1.,
-                        dontcutcolorplates=False):
+                        dontcutcolorplates=False, hemisphere=None):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
         if year is None:
@@ -1081,7 +1087,8 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             elif appath._APOGEE_REDUX == 'l31c.2': year= 5
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         self._year= year
-        origobslog= apread.obslog(year=self._year)
+        self._hemisphere = hemisphere
+        origobslog= apread.obslog(year=self._year, hemisphere=self._hemisphere)
         #Remove plates that only have pre-commissioning data
         indx= numpy.ones(len(origobslog),dtype='bool')
         for ii in range(len(origobslog)):
@@ -1094,9 +1101,8 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 indx[ii]= False
             if origobslog[ii]['Plate'] in _COMPLATES:
                 indx[ii]= False
-            if origobslog[ii]['Plate'] == 8632 or origobslog[ii]['Plate'] == 10001:
-                import warnings
-                warnings.warn('Removing plate 8632 and 10001 because not in apogee2Plate...')
+            if origobslog[ii]['Plate'] in _BADPLATES:
+                warnings.warn('Removing plates not found in apogee2Plate...')
                 indx[ii]= False
         origobslog= origobslog[indx]
         indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
@@ -1138,6 +1144,11 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             dindx= apogeePlate['PLATE_ID'] == self._plates[ii]
             if numpy.sum(dindx) == 0:
                 raise IOError("No entry found in apogeePlate for plate %i" % self._plates[ii])
+            elif numpy.sum(dindx) > 1:
+                warnings.warn("multiple entries in apogeePlate for plate %i (multiple designs on the same plate?), returning the first of these..." % self._plates[ii])
+                ndindx = numpy.zeros(len(dindx), dtype=bool)
+                ndindx[numpy.where(dindx)[0][0]] = True
+                dindx = ndindx
             platesIndx[ii]= list(dindx).index(True)
             designs[ii]= apogeePlate['DESIGN_ID'][dindx]
             dindx= apogeeDesign['DESIGN_ID'] == designs[ii]
@@ -1219,8 +1230,8 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         medium_cohorts_total= numpy.zeros((len(self._locations),4))
         medium_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
         medium_cohorts_hmax= numpy.zeros((len(self._locations),20))+numpy.nan
-        long_cohorts= numpy.zeros((len(self._locations),1))
-        long_cohorts_total= numpy.zeros((len(self._locations),1))
+        long_cohorts= numpy.zeros((len(self._locations),2))
+        long_cohorts_total= numpy.zeros((len(self._locations),2))
         long_cohorts_hmin= numpy.zeros((len(self._locations),20))+numpy.nan
         long_cohorts_hmax= numpy.zeros((len(self._locations),20))+numpy.nan
         for ii in range(len(self._locations)):
@@ -2197,7 +2208,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                  mjd=None,
                  sftype='constant',
                  minnspec=3,
-                 frac4complete=1.):
+                 frac4complete=1.,
+                 _justprocessobslog=False):
         """
         NAME:
            __init__
@@ -2222,7 +2234,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         HISTORY:
            2018-02-27 - Adapted from apogeeSelect - Mackereth (UoB)
         """
-        def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
+        def _combine_selfuncs(apo1sel, apo1locs, apo2sels):
             """ utility function to combine apogee1 and apogee2 selection functions"""
             selfunc = {}
             #combine apogee 1 selfunc (one color bin!) with apogee 2 - make sure a len(5) array always returned
@@ -2233,7 +2245,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
                 #long
                 selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-            selfunc.update(apo2sel._selfunc)
+            for i in range(len(apo2sels)):
+                selfunc.update(apo2sels[i]._selfunc)
             return selfunc
         self._sftype = sftype
         self._frac4complete = frac4complete
@@ -2245,69 +2258,111 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             self.apo2year = 6
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
-        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=locations)
-        apo2sel = apogee2Select(year=self.apo2year, sample=sample, locations=locations)
+        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=locations, _justprocessobslog=_justprocessobslog)
+        #add dummy color bin info to apo1sel...
+        apo1sel._number_of_bins = numpy.ones(len(apo1sel._locations))
+        apo1sel._color_bins_jkmax = numpy.ones([len(apo1sel._locations), 5])*999.
+        jkmin_apo1 = numpy.ones([len(apo1sel._locations), 5])*999.
+        jkmin_apo1[:,0] = 0.5
+        apo1sel._color_bins_jkmin = jkmin_apo1
+        bincomp_apo1 = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+        bincomp_apo1[:,0] = 1.
+        apo1sel._bin_completion = bincomp_apo1
+        apo2Nsel = apogee2Select(year=self.apo2year, sample=sample, locations=locations, hemisphere='north', _justprocessobslog=_justprocessobslog)
+        aposels = [apo1sel, apo2Nsel]
+        if self.apo2year > 5:
+            apo2Ssel = apogee2Select(year=self.apo2year, sample=sample, locations=locations, hemisphere='south', _justprocessobslog=_justprocessobslog)
+            aposels.append(apo2Ssel)
         self.apo1dr = apo1sel._dr
-        self.apo2dr = apo2sel._dr
+        self.apo2dr = apo2Nsel._dr
         #combine and store the locations (concatenate and add missing dimensions)
         if store_individual:
-            self.apo1sel = apo1sel
-            self.apo2sel = apo2sel
-        self._locations = numpy.concatenate([apo1sel._locations, apo2sel._locations])
-        self._apo1_locations = apo1sel._locations
-        self._apo2_locations = apo2sel._locations
-        self._selfunc = _combine_selfuncs(apo1sel, self._apo1_locations, apo2sel)
-        self._short_hmin = numpy.concatenate([apo1sel._short_hmin, apo2sel._short_hmin])
-        self._medium_hmin = numpy.concatenate([apo1sel._medium_hmin, apo2sel._medium_hmin])
-        self._long_hmin = numpy.concatenate([apo1sel._long_hmin, apo2sel._long_hmin])
-        self._short_hmax = numpy.concatenate([apo1sel._short_hmax, apo2sel._short_hmax])
-        self._medium_hmax = numpy.concatenate([apo1sel._medium_hmax, apo2sel._medium_hmax])
-        self._long_hmax = numpy.concatenate([apo1sel._long_hmax, apo2sel._long_hmax])
-        self._number_of_bins = numpy.concatenate([numpy.ones(len(self._apo1_locations)), apo2sel._number_of_bins])
-        self._color_bins_jkmax = numpy.concatenate([numpy.ones([len(self._apo1_locations), 5])*999.,apo2sel._color_bins_jkmax])
-        jkmin_apo1 = numpy.ones([len(self._apo1_locations), 5])*999.
-        jkmin_apo1[:,0] = 0.5
-        self._color_bins_jkmin = numpy.concatenate([jkmin_apo1, apo2sel._color_bins_jkmin])
+            self.apo1sel = aposels[0]
+            self.apo2Nsel = aposels[1]
+            if len(aposels) > 2:
+                self.apo2Ssel = aposels[2]
+
+        self._locations = numpy.concatenate([sel._locations for sel in aposels])
+        self._apo1_locations = self.apo1sel._locations
+        self._apo2N_locations = self.apo2Nsel._locations
+        if len(aposels) > 2:
+            self._apo2S_locations = self.apo2Ssel._locations
+            self._apo2_locations = numpy.concatenate([sel._locations for sel in aposels[1:]])
+        else:
+            self._apo2_locations = self._apo2N_locations
         #need to concatenate obslog info too (for determine_statistical)
-        self._short_completion = numpy.concatenate([apo1sel._short_completion,apo2sel._short_completion])
-        self._medium_completion = numpy.concatenate([apo1sel._medium_completion, apo2sel._medium_completion])
-        self._long_completion = numpy.concatenate([apo1sel._long_completion, apo2sel._long_completion])
-        bincomp_apo1 = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        bincomp_apo1[:,0] = 1.
-        self._bin_completion = numpy.concatenate([bincomp_apo1,apo2sel._bin_completion])
+        self._short_hmin = numpy.concatenate([sel._short_hmin for sel in aposels])
+        self._medium_hmin = numpy.concatenate([sel._medium_hmin for sel in aposels])
+        self._long_hmin = numpy.concatenate([sel._long_hmin for sel in aposels])
+        self._short_hmax = numpy.concatenate([sel._short_hmax for sel in aposels])
+        self._medium_hmax = numpy.concatenate([sel._medium_hmax for sel in aposels])
+        self._long_hmax = numpy.concatenate([sel._long_hmax for sel in aposels])
+        self._number_of_bins = numpy.concatenate([sel._number_of_bins for sel in aposels])
+        self._color_bins_jkmax = numpy.concatenate([sel._color_bins_jkmax for sel in aposels])
+        self._color_bins_jkmin = numpy.concatenate([sel._color_bins_jkmin for sel in aposels])
+        self._short_completion = numpy.concatenate([sel._short_completion for sel in aposels])
+        self._medium_completion = numpy.concatenate([sel._medium_completion for sel in aposels])
+        self._long_completion = numpy.concatenate([sel._long_completion for sel in aposels])
+        self._bin_completion = numpy.concatenate([sel._bin_completion for sel in aposels])
         self._apogee1Design = apo1sel._apogeeDesign
-        self._apogee2Design = apo2sel._apogeeDesign
+        self._apogee2NDesign = apo2Nsel._apogeeDesign
         self._apogee1Field = apo1sel._apogeeField
-        self._apogee2Field = apo2sel._apogeeField
+        self._apogee2NField = apo2Nsel._apogeeField
         self._designs1Indx = apo1sel._designsIndx
-        self._designs2Indx = apo2sel._designsIndx
+        self._designs2NIndx = apo2Nsel._designsIndx
+        if len(aposels) > 2:
+            self._apogee2SDesign = apo2Ssel._apogeeDesign
+            self._apogee2SField = apo2Ssel._apogeeField
+            self._designs2SIndx = apo2Ssel._designsIndx
+            self._apogee2Field = numpy.concatenate([self._apogee2NField, self._apogee2SField])
+            self._apogee2Design = numpy.concatenate([self._apogee2NDesign, self._apogee2SDesign])
+            self._designs2Indx = numpy.concatenate([self._designs2NIndx, self._designs2SIndx])
+        else:
+            self._apogee2Field = self._apogee2NField
+            self._apogee2Design = self._apogee2NDesign
+            self._designs2Indx = self._designs2NIndx
         self._1plates = apo1sel._plates
-        self._2plates = apo2sel._plates
-        self._plates = numpy.concatenate([self._1plates, self._2plates])
-        self._loc_design_radius = numpy.concatenate([apo1sel._loc_design_radius, apo2sel._loc_design_radius])
-        #combine the specdata and photdata for plots?
-        self._specdata = apo1sel._specdata
-        self._specdata.update(apo2sel._specdata)
-        self._photdata = apo1sel._photdata
-        self._photdata.update(apo2sel._photdata)
-        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nspec[:,0] = apo1sel._nspec_short
-        self._nspec_short = numpy.concatenate([apo1_nspec,apo2sel._nspec_short])
-        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nspec[:,0] = apo1sel._nspec_medium
-        self._nspec_medium = numpy.concatenate([apo1_nspec,apo2sel._nspec_medium])
-        apo1_nspec = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nspec[:,0] = apo1sel._nspec_long
-        self._nspec_long = numpy.concatenate([apo1_nspec,apo2sel._nspec_long])
-        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nphot[:,0] = apo1sel._nphot_short
-        self._nphot_short = numpy.concatenate([apo1_nphot,apo2sel._nphot_short])
-        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nphot[:,0] = apo1sel._nphot_medium
-        self._nphot_medium = numpy.concatenate([apo1_nphot,apo2sel._nphot_medium])
-        apo1_nphot = numpy.ones([len(self._apo1_locations), 5])*numpy.nan
-        apo1_nphot[:,0] = apo1sel._nphot_long
-        self._nphot_long = numpy.concatenate([apo1_nphot,apo2sel._nphot_long])
+        self._2Nplates = apo2Nsel._plates
+        if len(aposels) > 2:
+            self._2Splates = apo2Ssel._plates
+        self._plates = numpy.concatenate([sel._plates for sel in aposels])
+        self._loc_design_radius = numpy.concatenate([sel._loc_design_radius for sel in aposels])
+        if not _justprocessobslog:
+            #also make the nspec the same for apo1 as apo2
+            apo1_nspec = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nspec[:,0] = apo1sel._nspec_short
+            apo1sel._nspec_short = apo1_nspec
+            apo1_nspec = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nspec[:,0] = apo1sel._nspec_medium
+            apo1sel._nspec_medium = apo1_nspec
+            apo1_nspec = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nspec[:,0] = apo1sel._nspec_long
+            apo1sel._nspec_long = apo1_nspec
+            apo1_nphot = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nphot[:,0] = apo1sel._nphot_short
+            apo1sel._nphot_short = apo1_nphot
+            apo1_nphot = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nphot[:,0] = apo1sel._nphot_medium
+            apo1sel._nphot_medium = apo1_nphot
+            apo1_nphot = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
+            apo1_nphot[:,0] = apo1sel._nphot_long
+            apo1sel._nphot_long = apo1_nphot
+            #we also need this info if the sel func has been evaluated....
+            self._specdata = apo1sel._specdata
+            self._specdata.update(apo2Nsel._specdata)
+            if len(aposels) > 2:
+                self._specdata.update(apo2Ssel._specdata)
+            self._photdata = apo1sel._photdata
+            self._photdata.update(apo2Nsel._photdata)
+            if len(aposels) > 2:
+                self._photdata.update(apo2Ssel._photdata)
+            self._nspec_short = numpy.concatenate([sel._nspec_short for sel in aposels])
+            self._nspec_medium = numpy.concatenate([sel._nspec_medium for sel in aposels])
+            self._nspec_long = numpy.concatenate([sel._nspec_long for sel in aposels])
+            self._nphot_short = numpy.concatenate([sel._nphot_short for sel in aposels])
+            self._nphot_medium = numpy.concatenate([sel._nphot_medium for sel in aposels])
+            self._nphot_long = numpy.concatenate([sel._nphot_long for sel in aposels])
+            self._selfunc = _combine_selfuncs(apo1sel, self._apo1_locations, aposels[1:])
 
     def __call__(self, location, H, JK0):
         """
@@ -3180,7 +3235,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                           add_mean_label=False,
                           add_cohort_label=False,
                           incl_not_started=True,
-                          cmap='viridis'):
+                          cmap='viridis', gcf=False):
         """
         NAME:
            plot_obs_progress
@@ -3224,7 +3279,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                             xlabel=r'$\mathrm{Galactic\ longitude\,(deg)}$',
                             ylabel=r'$\mathrm{Galactic\ latitude\,(deg)}$',
                             clabel=r'$\mathrm{%s\ cohort\ progress}$' % cohort,
-                            zorder=10)
+                            zorder=10, gcf=gcf)
         #Then plot *all* locations as zero progress, to include the ones that
         #haven't been started yet
         ap1F= apread.apogeeField(dr=self.apo1dr)
@@ -3269,7 +3324,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                                 scatter=True,
                                 vmin=0.,vmax=1.,
                                 crange=[0.,1.],
-                                zorder=1)
+                                zorder=1, gcf=gcf)
             bovy_plot.bovy_plot(ap2Flb[:,0],ap2Flb[:,1],
                                 s=ms,overplot=True,
                                 c=colormap(0.),
@@ -3277,7 +3332,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                                 scatter=True,
                                 vmin=0.,vmax=1.,
                                 crange=[0.,1.],
-                                zorder=1)
+                                zorder=1, gcf=gcf)
         if add_mean_label:
             bovy_plot.bovy_text(r'$\mathrm{average\ completeness}: %.0f\,\%%$' %
                                 (100.*numpy.nansum(progress)/float(len(apFlb[:,0]))),
