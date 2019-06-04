@@ -121,6 +121,7 @@ def allStar(rmcommissioning=True,
             mjd=58104,
             xmatch=None,
             test=False,
+            dr=None,
             **kwargs):
     """
     NAME:
@@ -142,7 +143,7 @@ def allStar(rmcommissioning=True,
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
-       rmdups= (False) if True, remove duplicates
+       rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
@@ -157,11 +158,18 @@ def allStar(rmcommissioning=True,
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
     """
-    filePath= path.allStarPath(mjd=mjd)
-    if not os.path.exists(filePath):
-        download.allStar(mjd=mjd)
-    #read allStar file
-    data= fitsread(path.allStarPath(mjd=mjd))
+    if dr is None:
+        filePath= path.allStarPath(mjd=mjd)
+        if not os.path.exists(filePath):
+            download.allStar(mjd=mjd)
+            #read allStar file
+        data= fitsread(path.allStarPath(mjd=mjd))
+    else:
+        filePath= path.allStarPath(mjd=mjd, dr=dr)
+        if not os.path.exists(filePath):
+            download.allStar(mjd=mjd, dr=dr)
+            #read allStar file
+        data= fitsread(path.allStarPath(mjd=mjd, dr=dr))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
     # [ages file not matched line-by-line]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
@@ -179,19 +187,32 @@ def allStar(rmcommissioning=True,
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        sys.stdout.write('\r'+"Removing duplicates ...\r")
-        sys.stdout.flush()
-        data= remove_duplicates(data)
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
+        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
+        #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
+        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages:
+            astronn_used = True
+        else:
+            astronn_used = False
+        if os.path.exists(dupsFilename) and not astronn_used:
+            data= fitsread(dupsFilename)
+        else:
+            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ... (file not cached if use_astroNN=True)\r")
+            sys.stdout.flush()
+            data= remove_duplicates(data)
+            #Cache this file for subsequent use of rmdups (only if not astroNN!)
+            if not astronn_used:
+                fitswrite(dupsFilename,data,clobber=True)
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.flush()
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if rmdups:
-            matchFilePath= path.allStarPath(mjd=mjd).replace('.fits',
-                                                             '-nodups.fits')
+            matchFilePath= dupsFilename
         else:
             matchFilePath= filePath
-        ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
+        if use_astroNN_ages:
+            matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
     if rmcommissioning:
@@ -209,24 +230,24 @@ def allStar(rmcommissioning=True,
         if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         #get rid of the pesky trailing whitespace...
-        data['SURVEY'] = [data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))]
+        surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         if survey.lower() == 'apogee1':
-            indx = ((survey == b'apogee')
-                      + (survey == b'apogee,apogee-marvels')
-                      + (survey == b'apogee,apogee-marvels,apogee2')
-                      + (survey == b'apogee,apogee-marvels,apogee2-manga')
-                      + (survey == b'apogee,apogee2')
-                      + (survey == b'apogee,apogee2,apogee2-manga')
-                      + (survey == b'apogee,apogee2-manga')
-                      + (survey == b'apogee-marvels'),
-                      + (survey == b'apogee-marvels,apogee2')
-                      + (survey == b'apogee-marvels,apogee2-manga'))
+            indx = ((surv == b'apogee')
+                      + (surv == b'apogee,apogee-marvels')
+                      + (surv == b'apogee,apogee-marvels,apogee2')
+                      + (surv == b'apogee,apogee-marvels,apogee2-manga')
+                      + (surv == b'apogee,apogee2')
+                      + (surv == b'apogee,apogee2,apogee2-manga')
+                      + (surv == b'apogee,apogee2-manga')
+                      + (surv == b'apogee-marvels')
+                      + (surv == b'apogee-marvels,apogee2')
+                      + (surv == b'apogee-marvels,apogee2-manga'))
         elif survey.lower() == 'apogee2':
-            indx = ((survey == b'apogee2')
-                      + (survey == b'apogee2-manga')
-                      + (survey == b'manga-apogee2')
-                      + (survey == b'apogee2,apogee2-manga')
-                      + (survey == b'apogee2s'))
+            indx = ((surv == b'apogee2')
+                      + (surv == b'apogee2-manga')
+                      + (surv == b'manga-apogee2')
+                      + (surv == b'apogee2,apogee2-manga')
+                      + (surv == b'apogee2s'))
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
     if test:
@@ -405,9 +426,18 @@ def allVisit(rmcommissioning=True,
             if plateInt:
                 dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
             elif plateS4:
-                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S4')
+                #go to int first, as this field is formatted differently in diff releases...
+                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
+                dt= numpy.dtype(dt)
+                data= data.astype(dt)
+                dt= data.dtype
+                dt= dt.descr
+                plateDtypeIndx= dt.index(('PLATE', '<i8'))
+                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S5')
             dt= numpy.dtype(dt)
             data= data.astype(dt)
+
+
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
@@ -1035,12 +1065,13 @@ def mainIndx(data):
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone...
-        data['SURVEY'] = [data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))]
+        data['SURVEY'] = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         if type(data['SURVEY']) == numpy.chararray:
             #if the data have been read using astropy, make sure this field is the right format...
             survey = np.array(data['SURVEY'].encode())
         else:
             survey = data['SURVEY']
+
         indx *= ((survey == b'apogee')
                   + (survey == b'apogee,apogee-marvels')
                   + (survey == b'apogee,apogee-marvels,apogee2')
@@ -1048,10 +1079,9 @@ def mainIndx(data):
                   + (survey == b'apogee,apogee2')
                   + (survey == b'apogee,apogee2,apogee2-manga')
                   + (survey == b'apogee,apogee2-manga')
-                  + (survey == b'apogee-marvels'),
+                  + (survey == b'apogee-marvels')
                   + (survey == b'apogee-marvels,apogee2')
                   + (survey == b'apogee-marvels,apogee2-manga'))
-
         indx+= ((survey == b'apogee2')
                   + (survey == b'apogee2-manga')
                   + (survey == b'manga-apogee2')

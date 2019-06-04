@@ -52,7 +52,9 @@ _DR11REDUX='v402'
 _DR12REDUX='v603'
 _DR13REDUX='l30e.2'
 _DR14REDUX='l31c.2'
+_DR16REDUX='l33'
 _CURRENTREDUX='current'
+
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
 if _APOGEE_APOKASC_REDUX is None:
@@ -133,9 +135,12 @@ def allStarPath(dr=None,_old=False,mjd=58104):
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
-            if mjd >= 58297:
+            if not isinstance(mjd, str) and mjd >= 58297:
                 return os.path.join(specASPCAPPath,'r10','l31c',
                                     'allStar-r10-l31c-%i.fits' % mjd)
+            if mjd == 'beta':
+                return os.path.join(specASPCAPPath, 'r12', 'l33',
+                                    'allStar-r12-l33beta.fits')
             else:
                 return os.path.join(specASPCAPPath,'t9','l31c',
                                     'allStar-t9-l31c-%i.fits' % mjd)
@@ -164,6 +169,8 @@ def allVisitPath(dr=None,_old=False,mjd=58104):
     if _old:
         return os.path.join(_APOGEE_DATA,
                             'allVisit-%s.fits' % redux)
+    if dr is 'current':
+        return allStarPath(dr=dr,_old=_old,mjd='beta').replace('allStar','allVisit')
     else:
         return allStarPath(dr=dr,_old=_old,mjd=mjd).replace('allStar','allVisit')
 
@@ -242,9 +249,10 @@ def rcsamplePath(dr=None,_old=False):
         elif _APOGEE_REDUX == 'v603': dr= '12'
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'l31c.2': dr= '14'
-        elif _APOGEE_REDUX == 'current':
-            return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
-        else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
+    elif _APOGEE_REDUX == 'l33' : dr='16'
+    elif _APOGEE_REDUX == 'current':
+        return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
+    else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
     if _old:
         return os.path.join(_APOGEE_DATA,
                             'apogee-rc-DR%s.fits' % dr)
@@ -576,6 +584,19 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
+    elif dr == '16':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r12','stars','l33',
+                                _redux_dr(dr=dr),loc_id.strip(),
+                                'aspcapStar-r12-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id.strip()))
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r12','stars','l33',
+                                _redux_dr(dr=dr),'%i' % loc_id,
+                                'aspcapStar-r12-%s-%s.fits' % (_redux_dr(dr=dr),
+                                                              apogee_id))
     elif dr == 'current':
         specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
         return os.path.join(specASPCAPPath,'t9','l31c',telescope,
@@ -638,6 +659,17 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
             return os.path.join(specReduxPath,'r8','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r8-%s.fits' % apogee_id)
+    elif dr == '16':
+        if isinstance(loc_id,str): #1m
+            return os.path.join(specReduxPath,'r12','stars','apo1m',
+                                loc_id.strip(),
+                                'apStar-r12-%s.fits' % apogee_id.strip())
+        elif loc_id ==1:
+            raise IOError('For 1m targets, give the FIELD instead of the location ID')
+        else:
+            return os.path.join(specReduxPath,'r12','stars','apo25m',
+                                '%i' % loc_id,
+                                'apStar-r12-%s.fits' % apogee_id)
     elif dr == 'current':
         return os.path.join(specReduxPath,'t9','stars',telescope,
                             loc_id.strip(),
@@ -684,6 +716,9 @@ def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     elif dr == '14':
         return os.path.join(specReduxPath, 'r8', telescope , plateid, mjd,
                             'apVisit-r8-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+    elif dr == '16':
+        return os.path.join(specReduxPath, 'r12', telescope , plateid, mjd,
+                            'apVisit-r12-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == 'current':
         return os.path.join(specReduxPath, 'current', telescope , plateid, mjd,
                             'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
@@ -1012,6 +1047,7 @@ def change_dr(dr=None):
     elif str(dr) == '12': _APOGEE_REDUX=_DR12REDUX
     elif str(dr) == '13': _APOGEE_REDUX=_DR13REDUX
     elif str(dr) == '14': _APOGEE_REDUX=_DR14REDUX
+    elif str(dr) == '16': _APOGEE_REDUX=_DR16REDUX
     elif str(dr) == 'current': _APOGEE_REDUX=_CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
@@ -1021,6 +1057,7 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
+    elif _APOGEE_REDUX == _DR16REDUX: dr='16'
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -1032,6 +1069,7 @@ def _redux_dr(dr=None):
     elif dr == '12': return _DR12REDUX
     elif dr == '13': return _DR13REDUX
     elif dr == '14': return _DR14REDUX
+    elif dr == '16': return _DR16REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
