@@ -42,7 +42,7 @@ _COMPLATES= [5092,5093,5094,5095,4941,4923,4924,4925,4910,4826,4827,4828,
 _BADPLATES = [8632, 10001, 9468,  9469,  9470,  9478,  9479,  9659,  9662,  9688,  9807,
         9861,  9980, 10008, 10009, 10010, 10011, 10012, 10013, 10014,
        10018, 10019, 10020, 10097, 10099, 10304, 10343, 10344, 10346,
-       10375, 10635]
+       10375, 10635, 10643]
 _ERASESTR= "                                                                                "
 
 
@@ -603,6 +603,16 @@ class apogeeSelectPlotsMixin:
         apF= apF[has_cohort]
         apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
         colormap = cm.get_cmap(cmap)
+        #Remove fields not in this hemisphere (apogee2Select only)
+        if isinstance(self,apogee2Select):
+            hemisphere = self._hemisphere
+            if hemisphere == 'north':
+                inhem = apF['DEC'] > -32.
+            if hemisphere == 'south':
+                inhem = apF['DEC'] < 29.
+            apF = apF[inhem]
+            apFlb = apFlb[inhem]
+
         if incl_not_started:
             bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
                                 s=ms,overplot=True,
@@ -667,6 +677,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
     def __init__(self,sample='main',
                  locations=None,
                  year=None,
+                 mjd=None,
                  sftype='constant',
                  minnspec=3,
                  frac4complete=1.,
@@ -713,7 +724,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         #Load spectroscopic data and cut to the statistical sample
         sys.stdout.write('\r'+"Reading and parsing spectroscopic data; determining statistical sample ...\r")
         sys.stdout.flush()
-        self._load_spec_data(sample=sample)
+        self._load_spec_data(sample=sample, mjd=mjd)
         sys.stdout.write('\r'+_ERASESTR+'\r')
         sys.stdout.flush()
         #Load the underlying photometric sample for the locations/cohorts in
@@ -1436,21 +1447,30 @@ class apogee1Select(apogeeSelect):
            2013-11-10 - Written - Bovy (IAS)
         """
         #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        if self._mjd is not None:
+            allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
+        else:
+            allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
                  allVisit['PLATE'][ii]+b'-'+
                  b'%05i' % allVisit['MJD'][ii] + b'-'
                  b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S17')
+                            dtype='|S18')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
             avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            #include a check to catch instances where .fits is added to the end of visit ID (DR16 beta issue?)
+            if avisit.endswith(b'.fits'):
+                #just chop off .fits?
+                avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
+                print(avisit)
+                print(ii)
                 avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
@@ -1523,8 +1543,14 @@ class apogee1Select(apogeeSelect):
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
             sys.stdout.flush()
-            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
-                                               ak=True,akvers='targ')
+            try:
+                tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                                ak=True,akvers='targ')
+            except OSError:
+                #try field name+location?
+                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode()
+                tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                                ak=True,akvers='targ')
             #Cut to relevant color range
             jko= tapogeeObject['J0']-tapogeeObject['K0']
             if sample.lower() == 'rcsample':
@@ -1584,10 +1610,14 @@ class apogee1Select(apogeeSelect):
         self._nphot_long= nphot_long
         return None
 
-    def _load_spec_data(self,sample='rcsample'):
+    def _load_spec_data(self,sample='rcsample',mjd=None):
         """Internal function to load the full spectroscopic data set and
         cut it down to the statistical sample"""
-        allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee1')
+        self._mjd = mjd
+        if mjd is not None:
+            allStar= apread.allStar(main=True,mjd=mjd,akvers='targ',rmdups=True, survey='apogee1')
+        else:
+            allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee1')
         #Only keep stars in locations for which we are loading the
         #selection function
         indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations
@@ -1600,7 +1630,7 @@ class apogee1Select(apogeeSelect):
         else:
             indx= jko >= 0.5
         allStar= allStar[indx]
-        statIndx= self.determine_statistical(allStar)
+        statIndx= self.determine_statistical(allStar, )
         allStar= allStar[statIndx]
         #Save spectroscopic data by location
         specdata= {}
@@ -1668,23 +1698,34 @@ class apogee2Select(apogeeSelect):
            2019-27-02 - Updated for APOGEE-2 - Mackereth (UoB)
         """
         #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        if self._mjd is not None:
+            allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
+        else:
+            allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
                  allVisit['PLATE'][ii]+b'-'+
                  b'%05i' % allVisit['MJD'][ii] + b'-'
                  b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S17')
+                            dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
             avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            if avisit.endswith(b'.fits'):
+                #just chop off .fits?
+                avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
-                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
+                print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii])
                 avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
                 indx= visits == avisit
+                if numpy.sum(indx) == 0.:
+                    print(avisit)
+                    print(ii)
+                    statIndx[ii] = False
+                    continue
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
             tplatesIndx= (self._plates == avisitsplate)
@@ -1761,8 +1802,14 @@ class apogee2Select(apogeeSelect):
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
             sys.stdout.flush()
-            tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
-                                               ak=True,akvers='targ')
+            try:
+                tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                                ak=True,akvers='targ')
+            except OSError:
+                #try field name+location?
+                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode()
+                tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
+                                                ak=True,akvers='targ')
             #Cut to relevant color range
             jko= tapogeeObject['J0']-tapogeeObject['K0']
             if sample.lower() == 'rcsample':
@@ -1831,14 +1878,14 @@ class apogee2Select(apogeeSelect):
         self._nphot_long= nphot_long
         return None
 
-    def _load_spec_data(self,sample='rcsample'):
+    def _load_spec_data(self,sample='rcsample',mjd=None):
         """Internal function to load the full spectroscopic data set and
         cut it down to the statistical sample"""
-        if self._year > 5:
-            allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2', mjd=58360)
+        self._mjd = mjd
+        if mjd is not None:
+            allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2', mjd=mjd)
         else:
             allStar= apread.allStar(main=True,akvers='targ',rmdups=True, survey='apogee2')
-
         #Only keep stars in locations for which we are loading the
         #selection function
         indx= numpy.array([allStar['LOCATION_ID'][ii] in self._locations
@@ -2047,7 +2094,9 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         HISTORY:
            2018-02-27 - Adapted from apogeeSelect - Mackereth (UoB)
         """
+        self._mjd = mjd
         self._sftype = sftype
+        self._sample = sample
         self._frac4complete = frac4complete
         if year is None or year < 7:
             self.apo1year = 3
@@ -2071,7 +2120,7 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             ap1_locations= None
             ap2_locations= None
         #load an APOGEE 1 and 2 selection function
-        apo1sel = apogee1Select(year=self.apo1year, sample=sample, locations=ap1_locations, _justprocessobslog=_justprocessobslog)
+        apo1sel = apogee1Select(year=self.apo1year, mjd=mjd, sample=sample, locations=ap1_locations, _justprocessobslog=_justprocessobslog)
         #add dummy color bin info to apo1sel...
         apo1sel._number_of_bins = numpy.ones(len(apo1sel._locations))
         apo1sel._color_bins_jkmax = numpy.ones([len(apo1sel._locations), 5])*999.
@@ -2081,10 +2130,10 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         bincomp_apo1 = numpy.ones([len(apo1sel._locations), 5])*numpy.nan
         bincomp_apo1[:,0] = 1.
         apo1sel._bin_completion = bincomp_apo1
-        apo2Nsel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2_locations, hemisphere='north', _justprocessobslog=_justprocessobslog)
+        apo2Nsel = apogee2Select(year=self.apo2year, mjd=mjd, sample=sample, locations=ap2_locations, hemisphere='north', _justprocessobslog=_justprocessobslog)
         aposels = [apo1sel, apo2Nsel]
         if self.apo2year > 5:
-            apo2Ssel = apogee2Select(year=self.apo2year, sample=sample, locations=ap2_locations, hemisphere='south', _justprocessobslog=_justprocessobslog)
+            apo2Ssel = apogee2Select(year=self.apo2year, mjd=mjd, sample=sample, locations=ap2_locations, hemisphere='south', _justprocessobslog=_justprocessobslog)
             aposels.append(apo2Ssel)
         self.apo1dr = apo1sel._dr
         self.apo2dr = apo2Nsel._dr
@@ -2180,7 +2229,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             self._nphot_short = numpy.concatenate([sel._nphot_short for sel in aposels])
             self._nphot_medium = numpy.concatenate([sel._nphot_medium for sel in aposels])
             self._nphot_long = numpy.concatenate([sel._nphot_long for sel in aposels])
-            self._selfunc = _combine_selfuncs(apo1sel, self._apo1_locations, aposels[1:])
+            self._determine_selection(sample=sample,sftype=sftype,
+                                      minnspec=minnspec)
 
     def __call__(self, location, H, JK0):
         """
@@ -2631,12 +2681,15 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
            2018-02-27 - Adapted for CombinedSelect - Mackereth (UoB)
         """
         #Read the allVisit file to match back to plates
-        allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
+        if self._mjd is not None:
+            allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
+        else:
+            allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
         visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
                  allVisit['PLATE'][ii]+b'-'+
                  b'%05i' % allVisit['MJD'][ii] + b'-'
                  b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S17')
+                            dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
@@ -2648,20 +2701,30 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 design = self._apogee1Design
                 desIndx = self._designs1Indx
                 locs = self._apo1_locations
-            elif specdata['LOCATION_ID'][ii] in self._apo2_locations:
+            elif specdata['LOCATION_ID'][ii] in self._apo2N_locations:
                 survey = 2
-                platelist = self._2plates
-                design = self._apogee2Design
-                desIndx = self._designs2Indx
-                locs = self._apo2_locations
+                platelist = self._2Nplates
+                design = self._apogee2NDesign
+                desIndx = self._designs2NIndx
+                locs = self._apo2N_locations
+            elif specdata['LOCATION_ID'][ii] in self._apo2S_locations:
+                survey = 2
+                platelist = self._2Splates
+                design = self._apogee2SDesign
+                desIndx = self._designs2SIndx
+                locs = self._apo2S_locations
             else:
                 continue
             avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            if avisit.endswith(b'.fits'):
+                #just chop off .fits?
+                avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
                 avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                print(avisit)
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
@@ -2700,6 +2763,35 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 statIndx[ii]= True
         return statIndx*apread.mainIndx(specdata)
 
+    def _determine_selection(self,sample='rcsample',sftype='constant',
+                             minnspec=10):
+        """Internal function to determine the selection function"""
+        selfunc= {} #this will be a dictionary of functions; keys locid+s/m/l
+        self._minnspec= minnspec
+        self._sftype= sftype
+        if self._sftype.lower() == 'constant':
+            for ii in range(len(self._locations)):
+                if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
+                        and numpy.nansum(self._nspec_short[ii]) >= minnspec:
+                    #There is a short cohort
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: self._nspec_short[copy]/self._nphot_short[copy]
+                else:
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
+                if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
+                        and numpy.nansum(self._nspec_medium[ii]) >= minnspec:
+                    #There is a medium cohort
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: self._nspec_medium[copy]/self._nphot_medium[copy]
+                else:
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
+                if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
+                        and numpy.nansum(self._nspec_long[ii]) >= minnspec:
+                    #There is a long cohort
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: self._nspec_long[copy]/self._nphot_long[copy]
+                else:
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.zeros(5)+numpy.nan
+        self._selfunc= selfunc
+        return None
+
     def __getstate__(self):
         pdict= copy.copy(self.__dict__)
         del pdict['_selfunc']
@@ -2707,8 +2799,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
 
     def __setstate__(self,pdict):
         self.__dict__= pdict
-        self._selfunc= _combine_selfuncs(self.apo1sel,self._apo1_locations,
-                                         self.apo2sel)
+        self._determine_selection(sample=self.sample,sftype=self.sftype,
+                                  minnspec=self.minnspec)
         return None
 
 def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
@@ -2722,7 +2814,11 @@ def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
         selfunc['%im' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%im' % copy](0.))
         #long
         selfunc['%il' % loc] = lambda x, copy=loc: numpy.insert(numpy.zeros(4)+numpy.nan,0,apo1sel._selfunc['%il' % copy](0.))
-    selfunc.update(apo2sel._selfunc)
+    if isinstance(apo2sel, list):
+        selfunc.update(apo2sel[0]._selfunc)
+        selfunc.update(apo2sel[1]._selfunc)
+    else:
+        selfunc.update(apo2sel._selfunc)
     return selfunc
 
 class apogeeEffectiveSelect:
