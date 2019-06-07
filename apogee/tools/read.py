@@ -231,8 +231,11 @@ def allStar(rmcommissioning=True,
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
-        #get rid of the pesky trailing whitespace...
-        surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
+        #get rid of the pesky trailing whitespace and make sure we are in bytes...
+        if not type(data['SURVEY'][0]) == numpy.bytes_:
+            surv = numpy.array([data['SURVEY'][i].strip().encode() for i in range(len(data['SURVEY']))])
+        else:
+            surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         if survey.lower() == 'apogee1':
             indx = ((surv == b'apogee')
                       + (surv == b'apogee,apogee-marvels')
@@ -1072,12 +1075,10 @@ def mainIndx(data):
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone...
-        survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
-        if type(survey) == numpy.chararray:
-            #if the data have been read using astropy, make sure this field is the right format...
-            survey = numpy.array(survey.encode())
-
-
+        if not type(data['SURVEY'][0]) == numpy.bytes_:
+            survey = numpy.array([data['SURVEY'][i].strip().encode() for i in range(len(data['SURVEY']))])
+        else:
+            survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         indx *= ((survey == b'apogee')
                   + (survey == b'apogee,apogee-marvels')
                   + (survey == b'apogee,apogee-marvels,apogee2')
