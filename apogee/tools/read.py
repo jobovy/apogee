@@ -1073,7 +1073,7 @@ def mainIndx(data):
         data['SURVEY'] = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         if type(data['SURVEY']) == numpy.chararray:
             #if the data have been read using astropy, make sure this field is the right format...
-            survey = np.array(data['SURVEY'].encode())
+            survey = numpy.array(data['SURVEY'].encode())
         else:
             survey = data['SURVEY']
 
