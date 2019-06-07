@@ -37,11 +37,13 @@ try:
     fitsread= fitsio.read
     fitswrite=fitsio.write
     headerread=fitsio.read_header
+    _FITSIO_LOADED = True
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread= pyfits.getdata
     fitswrite=pyfits.writeto
     headerread=pyfits.getheader
+    _FITSIO_LOADED=False
 import tqdm
 from apogee.tools import path, paramIndx, download
 from apogee.tools.path import change_dr # make this available here
@@ -1074,7 +1076,7 @@ def mainIndx(data):
         if type(survey) == numpy.chararray:
             #if the data have been read using astropy, make sure this field is the right format...
             survey = numpy.array(survey.encode())
-        
+
 
         indx *= ((survey == b'apogee')
                   + (survey == b'apogee,apogee-marvels')
