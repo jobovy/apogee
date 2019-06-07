@@ -118,7 +118,11 @@ class apogeeSelectPlotsMixin:
                 JKs= None
             else:
                 JKs = numpy.ones(nHs)*(self._color_bins_jkmin[ii,color_bin]+self._color_bins_jkmax[ii,color_bin])/2.
-            dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
+            try:
+                dm= Hs-mh-numpy.median(self._specdata['%i' % self._locations[ii]]['AK_TARG'][True^numpy.isnan(self._specdata['%i' % self._locations[ii]]['AK_TARG'])])*1.55
+            except TypeError:
+                #no spec data, selfunc will be 0 anyway...
+                dm = 10.
             ds= 10.**(dm/5.-2.) #in kpc
             glonglat = self.glonGlat(self._locations[ii])
             tl= glonglat[0]
@@ -781,8 +785,25 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 bin_inds -= 1
             #then find the selection
             if JK0 is None:
-                if numpy.shape(self._selfunc['%is' % location](self._short_hmax[locIndx])) == (5,):
+                if isinstance(self, apogee1Select) and numpy.shape(self._selfunc['%is' % location](self._short_hmax[locIndx])) == (5,):
+                    #is combined version of apogee1Select, so take zeroth color bin....
+                    #short
+                    sindx= (H >= self._short_hmin[locIndx])\
+                        *(H <= self._short_hmax[locIndx])
+                    out[sindx]= self._selfunc['%is' % location](self._short_hmax[locIndx])[0] #constant
+                    #medium
+                    mindx= (H > self._medium_hmin[locIndx])\
+                        *(H <= self._medium_hmax[locIndx])
+                    out[mindx]= self._selfunc['%im' % location](self._medium_hmax[locIndx])[0] #constant
+                    #long
+                    lindx= (H > self._long_hmin[locIndx])\
+                        *(H <= self._long_hmax[locIndx])
+                    out[lindx]= self._selfunc['%il' % location](self._long_hmax[locIndx])[0] #constant
+                    out[numpy.isnan(out)]= 0. #set cohorts to zero that have no completed observations
+                    return out
+                elif numpy.shape(self._selfunc['%is' % location](self._short_hmax[locIndx])) == (5,):
                     raise ValueError('Must give dereddened J-K when using APOGEE-2 selection function')
+
                 #short
                 sindx= (H >= self._short_hmin[locIndx])\
                     *(H <= self._short_hmax[locIndx])
@@ -1513,21 +1534,21 @@ class apogee1Select(apogeeSelect):
                 if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_short[ii] >= minnspec:
                     #There is a short cohort
-                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_short[copy])/float(self._nphot_short[copy])
+                    selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: self._nspec_short[copy]/self._nphot_short[copy]
                 else:
-                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%is' % self._locations[ii]]= lambda x: numpy.zeros_like(self._nspec_short[0])+numpy.nan
                 if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_medium[ii] >= minnspec:
                     #There is a medium cohort
-                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_medium[copy])/float(self._nphot_medium[copy])
+                    selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: self._nspec_medium[copy]/self._nphot_medium[copy]
                 else:
-                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%im' % self._locations[ii]]= lambda x: numpy.zeros_like(self._nspec_medium[0])+numpy.nan
                 if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
                         and self._nspec_long[ii] >= minnspec:
                     #There is a long cohort
-                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: float(self._nspec_long[copy])/float(self._nphot_long[copy])
+                    selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: self._nspec_long[copy]/self._nphot_long[copy]
                 else:
-                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.nan
+                    selfunc['%il' % self._locations[ii]]= lambda x: numpy.zeros_like(self._nspec_long[0])+numpy.nan
         self._selfunc= selfunc
         return None
 

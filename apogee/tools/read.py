@@ -1062,6 +1062,11 @@ def mainIndx(data):
         *((data['APOGEE_TARGET1'] & 2**7) == 0)\
         *((data['APOGEE_TARGET1'] & 2**8) == 0)\
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
+    if 'APOGEE2_TARGET1' in data.dtype.names:
+        indx += (((data['APOGEE2_TARGET1'] & 2**11) != 0)+((data['APOGEE2_TARGET1'] & 2**12) != 0)+((data['APOGEE2_TARGET1'] & 2**13) != 0))\
+            *((data['APOGEE2_TARGET1'] & 2**7) == 0)\
+            *((data['APOGEE2_TARGET1'] & 2**8) == 0)\
+            *((data['APOGEE2_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone...
@@ -1086,8 +1091,8 @@ def mainIndx(data):
                   + (survey == b'apogee2-manga')
                   + (survey == b'manga-apogee2')
                   + (survey == b'apogee2,apogee2-manga')
-                  + (survey == b'apogee2s'))\
-            *((data['APOGEE2_TARGET1'] & 2**14) != 0)
+                  + (survey == b'apogee2s'))#\
+            #*((data['APOGEE2_TARGET1'] & 2**14) != 0)
     return indx
 
 def remove_duplicates(data):
