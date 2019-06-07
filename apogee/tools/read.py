@@ -232,7 +232,7 @@ def allStar(rmcommissioning=True,
         if not xmatch is None: ma= ma[indx]
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         #get rid of the pesky trailing whitespace and make sure we are in bytes...
-        if not type(data['SURVEY'][0]) == numpy.bytes_:
+        if not isinstance(data['SURVEY'][0], (bytes,numpy.bytes_)):
             surv = numpy.array([data['SURVEY'][i].strip().encode() for i in range(len(data['SURVEY']))])
         else:
             surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
@@ -1075,7 +1075,7 @@ def mainIndx(data):
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone...
-        if not type(data['SURVEY'][0]) == numpy.bytes_:
+        if not isinstance(data['SURVEY'][0], (bytes,numpy.bytes_))::
             survey = numpy.array([data['SURVEY'][i].strip().encode() for i in range(len(data['SURVEY']))])
         else:
             survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
