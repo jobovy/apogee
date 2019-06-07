@@ -1074,8 +1074,7 @@ def mainIndx(data):
         if type(survey) == numpy.chararray:
             #if the data have been read using astropy, make sure this field is the right format...
             survey = numpy.array(survey.encode())
-        else:
-            continue
+        
 
         indx *= ((survey == b'apogee')
                   + (survey == b'apogee,apogee-marvels')
