@@ -1532,19 +1532,19 @@ class apogee1Select(apogeeSelect):
         if self._sftype.lower() == 'constant':
             for ii in range(len(self._locations)):
                 if numpy.nanmax(self._short_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_short[ii] >= minnspec:
+                        and numpy.nansum(self._nspec_short[ii]) >= minnspec:
                     #There is a short cohort
                     selfunc['%is' % self._locations[ii]]= lambda x, copy=ii: self._nspec_short[copy]/self._nphot_short[copy]
                 else:
                     selfunc['%is' % self._locations[ii]]= lambda x: numpy.zeros_like(self._nspec_short[0])+numpy.nan
                 if numpy.nanmax(self._medium_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_medium[ii] >= minnspec:
+                        and numpy.nansum(self._nspec_medium[ii]) >= minnspec:
                     #There is a medium cohort
                     selfunc['%im' % self._locations[ii]]= lambda x, copy=ii: self._nspec_medium[copy]/self._nphot_medium[copy]
                 else:
                     selfunc['%im' % self._locations[ii]]= lambda x: numpy.zeros_like(self._nspec_medium[0])+numpy.nan
                 if numpy.nanmax(self._long_completion[ii,:]) >= self._frac4complete \
-                        and self._nspec_long[ii] >= minnspec:
+                        and numpy.nansum(self._nspec_long[ii]) >= minnspec:
                     #There is a long cohort
                     selfunc['%il' % self._locations[ii]]= lambda x, copy=ii: self._nspec_long[copy]/self._nphot_long[copy]
                 else:
@@ -2820,8 +2820,8 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
 
     def __setstate__(self,pdict):
         self.__dict__= pdict
-        self._determine_selection(sample=self.sample,sftype=self.sftype,
-                                  minnspec=self.minnspec)
+        self._determine_selection(sample=self._sample,sftype=self._sftype,
+                                  minnspec=self._minnspec)
         return None
 
 def _combine_selfuncs(apo1sel, apo1locs, apo2sel):
