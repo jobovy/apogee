@@ -1070,12 +1070,12 @@ def mainIndx(data):
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone...
-        data['SURVEY'] = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
-        if type(data['SURVEY']) == numpy.chararray:
+        survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
+        if type(survey) == numpy.chararray:
             #if the data have been read using astropy, make sure this field is the right format...
-            survey = numpy.array(data['SURVEY'].encode())
+            survey = numpy.array(survey.encode())
         else:
-            survey = data['SURVEY']
+            continue
 
         indx *= ((survey == b'apogee')
                   + (survey == b'apogee,apogee-marvels')
