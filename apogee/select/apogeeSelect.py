@@ -1193,7 +1193,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         #Remove plates that only have pre-commissioning data
         indx= numpy.ones(len(origobslog),dtype='bool')
         for ii in range(len(origobslog)):
-            if origobslog[ii]['ObsHistory'] == b'NOT,OBSERVED': continue
+            if origobslog[ii]['ObsHistory'] == 'NOT,OBSERVED': continue
             if year < 4:
                 mjds= numpy.array(origobslog[ii]['ObsHistory'].astype(str).split(','),dtype='int')
             else: # MJDs now end in ',' so need to cut the last
@@ -1206,7 +1206,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 warnings.warn('Removing plates not found in apogee2Plate...')
                 indx[ii]= False
         origobslog= origobslog[indx]
-        indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
+        indx= origobslog['ObsHistory'] != 'NOT,OBSERVED'
         obslog= origobslog[indx]
         #Remove plates that aren't complete yet
         indx= numpy.ones(len(obslog),dtype='bool')
@@ -1271,7 +1271,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 elif year > 4 and numpy.sum(apogeeDesign[self._designsIndx[ii]]['BIN_USE_WD_FLAG']) >= apogeeDesign[self._designsIndx[ii]]['NUMBER_OF_SELECTION_BINS']:
                     indx[ii]= False
                 # APOGEE-2: Remove halo_stream fields
-                elif year > 4 and apogeeDesign[self._designsIndx[ii]]['DESIGN_TYPE'] == b'halo_stream':
+                elif year > 4 and apogeeDesign[self._designsIndx[ii]]['DESIGN_TYPE'] == 'halo_stream':
                     indx[ii]= False
             self._plates= self._plates[indx]
             nplates= len(self._plates)
@@ -1303,7 +1303,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 if numpy.any(apogeeDesign['SHORT_COHORT_VERSION'][dindx] < 0.):
                     pindx[dummyIndxArray[cpindx][jj]]= False
                 oindx= origobslog['Plate'] == apogeePlate['PLATE_ID'][cpindx][jj]
-                if origobslog['ObsHistory'][oindx] == b'NOT,OBSERVED':
+                if origobslog['ObsHistory'][oindx] == 'NOT,OBSERVED':
                     pindx[dummyIndxArray[cpindx][jj]]= False
             locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
             for jj in range(numpy.sum(pindx)):
@@ -1472,18 +1472,18 @@ class apogee1Select(apogeeSelect):
             allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                 allVisit['PLATE'][ii]+b'-'+
-                 b'%05i' % allVisit['MJD'][ii] + b'-'
-                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                 allVisit['PLATE'][ii]+'-'+
+                 '%05i' % allVisit['MJD'][ii] + '-'
+                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
                             dtype='|S18')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
             #include a check to catch instances where .fits is added to the end of visit ID (DR16 beta issue?)
-            if avisit.endswith(b'.fits'):
+            if avisit.endswith('.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
@@ -1492,7 +1492,7 @@ class apogee1Select(apogeeSelect):
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
                 print(avisit)
                 print(ii)
-                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
@@ -1723,24 +1723,24 @@ class apogee2Select(apogeeSelect):
             allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                 allVisit['PLATE'][ii]+b'-'+
-                 b'%05i' % allVisit['MJD'][ii] + b'-'
-                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                 allVisit['PLATE'][ii]+'-'+
+                 '%05i' % allVisit['MJD'][ii] + '-'
+                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
                             dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
-            if avisit.endswith(b'.fits'):
+            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
+            if avisit.endswith('.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii])
-                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
                 indx= visits == avisit
                 if numpy.sum(indx) == 0.:
                     print(avisit)
@@ -2706,10 +2706,10 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                 allVisit['PLATE'][ii]+b'-'+
-                 b'%05i' % allVisit['MJD'][ii] + b'-'
-                 b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                 allVisit['PLATE'][ii]+'-'+
+                 '%05i' % allVisit['MJD'][ii] + '-'
+                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
                             dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
@@ -2736,15 +2736,15 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 locs = self._apo2S_locations
             else:
                 continue
-            avisit= specdata['VISITS'][ii].split(b',')[0].strip() #this is a visit ID
-            if avisit.endswith(b'.fits'):
+            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
+            if avisit.endswith('.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
-                avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip() #this is a visit ID
+                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
                 print(avisit)
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
