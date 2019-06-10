@@ -233,23 +233,25 @@ def allStar(rmcommissioning=True,
     if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
         #get rid of any trailing whitespace...
         surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
+        if not isinstance(surv[0], (bytes,numpy.bytes_)):
+            surv = numpy.array([surv[i].encode('utf-8') for i in range(len(surv))])
         if survey.lower() == 'apogee1':
-            indx = ((surv == 'apogee')
-                      + (surv == 'apogee,apogee-marvels')
-                      + (surv == 'apogee,apogee-marvels,apogee2')
-                      + (surv == 'apogee,apogee-marvels,apogee2-manga')
-                      + (surv == 'apogee,apogee2')
-                      + (surv == 'apogee,apogee2,apogee2-manga')
-                      + (surv == 'apogee,apogee2-manga')
-                      + (surv == 'apogee-marvels')
-                      + (surv == 'apogee-marvels,apogee2')
-                      + (surv == 'apogee-marvels,apogee2-manga'))
+            indx = ((surv == b'apogee')
+                      + (surv == b'apogee,apogee-marvels')
+                      + (surv == b'apogee,apogee-marvels,apogee2')
+                      + (surv == b'apogee,apogee-marvels,apogee2-manga')
+                      + (surv == b'apogee,apogee2')
+                      + (surv == b'apogee,apogee2,apogee2-manga')
+                      + (surv == b'apogee,apogee2-manga')
+                      + (surv == b'apogee-marvels')
+                      + (surv == b'apogee-marvels,apogee2')
+                      + (surv == b'apogee-marvels,apogee2-manga'))
         elif survey.lower() == 'apogee2':
-            indx = ((surv == 'apogee2')
-                      + (surv == 'apogee2-manga')
-                      + (surv == 'manga-apogee2')
-                      + (surv == 'apogee2,apogee2-manga')
-                      + (surv == 'apogee2s'))
+            indx = ((surv == b'apogee2')
+                      + (surv == b'apogee2-manga')
+                      + (surv == b'manga-apogee2')
+                      + (surv == b'apogee2,apogee2-manga')
+                      + (surv == b'apogee2s'))
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
     if test:
@@ -1073,21 +1075,23 @@ def mainIndx(data):
     if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
         #ensure the whitespace is gone... (whitespace was left in some old fits reading...)
         survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
-        indx *= ((survey == 'apogee')
-                  + (survey == 'apogee,apogee-marvels')
-                  + (survey == 'apogee,apogee-marvels,apogee2')
-                  + (survey == 'apogee,apogee-marvels,apogee2-manga')
-                  + (survey == 'apogee,apogee2')
-                  + (survey == 'apogee,apogee2,apogee2-manga')
-                  + (survey == 'apogee,apogee2-manga')
-                  + (survey == 'apogee-marvels')
-                  + (survey == 'apogee-marvels,apogee2')
-                  + (survey == 'apogee-marvels,apogee2-manga'))
-        indx+= ((survey == 'apogee2')
-                  + (survey == 'apogee2-manga')
-                  + (survey == 'manga-apogee2')
-                  + (survey == 'apogee2,apogee2-manga')
-                  + (survey == 'apogee2s'))#\
+        if not isinstance(survey[0], (bytes,numpy.bytes_)):
+            survey = numpy.array([survey[i].encode('utf-8') for i in range(len(survey))])
+        indx *= ((survey == b'apogee')
+                  + (survey == b'apogee,apogee-marvels')
+                  + (survey == b'apogee,apogee-marvels,apogee2')
+                  + (survey == b'apogee,apogee-marvels,apogee2-manga')
+                  + (survey == b'apogee,apogee2')
+                  + (survey == b'apogee,apogee2,apogee2-manga')
+                  + (survey == b'apogee,apogee2-manga')
+                  + (survey == b'apogee-marvels')
+                  + (survey == b'apogee-marvels,apogee2')
+                  + (survey == b'apogee-marvels,apogee2-manga'))
+        indx+= ((survey == b'apogee2')
+                  + (survey == b'apogee2-manga')
+                  + (survey == b'manga-apogee2')
+                  + (survey == b'apogee2,apogee2-manga')
+                  + (survey == b'apogee2s'))#\
             #*((data['APOGEE2_TARGET1'] & 2**14) != 0)
     return indx
 

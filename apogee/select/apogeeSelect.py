@@ -1472,18 +1472,28 @@ class apogee1Select(apogeeSelect):
             allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
-                 allVisit['PLATE'][ii]+'-'+
-                 '%05i' % allVisit['MJD'][ii] + '-'
-                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S18')
+        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
+                    allVisit['PLATE'][ii]+b'-'+
+                    b'%05i' % allVisit['MJD'][ii] + b'-'
+                    b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S18')
+        else:
+            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode('utf-8')+b'-'+
+                    allVisit['PLATE'][ii].encode('utf-8')+b'-'+
+                    b'%05i' % allVisit['MJD'][ii] + b'-'
+                    b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S18')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
+            if isinstance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
+                avisit= specdata['VISITS'][ii].split(b',')[0].strip()
+            else:
+                avisit= specdata['VISITS'][ii].split(',')[0].strip().encode()  #this is a visit ID
             #include a check to catch instances where .fits is added to the end of visit ID (DR16 beta issue?)
-            if avisit.endswith('.fits'):
+            if avisit.endswith(b'.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
@@ -1723,24 +1733,39 @@ class apogee2Select(apogeeSelect):
             allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
-                 allVisit['PLATE'][ii]+'-'+
-                 '%05i' % allVisit['MJD'][ii] + '-'
-                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S19')
+        if isinstance(allVisit['MJD'][ii], (bytes,numpy.bytes_)):
+            visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+                     allVisit['PLATE'][ii]+b'-'+
+                     b'%05i' % allVisit['MJD'][ii] + b'-'
+                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S19')
+        else:
+            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode()+b'-'+
+                     allVisit['PLATE'][ii].encode()+b'-'+
+                     b'%05i' % allVisit['MJD'][ii] + b'-'
+                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
-            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
-            if avisit.endswith('.fits'):
+            #this is a visit ID
+            if instance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
+                avisit= specdata['VISITS'][ii].split(b',')[0].strip()
+            else:
+                avisit= specdata['VISITS'][ii].split(',')[0].strip().encode()
+            if avisit.endswith(b'.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
             if numpy.sum(indx) == 0.:
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii])
-                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
+                 #this is a visit ID
+                if instance(specdata['ALL_VISITS'][ii], (bytes,numpy.bytes_)):
+                    avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip()
+                else:
+                    avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip().encode()
                 indx= visits == avisit
                 if numpy.sum(indx) == 0.:
                     print(avisit)
@@ -2706,11 +2731,18 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
             allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
-                 allVisit['PLATE'][ii]+'-'+
-                 '%05i' % allVisit['MJD'][ii] + '-'
-                 '%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                            dtype='|S19')
+        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
+                     allVisit['PLATE'][ii]+ b'-'+
+                     b'%05i' % allVisit['MJD'][ii] + b'-'
+                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S19')
+        else:
+            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode()+b'-'+
+                     allVisit['PLATE'][ii].encode()+b'-'+
+                     b'%05i' % allVisit['MJD'][ii] + b'-'
+                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                                dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
@@ -2736,8 +2768,11 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 locs = self._apo2S_locations
             else:
                 continue
-            avisit= specdata['VISITS'][ii].split(',')[0].strip() #this is a visit ID
-            if avisit.endswith('.fits'):
+            if isinstance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
+                avisit= specdata['VISITS'][ii].split(b',')[0].strip()
+            else:
+                avisit= specdata['VISITS'][ii].split(',')[0].strip().encode()
+            if avisit.endswith(b'.fits'):
                 #just chop off .fits?
                 avisit = avisit[:-5]
             indx= visits == avisit
