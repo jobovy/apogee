@@ -1193,7 +1193,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         #Remove plates that only have pre-commissioning data
         indx= numpy.ones(len(origobslog),dtype='bool')
         for ii in range(len(origobslog)):
-            if origobslog[ii]['ObsHistory'] == 'NOT,OBSERVED': continue
+            if origobslog[ii]['ObsHistory'] == b'NOT,OBSERVED': continue
             if year < 4:
                 mjds= numpy.array(origobslog[ii]['ObsHistory'].astype(str).split(','),dtype='int')
             else: # MJDs now end in ',' so need to cut the last
@@ -1206,7 +1206,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 warnings.warn('Removing plates not found in apogee2Plate...')
                 indx[ii]= False
         origobslog= origobslog[indx]
-        indx= origobslog['ObsHistory'] != 'NOT,OBSERVED'
+        indx= origobslog['ObsHistory'] != b'NOT,OBSERVED'
         obslog= origobslog[indx]
         #Remove plates that aren't complete yet
         indx= numpy.ones(len(obslog),dtype='bool')
@@ -1303,7 +1303,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 if numpy.any(apogeeDesign['SHORT_COHORT_VERSION'][dindx] < 0.):
                     pindx[dummyIndxArray[cpindx][jj]]= False
                 oindx= origobslog['Plate'] == apogeePlate['PLATE_ID'][cpindx][jj]
-                if origobslog['ObsHistory'][oindx] == 'NOT,OBSERVED':
+                if origobslog['ObsHistory'][oindx] == b'NOT,OBSERVED':
                     pindx[dummyIndxArray[cpindx][jj]]= False
             locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
             for jj in range(numpy.sum(pindx)):
