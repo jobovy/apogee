@@ -1733,8 +1733,8 @@ class apogee2Select(apogeeSelect):
             allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        if isinstance(allVisit['MJD'][ii], (bytes,numpy.bytes_)):
-            visits= numpy.array([allVisit['APRED_VERSION'][ii]+'-'+
+        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
                      allVisit['PLATE'][ii]+b'-'+
                      b'%05i' % allVisit['MJD'][ii] + b'-'
                      b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
@@ -1750,7 +1750,7 @@ class apogee2Select(apogeeSelect):
         plateIncomplete= 0
         for ii in tqdm.trange(len(specdata)):
             #this is a visit ID
-            if instance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
+            if isinstance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
                 avisit= specdata['VISITS'][ii].split(b',')[0].strip()
             else:
                 avisit= specdata['VISITS'][ii].split(',')[0].strip().encode()
@@ -1762,7 +1762,7 @@ class apogee2Select(apogeeSelect):
                 #Hasn't happened so far
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii])
                  #this is a visit ID
-                if instance(specdata['ALL_VISITS'][ii], (bytes,numpy.bytes_)):
+                if isinstance(specdata['ALL_VISITS'][ii], (bytes,numpy.bytes_)):
                     avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip()
                 else:
                     avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip().encode()
