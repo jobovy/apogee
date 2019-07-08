@@ -52,6 +52,7 @@ _DR11REDUX='v402'
 _DR12REDUX='v603'
 _DR13REDUX='l30e.2'
 _DR14REDUX='l31c.2'
+_DR16REDUX='l33'
 _CURRENTREDUX='current'
 if _APOGEE_REDUX is None:
     _APOGEE_REDUX= _DR12REDUX
@@ -131,6 +132,11 @@ def allStarPath(dr=None,_old=False,mjd=58104):
         elif dr == '14':
             return os.path.join(specReduxPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == '16':
+            # Think this specReduxPath should work for all DR, but just in case
+            specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
+            return os.path.join(specReduxPath,'r12','l33',
+                                'allStar-r12-%s.fits' % redux)
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             return os.path.join(specASPCAPPath,'t9','l31c',
@@ -915,6 +921,9 @@ def apogeeSpectroASPCAPDirPath(dr=None):
     if dr.lower() == 'current':
         return os.path.join(_APOGEE_DATA,'apogeework',
                             'apogee','spectro','aspcap')
+    elif dr == '16':
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','spectro','aspcap')
     else:
         return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                             'apogee','spectro','redux')
@@ -976,6 +985,7 @@ def change_dr(dr=None):
     elif str(dr) == '12': _APOGEE_REDUX=_DR12REDUX
     elif str(dr) == '13': _APOGEE_REDUX=_DR13REDUX
     elif str(dr) == '14': _APOGEE_REDUX=_DR14REDUX
+    elif str(dr) == '16': _APOGEE_REDUX=_DR16REDUX
     elif str(dr) == 'current': _APOGEE_REDUX=_CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
    
@@ -985,6 +995,7 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
+    elif _APOGEE_REDUX == _DR16REDUX: dr= '16'
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -996,6 +1007,7 @@ def _redux_dr(dr=None):
     elif dr == '12': return _DR12REDUX
     elif dr == '13': return _DR13REDUX
     elif dr == '14': return _DR14REDUX
+    elif dr == '16': return _DR16REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
