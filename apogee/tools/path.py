@@ -244,6 +244,7 @@ def rcsamplePath(dr=None,_old=False):
         elif _APOGEE_REDUX == 'v603': dr= '12'
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'l31c.2': dr= '14'
+        elif _APOGEE_REDUX == 'l33': dr= '16'
         elif _APOGEE_REDUX == 'current': 
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
@@ -259,6 +260,9 @@ def rcsamplePath(dr=None,_old=False):
                                 'cat','apogee-rc-DR%s.fits' % dr)
         elif dr == '14':
             return os.path.join(_APOGEE_DATA,'dr14','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
+        elif dr == '16':
+            return os.path.join(_APOGEE_DATA,'dr16','apogee','vac','apogee-rc',
                                 'cat','apogee-rc-DR%s.fits' % dr)
 
 def astroNNPath(dr=None):

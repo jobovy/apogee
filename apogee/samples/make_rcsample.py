@@ -12,6 +12,8 @@
 #
 # DR14 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR14.fits --rmdups --addl-logg-cut --nostat'
 #
+# DR16 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR16.fits --rmdups --addl-logg-cut --nostat'
+#
 # current catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-current.fits --addl-logg-cut --rmdups --nostat --nopm'
 #
 import os, os.path
@@ -96,6 +98,26 @@ def make_rcsample(parser):
                                            'REDUCTION_ID',
                                            'SRC_H',
                                            'PM_SRC'])
+    # More
+    if appath._APOGEE_REDUX.lower() == 'l33':
+        data= esutil.numpy_util.remove_fields(data,
+                                              ['GAIA_SOURCE_ID',
+                                               'GAIA_PARALLAX',
+                                               'GAIA_PARALLAX_ERROR',
+                                               'GAIA_PMRA',
+                                               'GAIA_PMRA_ERROR',
+                                               'GAIA_PMDEC',
+                                               'GAIA_PMDEC_ERROR',
+                                               'GAIA_PHOT_G_MEAN_MAG',
+                                               'GAIA_PHOT_BP_MEAN_MAG',
+                                               'GAIA_PHOT_RP_MEAN_MAG',
+                                               'GAIA_RADIAL_VELOCITY',
+                                               'GAIA_RADIAL_VELOCITY_ERROR',
+                                               'GAIA_R_EST',
+                                               'GAIA_R_LO',
+                                               'GAIA_R_HI',
+                                               'TEFF_SPEC',
+                                               'LOGG_SPEC'])
     if not appath._APOGEE_REDUX.lower() == 'current' \
             and not 'l3' in appath._APOGEE_REDUX \
             and int(appath._APOGEE_REDUX[1:]) < 500:
@@ -131,7 +153,8 @@ def make_rcsample(parser):
         *(z <= rcmodel.jkzcut(jk,upper=True))\
         *(z >= rcmodel.jkzcut(jk))\
         *(logg >= rcmodel.loggteffcut(data['TEFF'],z,upper=False))\
-        *(logg+0.1*('l31' in appath._APOGEE_REDUX) \
+        *(logg+0.1*('l31' in appath._APOGEE_REDUX 
+                    or 'l33' in appath._APOGEE_REDUX) \
               <= rcmodel.loggteffcut(data['TEFF'],z,upper=True))
     data= data[indx]
     #Add more aggressive flag cut
@@ -158,7 +181,7 @@ def make_rcsample(parser):
     RphiZ= bovy_coords.XYZ_to_galcencyl(XYZ[:,0],
                                         XYZ[:,1],
                                         XYZ[:,2],
-                                        Xsun=8.,Zsun=0.025)
+                                        Xsun=8.15,Zsun=0.0208)
     R= RphiZ[:,0]
     phi= RphiZ[:,1]
     Z= RphiZ[:,2]
@@ -234,6 +257,80 @@ def make_rcsample(parser):
     if options.nopm:
         fitswrite(savefilename,data,clobber=True)       
         return None
+    data= _add_proper_motions(data,savefilename)
+    # Save
+    fitswrite(savefilename,data,clobber=True)
+    return None
+
+def _add_proper_motions(data,savefilename):
+    if 'l33' in appath._APOGEE_REDUX:
+        return _add_proper_motions_gaia(data)
+    else:
+        return _add_proper_motions_pregaia(data,savefilename)
+
+def _add_proper_motions_gaia(data):
+    from gaia_tools import xmatch
+    gaia2_matches, matches_indx= xmatch.cds(data,colRA='RA',
+                                            colDec='DEC',
+                                            xcat='vizier:I/345/gaia2')
+    # Add matches
+    try: #These already exist currently, but may not always exist
+        data= esutil.numpy_util.remove_fields(data,['PMRA','PMDEC'])
+    except ValueError:
+        pass
+    data= esutil.numpy_util.add_fields(data,[('PLX', numpy.float),
+                                             ('PMRA', numpy.float),
+                                             ('PMDEC', numpy.float),
+                                             ('PLX_ERR', numpy.float),
+                                             ('PMRA_ERR', numpy.float),
+                                             ('PMDEC_ERR', numpy.float),
+                                             ('PMMATCH',numpy.int32)])
+    data['PMMATCH']= 0
+    data['PMMATCH'][matches_indx]= 1
+    data['PLX'][matches_indx]= gaia2_matches['parallax']
+    data['PMRA'][matches_indx]= gaia2_matches['pmra']
+    data['PMDEC'][matches_indx]= gaia2_matches['pmdec']
+    data['PLX_ERR'][matches_indx]= gaia2_matches['parallax_error']
+    data['PMRA_ERR'][matches_indx]= gaia2_matches['pmra_error']
+    data['PMDEC_ERR'][matches_indx]= gaia2_matches['pmdec_error']
+    # Set values for those without match to -999
+    pmindx= data['PMMATCH'] == 1
+    data['PLX'][True^pmindx]= -9999.99
+    data['PMRA'][True^pmindx]= -9999.99
+    data['PMDEC'][True^pmindx]= -9999.99
+    data['PLX_ERR'][True^pmindx]= -9999.99
+    data['PMRA_ERR'][True^pmindx]= -9999.99
+    data['PMDEC_ERR'][True^pmindx]= -9999.99
+    #Calculate Galactocentric velocities
+    data= esutil.numpy_util.add_fields(data,[('GALVR', numpy.float),
+                                             ('GALVT', numpy.float),
+                                             ('GALVZ', numpy.float)])
+    lb= bovy_coords.radec_to_lb(data['RA'],data['DEC'],degree=True)
+    XYZ= bovy_coords.lbd_to_XYZ(lb[:,0],lb[:,1],data['RC_DIST'],degree=True)
+    pmllpmbb= bovy_coords.pmrapmdec_to_pmllpmbb(data['PMRA'],data['PMDEC'],
+                                                data['RA'],data['DEC'],
+                                                degree=True)
+    vxvyvz= bovy_coords.vrpmllpmbb_to_vxvyvz(data['VHELIO_AVG'],
+                                             pmllpmbb[:,0],
+                                             pmllpmbb[:,1],
+                                             lb[:,0],lb[:,1],data['RC_DIST'],
+                                             degree=True)
+    vRvTvZ= bovy_coords.vxvyvz_to_galcencyl(vxvyvz[:,0],
+                                                vxvyvz[:,1],
+                                                vxvyvz[:,2],
+                                                8.-XYZ[:,0],
+                                                XYZ[:,1],
+                                                XYZ[:,2]+0.0208,
+                                                vsun=[-11.1,30.24*8.15,7.25])#Assumes proper motion of Sgr A* and R0=8.15 kpc, zo= 20.8 pc (Bennett & Bovy 2019)
+    data['GALVR']= vRvTvZ[:,0]
+    data['GALVT']= vRvTvZ[:,1]
+    data['GALVZ']= vRvTvZ[:,2]
+    data['GALVR'][True^pmindx]= -9999.99
+    data['GALVT'][True^pmindx]= -9999.99
+    data['GALVZ'][True^pmindx]= -9999.99
+    return data
+
+def _add_proper_motions_pregaia(data,savefilename):
     #Get proper motions, in a somewhat roundabout way
     pmfile= savefilename.split('.')[0]+'_pms.fits'
     if os.path.exists(pmfile):
@@ -463,8 +560,8 @@ def make_rcsample(parser):
     data['GALVR_HSOY'][True^pmindx]= -9999.99
     data['GALVT_HSOY'][True^pmindx]= -9999.99
     data['GALVZ_HSOY'][True^pmindx]= -9999.99
-    #Save
-    fitswrite(savefilename,data,clobber=True)
+    #Return
+    return data
     return None
 
 def cos_sphere_dist(theta,phi,theta_o,phi_o):
