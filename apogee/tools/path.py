@@ -133,6 +133,11 @@ def allStarPath(dr=None,_old=False,mjd=58104):
         elif dr == '14':
             return os.path.join(specReduxPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),'allStar-%s.fits' % redux)
+        elif dr == '16':
+            # Think this specReduxPath should work for all DR, but just in case
+            specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
+            return os.path.join(specReduxPath,'r12','l33',
+                                'allStar-r12-%s.fits' % redux)
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             if not isinstance(mjd, str) and mjd >= 58297:
@@ -249,10 +254,17 @@ def rcsamplePath(dr=None,_old=False):
         elif _APOGEE_REDUX == 'v603': dr= '12'
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'l31c.2': dr= '14'
+<<<<<<< HEAD
     elif _APOGEE_REDUX == 'l33' : dr='16'
     elif _APOGEE_REDUX == 'current':
         return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
     else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
+=======
+        elif _APOGEE_REDUX == 'l33': dr= '16'
+        elif _APOGEE_REDUX == 'current': 
+            return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
+        else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
+>>>>>>> 629a570e512a88ceb4cc5e2348036d7ddaaed60a
     if _old:
         return os.path.join(_APOGEE_DATA,
                             'apogee-rc-DR%s.fits' % dr)
@@ -265,6 +277,9 @@ def rcsamplePath(dr=None,_old=False):
                                 'cat','apogee-rc-DR%s.fits' % dr)
         elif dr == '14':
             return os.path.join(_APOGEE_DATA,'dr14','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
+        elif dr == '16':
+            return os.path.join(_APOGEE_DATA,'dr16','apogee','vac','apogee-rc',
                                 'cat','apogee-rc-DR%s.fits' % dr)
 
 def astroNNPath(dr=None):
@@ -986,6 +1001,9 @@ def apogeeSpectroASPCAPDirPath(dr=None):
     if dr.lower() == 'current':
         return os.path.join(_APOGEE_DATA,'apogeework',
                             'apogee','spectro','aspcap')
+    elif dr == '16':
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','spectro','aspcap')
     else:
         return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                             'apogee','spectro','redux')
@@ -1057,7 +1075,11 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
+<<<<<<< HEAD
     elif _APOGEE_REDUX == _DR16REDUX: dr='16'
+=======
+    elif _APOGEE_REDUX == _DR16REDUX: dr= '16'
+>>>>>>> 629a570e512a88ceb4cc5e2348036d7ddaaed60a
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
