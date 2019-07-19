@@ -254,17 +254,10 @@ def rcsamplePath(dr=None,_old=False):
         elif _APOGEE_REDUX == 'v603': dr= '12'
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'l31c.2': dr= '14'
-<<<<<<< HEAD
-    elif _APOGEE_REDUX == 'l33' : dr='16'
-    elif _APOGEE_REDUX == 'current':
-        return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
-    else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
-=======
         elif _APOGEE_REDUX == 'l33': dr= '16'
-        elif _APOGEE_REDUX == 'current': 
+        elif _APOGEE_REDUX == 'current':
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
->>>>>>> 629a570e512a88ceb4cc5e2348036d7ddaaed60a
     if _old:
         return os.path.join(_APOGEE_DATA,
                             'apogee-rc-DR%s.fits' % dr)
@@ -1075,11 +1068,7 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR12REDUX: dr= '12'
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
-<<<<<<< HEAD
-    elif _APOGEE_REDUX == _DR16REDUX: dr='16'
-=======
     elif _APOGEE_REDUX == _DR16REDUX: dr= '16'
->>>>>>> 629a570e512a88ceb4cc5e2348036d7ddaaed60a
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
