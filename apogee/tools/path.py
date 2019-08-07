@@ -576,9 +576,13 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
     HISTORY:
        2015-01-13 - Written - Bovy (IAS)
        2018-01-22 - Edited for new post-DR14 path structure - Bovy (UofT)
+       2019-08-07 - Edited for DR16 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    # Name of the file
+    apStar_base_filename= 'apStar'
+    if telescope == 'lco25m': apStar_base_filename= 'asStar'
     if dr == '10':
         return os.path.join(specReduxPath,'r3','s3',
                             '%i' % loc_id,
@@ -616,10 +620,16 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
             return os.path.join(specReduxPath,'r8','stars','apo25m',
                                 '%i' % loc_id,
                                 'apStar-r8-%s.fits' % apogee_id)
+    elif dr == '16':
+        return os.path.join(specReduxPath,'r12','stars',telescope,
+                            loc_id.strip(),
+                            '%s-r12-%s.fits' % (apStar_base_filename,
+                                               apogee_id.strip()))
     elif dr == 'current':
         return os.path.join(specReduxPath,'t9','stars',telescope,
                             loc_id.strip(),
-                            'apStar-t9-%s.fits' % apogee_id.strip())
+                            '%s-t9-%s.fits' % (apStar_base_filename,
+                                               apogee_id.strip()))
 
 def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     """
