@@ -503,55 +503,59 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
     HISTORY:
        2014-11-25 - Written - Bovy (IAS)
        2018-01-22 - Edited for new post-DR14 path structure - Bovy (UofT)
+       2019-08-07 - Edited for DR16 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
     if dr == '10':
-        return os.path.join(specReduxPath,'r3','s3','a3',
+        return os.path.join(specASPCAPPath,'r3','s3','a3',
                             _redux_dr(dr=dr),'%i' % loc_id,
                             'aspcapStar-%s-%s.fits' % (_redux_dr(dr=dr),
                                                        apogee_id))
     elif dr == '12':
         if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'r5','stars','l25_6d',
+            return os.path.join(specASPCAPPath,'r5','stars','l25_6d',
                                 _redux_dr(dr=dr),loc_id.strip(),
                                 'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id.strip()))
         elif loc_id ==1:
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
-            return os.path.join(specReduxPath,'r5','stars','l25_6d',
+            return os.path.join(specASPCAPPath,'r5','stars','l25_6d',
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r5-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))    
     elif dr == '13':
         if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'r6','stars','l30e',
+            return os.path.join(specASPCAPPath,'r6','stars','l30e',
                                 _redux_dr(dr=dr),loc_id.strip(),
                                 'aspcapStar-r6-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id.strip()))
         elif loc_id ==1:
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
-            return os.path.join(specReduxPath,'r6','stars','l30e',
+            return os.path.join(specASPCAPPath,'r6','stars','l30e',
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r6-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
     elif dr == '14':
         if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'r8','stars','l31c',
+            return os.path.join(specASPCAPPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),loc_id.strip(),
                                 'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id.strip()))
         elif loc_id ==1:
             raise IOError('For 1m targets, give the FIELD instead of the location ID')
         else:
-            return os.path.join(specReduxPath,'r8','stars','l31c',
+            return os.path.join(specASPCAPPath,'r8','stars','l31c',
                                 _redux_dr(dr=dr),'%i' % loc_id,
                                 'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
+    elif dr == '16':
+        return os.path.join(specASPCAPPath,'r12','l33',telescope,
+                            loc_id.strip(),
+                            'aspcapStar-r12-%s.fits' % (apogee_id.strip()))
     elif dr == 'current':
-        specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
         return os.path.join(specASPCAPPath,'t9','l31c',telescope,
                             loc_id.strip(),
                             'aspcapStar-t9-%s.fits' % (apogee_id.strip()))
