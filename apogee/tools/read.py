@@ -550,6 +550,7 @@ def astroNN(dr=None):
        astroNN data
     HISTORY:
        2018-10-20 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     filePath= path.astroNNPath(dr=dr)
     if not os.path.exists(filePath):
@@ -569,6 +570,7 @@ def astroNNDistances(dr=None):
        astroNN distances data
     HISTORY:
        2018-02-15 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNDistancesPath(dr=dr)):
         download.astroNNDistances(dr=dr)
@@ -587,6 +589,7 @@ def astroNNAges(dr=None):
        astroNN ages data
     HISTORY:
        2018-02-16 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNAgesPath(dr=dr)):
         download.astroNNAges(dr=dr)

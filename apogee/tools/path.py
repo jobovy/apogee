@@ -280,14 +280,19 @@ def astroNNPath(dr=None):
        APOGEE_REDUX with the current reduction version (e.g., v0.91)
     HISTORY:
        2018-10-20 - Written - Bovy (UofT)
+       2019-08-13 - Added DR16 path - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    if int(dr) != 14:
-        raise ValueError('astroNN catalog for DR =/= 14 not available')
+    if int(dr) < 14:
+        raise ValueError('astroNN catalog for DR<14 not available')
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
     if dr == '14':
         return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
                             'astroNN_apogee_dr14_catalog.fits')
+    elif dr == '16':
+        return os.path.join(_APOGEE_DATA,'dr16','apogee','vac',
+                            'apogee-astronn',
+                            'apogee_astroNN-DR{}.fits'.format(dr))
 
 def astroNNDistancesPath(dr=None):
     """
@@ -304,12 +309,15 @@ def astroNNDistancesPath(dr=None):
        APOGEE_REDUX with the current reduction version (e.g., v0.91)
     HISTORY:
        2019-02-15 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    if int(dr) != 14:
-        raise ValueError('astroNN distances catalog for DR =/= 14 not available')
-    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
-    if dr == '14':
+    if int(dr) < 14:
+        raise ValueError('astroNN distances catalog for DR < 14 not available')
+    elif int(dr) > 14: # From DR16 onwards, one astroNN file
+        return astroNNPath(dr=dr)
+    else:
+        specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
         return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
                             'apogee_dr14_nn_dist.fits')
 
@@ -328,12 +336,15 @@ def astroNNAgesPath(dr=None):
        APOGEE_REDUX with the current reduction version (e.g., v0.91)
     HISTORY:
        2019-02-16 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
-    if int(dr) != 14:
-        raise ValueError('astroNN ages catalog for DR =/= 14 not available')
-    specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
-    if dr == '14':
+    if int(dr) < 14:
+        raise ValueError('astroNN ages catalog for DR < 14 not available')
+    elif int(dr) > 14: # From DR16 onwards, one astroNN file
+        return astroNNPath(dr=dr)
+    else:
+        specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
         return os.path.join(specReduxPath,'r8','stars','l31c',_redux_dr(dr=dr),
                             'astroNNBayes_ages_goodDR14.fits')
 
