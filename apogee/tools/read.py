@@ -155,18 +155,11 @@ def allStar(rmcommissioning=True,
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
-<<<<<<< HEAD
        2018-05-09 - Add xmatch - Bovy (UofT)
        2018-10-20 - Add use_astroNN option - Bovy (UofT)
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
-=======
-       2018-05-09 - Add xmatch - Bovy (UofT) 
-       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
-       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
-       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT) 
        2019-08-13 - Edited for DR16 (incl. astroNN) - Bovy (UofT)
->>>>>>> 3cf13272c4e771268fac6752b36b7c920d8b7263
     """
     if dr is None:
         filePath= path.allStarPath(mjd=mjd)

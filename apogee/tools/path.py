@@ -605,24 +605,9 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                                 'aspcapStar-r8-%s-%s.fits' % (_redux_dr(dr=dr),
                                                               apogee_id))
     elif dr == '16':
-<<<<<<< HEAD
-        if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'r12','stars','l33',
-                                _redux_dr(dr=dr),loc_id.strip(),
-                                'aspcapStar-r12-%s-%s.fits' % (_redux_dr(dr=dr),
-                                                              apogee_id.strip()))
-        elif loc_id ==1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            return os.path.join(specReduxPath,'r12','stars','l33',
-                                _redux_dr(dr=dr),'%i' % loc_id,
-                                'aspcapStar-r12-%s-%s.fits' % (_redux_dr(dr=dr),
-                                                              apogee_id))
-=======
         return os.path.join(specASPCAPPath,'r12','l33',telescope,
                             loc_id.strip(),
                             'aspcapStar-r12-%s.fits' % (apogee_id.strip()))
->>>>>>> 3cf13272c4e771268fac6752b36b7c920d8b7263
     elif dr == 'current':
         return os.path.join(specASPCAPPath,'t9','l31c',telescope,
                             loc_id.strip(),
@@ -689,23 +674,10 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                                 '%i' % loc_id,
                                 'apStar-r8-%s.fits' % apogee_id)
     elif dr == '16':
-<<<<<<< HEAD
-        if isinstance(loc_id,str): #1m
-            return os.path.join(specReduxPath,'r12','stars','apo1m',
-                                loc_id.strip(),
-                                'apStar-r12-%s.fits' % apogee_id.strip())
-        elif loc_id ==1:
-            raise IOError('For 1m targets, give the FIELD instead of the location ID')
-        else:
-            return os.path.join(specReduxPath,'r12','stars','apo25m',
-                                '%i' % loc_id,
-                                'apStar-r12-%s.fits' % apogee_id)
-=======
         return os.path.join(specReduxPath,'r12','stars',telescope,
                             loc_id.strip(),
                             '%s-r12-%s.fits' % (apStar_base_filename,
                                                apogee_id.strip()))
->>>>>>> 3cf13272c4e771268fac6752b36b7c920d8b7263
     elif dr == 'current':
         return os.path.join(specReduxPath,'t9','stars',telescope,
                             loc_id.strip(),
