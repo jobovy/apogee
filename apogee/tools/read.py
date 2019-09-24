@@ -139,7 +139,7 @@ def allStar(rmcommissioning=True,
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
        survey= ('all') When reading an APOGEE-2 allStar file, select stars from both APOGEE-1 and -2 ('all'), just APOGEE-1 ('apogee1'), or just APOGEE-2 ('apogee-2') [Note: both 'apogee1' and 'apogee2' exclude stars from the APO-1m]
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. (2019)
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. 2019)
        use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
        use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
@@ -155,10 +155,18 @@ def allStar(rmcommissioning=True,
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
+<<<<<<< HEAD
        2018-05-09 - Add xmatch - Bovy (UofT)
        2018-10-20 - Add use_astroNN option - Bovy (UofT)
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
+=======
+       2018-05-09 - Add xmatch - Bovy (UofT) 
+       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
+       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT) 
+       2019-08-13 - Edited for DR16 (incl. astroNN) - Bovy (UofT)
+>>>>>>> 3cf13272c4e771268fac6752b36b7c920d8b7263
     """
     if dr is None:
         filePath= path.allStarPath(mjd=mjd)
@@ -173,7 +181,7 @@ def allStar(rmcommissioning=True,
             #read allStar file
         data= fitsread(path.allStarPath(mjd=mjd, dr=dr))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
-    # [ages file not matched line-by-line]
+    # [ages file not matched line-by-line in DR14]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
         _warn_astroNN_abundances()
         astroNNdata= astroNN()
@@ -605,6 +613,7 @@ def astroNN(dr=None):
        astroNN data
     HISTORY:
        2018-10-20 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     filePath= path.astroNNPath(dr=dr)
     if not os.path.exists(filePath):
@@ -624,6 +633,7 @@ def astroNNDistances(dr=None):
        astroNN distances data
     HISTORY:
        2018-02-15 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNDistancesPath(dr=dr)):
         download.astroNNDistances(dr=dr)
@@ -642,6 +652,7 @@ def astroNNAges(dr=None):
        astroNN ages data
     HISTORY:
        2018-02-16 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNAgesPath(dr=dr)):
         download.astroNNAges(dr=dr)
@@ -1177,27 +1188,49 @@ def _xmatch(cat1,cat2,maxdist=2,
     return (m1,m2,d2d[mindx])
 
 def _swap_in_astroNN(data,astroNNdata):
-    for tag,indx in zip(['TEFF','LOGG'],[0,1]):
-        data[tag]= astroNNdata['astroNN'][:,indx]
-        data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
-    for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
-                         'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
-                        range(2,22)):
-        data['X_H'][:,elemIndx(tag.upper())]=\
-            astroNNdata['astroNN'][:,indx]
-        data['X_H_ERR'][:,elemIndx(tag.upper())]=\
-            astroNNdata['astroNN_error'][:,indx]
-        if tag.upper() != 'FE':
-            data['{}_FE'.format(tag.upper())]=\
-                astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
-            data['{}_FE_ERR'.format(tag.upper())]=\
-                numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
-                           +astroNNdata['astroNN_error'][:,19]**2.)
-        else:
-            data['FE_H'.format(tag.upper())]=\
+    dr= path._default_dr()
+    if int(dr) == 14:
+        for tag,indx in zip(['TEFF','LOGG'],[0,1]):
+            data[tag]= astroNNdata['astroNN'][:,indx]
+            data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
+        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                            range(2,22)):
+            data['X_H'][:,elemIndx(tag.upper())]=\
                 astroNNdata['astroNN'][:,indx]
-            data['FE_H_ERR'.format(tag.upper())]=\
+            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
                 astroNNdata['astroNN_error'][:,indx]
+            if tag.upper() != 'FE':
+                data['{}_FE'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
+                data['{}_FE_ERR'.format(tag.upper())]=\
+                    numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
+                               +astroNNdata['astroNN_error'][:,19]**2.)
+            else:
+                data['FE_H'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]
+                data['FE_H_ERR'.format(tag.upper())]=\
+                    astroNNdata['astroNN_error'][:,indx]
+    else:
+        for tag in ['TEFF','LOGG']:
+            data[tag]= astroNNdata[tag]
+            data[tag+'_ERR']= astroNNdata[tag+'_ERR']
+        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                            range(2,22)):
+            data['X_H'][:,elemIndx(tag.upper())]=\
+                astroNNdata[tag.upper()+'_H']
+            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
+                astroNNdata[tag.upper()+'_H_ERR']
+            if tag.upper() != 'FE':
+                data['{}_FE'.format(tag.upper())]=\
+                    astroNNdata[tag.upper()+'_H']-astroNNdata['FE_H']
+                data['{}_FE_ERR'.format(tag.upper())]=\
+                    numpy.sqrt(astroNNdata['{}_H_ERR'.format(tag.upper())]**2.
+                               +astroNNdata['FE_H_ERR']**2.)
+            else:
+                data['FE_H']= astroNNdata['FE_H']
+                data['FE_H_ERR']= astroNNdata['FE_H_ERR']
     return data
 
 def _add_astroNN_distances(data,astroNNDistancesdata):
@@ -1222,8 +1255,14 @@ def _add_astroNN_distances(data,astroNNDistancesdata):
             usemask=False)
 
 def _add_astroNN_ages(data,astroNNAgesdata):
-    fields_to_append= ['astroNN_age','astroNN_age_total_std',
-                       'astroNN_age_predictive_std','astroNN_age_model_std']
+    dr= path._default_dr()
+    if int(dr) == 14:
+        fields_to_append= ['astroNN_age','astroNN_age_total_std',
+                           'astroNN_age_predictive_std',
+                           'astroNN_age_model_std']
+    else:
+        fields_to_append= ['age','age_linear_correct','age_lowess_correct',
+                           'age_total_error','age_model_error']
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1241,18 +1280,22 @@ def _add_astroNN_ages(data,astroNNAgesdata):
             fields_to_append,
             [numpy.zeros(len(data))-9999. for f in fields_to_append],
             usemask=False)
-    # Only match primary targets
-    hash1= dict(zip(data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
-                    numpy.arange(len(data))[(data['EXTRATARG'] & 2**4) == 0]))
-    hash2= dict(zip(astroNNAgesdata['APOGEE_ID'],
-                    numpy.arange(len(astroNNAgesdata))))
-    common= numpy.intersect1d(\
-        data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
-        astroNNAgesdata['APOGEE_ID'])
-    indx1= list(itemgetter(*common)(hash1))
-    indx2= list(itemgetter(*common)(hash2))
-    for f in fields_to_append:
-        data[f][indx1]= astroNNAgesdata[f][indx2]
+    if int(dr) == 14: # Not row-matched to allStar, so need to match
+        # Only match primary targets
+        hash1= dict(zip(data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+                     numpy.arange(len(data))[(data['EXTRATARG'] & 2**4) == 0]))
+        hash2= dict(zip(astroNNAgesdata['APOGEE_ID'],
+                     numpy.arange(len(astroNNAgesdata))))
+        common= numpy.intersect1d(\
+                    data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+                    astroNNAgesdata['APOGEE_ID'])
+        indx1= list(itemgetter(*common)(hash1))
+        indx2= list(itemgetter(*common)(hash2))
+        for f in fields_to_append:
+            data[f][indx1]= astroNNAgesdata[f][indx2]
+    else:
+        for f in fields_to_append:
+            data[f]= astroNNAgesdata[f]
     return data
 
 def _warn_astroNN_abundances():

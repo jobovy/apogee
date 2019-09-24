@@ -143,7 +143,12 @@ def astroNN(dr=None):
     filePath= path.astroNNPath(dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path
-    downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    if int(dr) == 14:
+        downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    else:
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    _dr_string(dr)),
+                                       _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
