@@ -2760,12 +2760,13 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 design = self._apogee2NDesign
                 desIndx = self._designs2NIndx
                 locs = self._apo2N_locations
-            elif specdata['LOCATION_ID'][ii] in self._apo2S_locations:
-                survey = 2
-                platelist = self._2Splates
-                design = self._apogee2SDesign
-                desIndx = self._designs2SIndx
-                locs = self._apo2S_locations
+            elif self.apo2year >= 7:
+                if specdata['LOCATION_ID'][ii] in self._apo2S_locations:
+                    survey = 2
+                    platelist = self._2Splates
+                    design = self._apogee2SDesign
+                    desIndx = self._designs2SIndx
+                    locs = self._apo2S_locations
             else:
                 continue
             if isinstance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
