@@ -280,6 +280,8 @@ class apogeeSelectPlotsMixin:
         if not isinstance(self,apogee1Select) and color_bin is None:
             warnings.warn('color_bin not set, assuming first bin for all fields')
             color_bin = 0
+        elif isinstance(self,apogee1Select) and color_bin is None:
+            color_bin= 0
         if type.lower() == 'selfunc':
             for ii in range_func(len(self._locations)):
                 plotSF[ii]= numpy.atleast_1d(\
@@ -567,8 +569,8 @@ class apogeeSelectPlotsMixin:
         # Stack apogeeField recarrays, adjust
         if isinstance(self,apogeeCombinedSelect):
             # Combined, create combined apogeeField
-            ap1F= apread.apogeeField(dr='12')
-            ap2F= apread.apogeeField(dr='14')
+            ap1F= numpy.asarray(apread.apogeeField(dr='12'))
+            ap2F= numpy.asarray(apread.apogeeField(dr='14'))
             ap2F4stack= ap2F[[name for name
                                in ap1F.dtype.names]]
             ap1F4stack= ap1F.astype(ap2F4stack.dtype)
@@ -1502,7 +1504,10 @@ class apogee1Select(apogeeSelect):
                 print("Warning: no visit in combined spectrum found for data point %s" % specdata['APSTAR_ID'][ii]            )
                 print(avisit)
                 print(ii)
-                avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip() #this is a visit ID
+                if isinstance(specdata['VISITS'][ii], (bytes,numpy.bytes_)):
+                    avisit= specdata['ALL_VISITS'][ii].split(b',')[0].strip()
+                else:
+                    avisit= specdata['ALL_VISITS'][ii].split(',')[0].strip().encode()  #this is a visit ID
                 indx= visits == avisit
             avisitsplate= int(allVisit['PLATE'][indx][0])
             #Find the design corresponding to this plate
