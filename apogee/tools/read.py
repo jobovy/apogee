@@ -416,7 +416,7 @@ def allVisit(rmcommissioning=True,
         data= data[(data[aktag] > -50.)]
     if plateInt or plateS4:
         #If plate is a string, cast it as an integer
-        if isinstance(data['PLATE'][0],bytes):
+        if isinstance(data['PLATE'][0],(bytes,str)):
             #First cast the special plates as -1
             plateDtype= data['PLATE'].dtype
             data['PLATE'][data['PLATE'] == 'calibration'.ljust(int(str(plateDtype)[2:]))]= '-1'
@@ -430,15 +430,18 @@ def allVisit(rmcommissioning=True,
             plateDtypeIndx= dt.index(('PLATE', '|S13'))
             if plateInt:
                 dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
-            elif plateS4:
-                #go to int first, as this field is formatted differently in diff releases...
-                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
                 dt= numpy.dtype(dt)
                 data= data.astype(dt)
-                dt= data.dtype
-                dt= dt.descr
-                plateDtypeIndx= dt.index(('PLATE', '<i8'))
-                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S5')
+        # If we want the plate as a S4 string...
+        if plateS4:
+            #go to int first, as this field is formatted differently in diff releases...
+            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
+            dt= numpy.dtype(dt)
+            data= data.astype(dt)
+            dt= data.dtype
+            dt= dt.descr
+            plateDtypeIndx= dt.index(('PLATE', '<i8'))
+            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S5')
             dt= numpy.dtype(dt)
             data= data.astype(dt)
 
@@ -760,6 +763,7 @@ def apogeeDesign(dr=None,ap1ize=False):
         download.apogeeDesign(dr=dr)
     out= fitsread(filePath)
     if ap1ize and 'COHORT_SHORT_VERSION' in out.dtype.fields:
+        out= numpy.asarray(out) # makes sure that FITS_REC --> recarray for apy
         names= list(out.dtype.names)
         names[names.index('COHORT_SHORT_VERSION')]= 'SHORT_COHORT_VERSION'
         names[names.index('COHORT_MEDIUM_VERSION')]= 'MEDIUM_COHORT_VERSION'
