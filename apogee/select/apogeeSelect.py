@@ -585,11 +585,11 @@ class apogeeSelectPlotsMixin:
             # Stack apogeeDesign recarrays, adjust
             apDtags4plot= ['LOCATION_ID','SHORT_COHORT_VERSION',
                            'MEDIUM_COHORT_VERSION','LONG_COHORT_VERSION']
-            _ap2D4stack= self._apogee2Design[[name for name
-                                              in apDtags4plot]]
-            _ap1D4stack=self._apogee1Design[[name for name
-                                             in apDtags4plot]]\
-                            .astype(_ap2D4stack.dtype)
+            _ap2D4stack= numpy.asarray(self._apogee2Design[[name for name
+                                                            in apDtags4plot]])
+            _ap1D4stack= numpy.asarray(self._apogee1Design)[[name for name
+                                                            in apDtags4plot]]\
+                                       .astype(_ap2D4stack.dtype)
             apD= numpy.lib.recfunctions.stack_arrays(\
                                     [_ap1D4stack,_ap2D4stack],
                                     asrecarray=True,usemask=False)
