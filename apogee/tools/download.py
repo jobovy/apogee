@@ -308,9 +308,7 @@ def apogeePlate(dr=None):
                                                      _dr_string(dr)),
                                         _base_url(dr=dr))
     elif int(dr) >= 16: #change of location/format after DR16
-        downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
-                                'apogee','spectro','aspcap','r12','l33',os.path.basename(filePath))\
-                                .replace(os.path.join(path._APOGEE_DATA,
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                      _dr_string(dr)),
                                         _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
