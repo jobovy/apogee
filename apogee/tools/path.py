@@ -143,12 +143,8 @@ def allStarPath(dr=None,_old=False,mjd=58104):
             if not isinstance(mjd, str) and mjd >= 58297:
                 return os.path.join(specASPCAPPath,'r10','l31c',
                                     'allStar-r10-l31c-%i.fits' % mjd)
-            if mjd == 'beta':
-                return os.path.join(specASPCAPPath, 'r12', 'l33',
-                                    'allStar-r12-l33beta.fits')
-            else:
-                return os.path.join(specASPCAPPath,'t9','l31c',
-                                    'allStar-t9-l31c-%i.fits' % mjd)
+            return os.path.join(specASPCAPPath,'r12','l33',
+                                    'allStar-r12-l33-%i.fits' % mjd)
 
 def allVisitPath(dr=None,_old=False,mjd=58104):
     """
@@ -175,7 +171,7 @@ def allVisitPath(dr=None,_old=False,mjd=58104):
         return os.path.join(_APOGEE_DATA,
                             'allVisit-%s.fits' % redux)
     if dr is 'current':
-        return allStarPath(dr=dr,_old=_old,mjd='beta').replace('allStar','allVisit')
+        return allStarPath(dr=dr,_old=_old).replace('allStar','allVisit')
     else:
         return allStarPath(dr=dr,_old=_old,mjd=mjd).replace('allStar','allVisit')
 
@@ -447,8 +443,14 @@ def apogeePlatePath(dr=None):
     if dr is None: dr= _default_dr()
     if dr == '11' or dr == '12':
         platename= 'apogeePlate.fits'
-    elif int(dr) > 13:
+    elif (int(dr) > 13) & (int(dr) <= 15):
         platename= 'apogee2Plate.fits'
+    elif int(dr) >= 16: #apogeePlate is in a completely different place/format....
+        redux= _redux_dr(dr=dr)
+        specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
+        platename = os.path.join(specReduxPath,'r12','l33',
+                            'allPlates-r12-%s.fits' % redux)
+        return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
@@ -475,8 +477,10 @@ def apogeeDesignPath(dr=None):
     if dr is None: dr= _default_dr()
     if str(dr) == '11' or str(dr) == '12':
         platename= 'apogeeDesign.fits'
-    elif int(dr) > 13:
+    elif (int(dr) > 13) & (int(dr) <= 15):
         platename= 'apogee2Design.fits'
+    elif  int(dr) >= 16:
+        platename='allDesign.fits' #DR16 switched to allDesign
     else:
         platename= 'apogeeDesign_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),
@@ -503,8 +507,10 @@ def apogeeFieldPath(dr=None):
     if dr is None: dr= _default_dr()
     if dr == '11' or dr == '12':
         platename= 'apogeeField.fits'
-    elif int(dr) > 13:
+    elif (int(dr) > 13) & (int(dr) <= 15):
         platename= 'apogee2Field.fits'
+    elif int(dr) >= 16:
+        platename = 'allField.fits' # DR16 switched to allField
     else:
         platename= 'apogeeField_DR%s.fits' % dr
     return os.path.join(apogeeTargetDirPath(dr=dr),

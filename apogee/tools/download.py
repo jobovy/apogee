@@ -14,7 +14,7 @@ _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
 _DR13_URL= 'http://data.sdss.org/sas/dr13'
 _DR14_URL= 'http://data.sdss.org/sas/dr14'
-_DR16_URL= 'https://dr16.sdss.utah.edu/sas/dr16'
+_DR16_URL= 'https://data.sdss.org/sas/dr16'
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
@@ -301,9 +301,16 @@ def apogeePlate(dr=None):
     filePath= path.apogeePlatePath(dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path
-    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
-                               'apogee','target',os.path.basename(filePath))\
-                               .replace(os.path.join(path._APOGEE_DATA,
+    if int(dr) < 16:
+        downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                                'apogee','target',os.path.basename(filePath))\
+                                .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    elif int(dr) >= 16: #change of location/format after DR16
+        downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                                'apogee','spectro','aspcap','r12','l33',os.path.basename(filePath))\
+                                .replace(os.path.join(path._APOGEE_DATA,
                                                      _dr_string(dr)),
                                         _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
