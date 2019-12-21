@@ -427,7 +427,10 @@ def allVisit(rmcommissioning=True,
             #Now change the dtype to make plate an int
             dt= data.dtype
             dt= dt.descr
-            plateDtypeIndx= dt.index(('PLATE', '|S13'))
+            try:
+                plateDtypeIndx= dt.index(('PLATE', '|S13'))
+            except ValueError: #PLATE column is not string - try U
+                plateDtypeIndx = dt.index(('PLATE', '<U13'))
             if plateInt:
                 dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
                 dt= numpy.dtype(dt)
