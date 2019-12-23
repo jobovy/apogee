@@ -1184,10 +1184,14 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         """Process the observation log and the apogeePlate, Design, and Field files to figure what has been observed and what cohorts are complete"""
         #First read the observation-log to determine which plates were observed
         if year is None:
-            if appath._APOGEE_REDUX == 'v402': year= 2
-            elif appath._APOGEE_REDUX == 'v603' \
-                    or appath._APOGEE_REDUX == 'l30e.2': year= 3
-            elif appath._APOGEE_REDUX == 'l31c.2': year= 5
+            if appath._default_dr() == '11':
+                year= 2
+            elif appath._default_dr() == '12' or appath._default_dr() == '13':
+                year= 3
+            elif appath._default_dr() == '14':
+                year= 5
+            elif appath._default_dr() == '16':
+                year= 7
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         self._year= year
         self._hemisphere = hemisphere
@@ -2149,12 +2153,19 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         self._sftype = sftype
         self._sample = sample
         self._frac4complete = frac4complete
-        if year is None or year < 7:
-            self.apo1year = 3
-            self.apo2year = 5
-        elif year == 7:
-            self.apo1year = 3
-            self.apo2year = 7
+        if year is None:
+            if appath._default_dr() == '11':
+                year= 2
+            elif appath._default_dr() == '12' or appath._default_dr() == '13':
+                year= 3
+            elif appath._default_dr() == '14':
+                year= 5
+            elif appath._default_dr() == '16':
+                year= 7
+            else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
+        # APO-1 is until year 3
+        self.apo1year= 3
+        self.apo2year= year
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         if not locations is None:
