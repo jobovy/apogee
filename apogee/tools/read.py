@@ -683,11 +683,15 @@ def obslog(year=None, hemisphere=None):
     if not os.path.exists(obslogfilename):
         download.obslog(year=year, hemisphere=hemisphere)
     if year is None:
-        if path._APOGEE_REDUX == 'v402': year= 2
-        elif path._APOGEE_REDUX == 'v603' \
-                or path._APOGEE_REDUX == 'l30e.2': year= 3
-        elif path._APOGEE_REDUX == 'l31c.2': year= 5
-        else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % path._APOGEE_REDUX)
+        if path._default_dr() == '11':
+            year= 2
+        elif path._default_dr() == '12' or path._default_dr() == '13':
+            year= 3
+        elif path._default_dr() == '14':
+            year= 5
+        elif path._default_dr() == '16':
+                year= 7
+        else: raise IOError('No default year available for DR{}, need to set it by hand'.format(path._default_dr()))
     if year > 3:
         genfromtxtKwargs= {'delimiter':', ',
                            'dtype':[('Plate','int'),
