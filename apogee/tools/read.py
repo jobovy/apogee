@@ -548,6 +548,7 @@ def rcsample(main=False,dr=None,xmatch=None,
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
     """
+    if dr is None: dr= path._default_dr()
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
@@ -559,7 +560,9 @@ def rcsample(main=False,dr=None,xmatch=None,
         astroNNdata= astroNN()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
-            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC')
+            colRA1='RA',colDec1='DEC',
+                         colRA2='RA' if int(dr) < 16 else 'ra_apogee',
+                         colDec2='DEC' if int(dr) < 16 else 'dec_apogee')
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _swap_in_astroNN(data,astroNNdata)
@@ -575,6 +578,11 @@ def rcsample(main=False,dr=None,xmatch=None,
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
         _warn_astroNN_ages()
         astroNNdata= astroNNAges()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
         data= _add_astroNN_ages(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
