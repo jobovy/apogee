@@ -563,9 +563,13 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
        2014-11-25 - Written - Bovy (IAS)
        2018-01-22 - Edited for new post-DR14 path structure - Bovy (UofT)
        2019-08-07 - Edited for DR16 - Bovy (UofT)
+       2019-12-23 - Make sure inputs are strings - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
+    if isinstance(loc_id,bytes): loc_id= loc_id.decode('utf-8')
+    if isinstance(apogee_id,bytes): apogee_id= apogee_id.decode('utf-8')
+    if isinstance(telescope,bytes): telescope= telescope.decode('utf-8')
     if dr == '10':
         return os.path.join(specASPCAPPath,'r3','s3','a3',
                             _redux_dr(dr=dr),'%i' % loc_id,
@@ -639,6 +643,9 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     if dr is None: dr= _default_dr()
     specReduxPath= apogeeSpectroReduxDirPath(dr=dr)
+    if isinstance(loc_id,bytes): loc_id= loc_id.decode('utf-8')
+    if isinstance(apogee_id,bytes): apogee_id= apogee_id.decode('utf-8')
+    if isinstance(telescope,bytes): telescope= telescope.decode('utf-8')
     # Name of the file
     apStar_base_filename= 'apStar'
     if telescope == 'lco25m': apStar_base_filename= 'asStar'

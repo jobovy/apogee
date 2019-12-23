@@ -227,6 +227,36 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     _download_file(downloadPath,filePath,dr)
     return None
 
+def all_aspcapStar(dr=None):
+    """
+    NAME:
+       all_aspcapStar
+    PURPOSE:
+       Convenience function to download all aspcapStar files for a given DR
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2019-12-23 - Written - Bovy (UofT)
+    """
+    from . import read as apread
+    if dr is None: dr= path._default_dr()
+    alldata= apread.allStar(raw=True)
+    for ii in range(len(alldata)):
+        try:
+            _= apread.aspcapStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                                     else alldata['FIELD'][ii],
+                                 alldata['APOGEE_ID'][ii],
+                                 telescope=alldata['TELESCOPE'][ii],dr=dr)
+        except:
+            print("Failed to download location {}, apogee_id {}, telescope {}"\
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                              else alldata['FIELD'][ii],
+                          alldata['APOGEE_ID'][ii],
+                          alldata['TELESCOPE'][ii]))
+    return None
+
 def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
     NAME:
@@ -253,6 +283,36 @@ def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
+    return None
+
+def all_apStar(dr=None):
+    """
+    NAME:
+       all_apStar
+    PURPOSE:
+       Convenience function to download all apStar files for a given DR
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2019-12-23 - Written - Bovy (UofT)
+    """
+    from . import read as apread
+    if dr is None: dr= path._default_dr()
+    alldata= apread.allStar(raw=True)
+    for ii in range(len(alldata)):
+        try:
+            _= apread.apStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                                 else alldata['FIELD'][ii],
+                             alldata['APOGEE_ID'][ii],
+                             telescope=alldata['TELESCOPE'][ii],dr=dr)
+        except:
+            print("Failed to download location {}, apogee_id {}, telescope {}"\
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                              else alldata['FIELD'][ii],
+                          alldata['APOGEE_ID'][ii],
+                          alldata['TELESCOPE'][ii]))
     return None
 
 def apVisit(plateid, mjd, fiberid, telescope='apo25m', dr=None):
