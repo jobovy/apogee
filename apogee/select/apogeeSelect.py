@@ -621,7 +621,7 @@ class apogeeSelectPlotsMixin:
             ap1_fields= numpy.unique(ap1F['FIELD_NAME'])
             ap1_fields = [f.strip() for f in ap1_fields]
             #make a boolean array indicating the APOGEE-1 fields
-            inap1 = np.zeros(len(apF), dtype=bool)
+            inap1 = numpy.zeros(len(apF), dtype=bool)
             for q,f in enumerate(apF['FIELD_NAME']):
                 inap1[q] = f.strip() in ap1_fields
             hemisphere = self._hemisphere
