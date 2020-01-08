@@ -614,15 +614,23 @@ class apogeeSelectPlotsMixin:
         apF= apF[has_cohort]
         apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
         colormap = cm.get_cmap(cmap)
-        #Remove fields not in this hemisphere (apogee2Select only)
+        #Remove fields not in this hemisphere and from APOGEE-1 (apogee2Select only)
         if isinstance(self,apogee2Select):
+            #need to get the final APOGEE-1 Field file...
+            ap1F = apread.apogeeField(dr='12')
+            ap1_fields= numpy.unique(ap1F['FIELD_NAME'])
+            ap1_fields = [f.strip() for f in ap1_fields]
+            #make a boolean array indicating the APOGEE-1 fields
+            inap1 = np.zeros(len(apF), dtype=bool)
+            for q,f in enumerate(apF['FIELD_NAME']):
+                inap1[q] = f.strip() in ap1_fields
             hemisphere = self._hemisphere
             if hemisphere == 'north':
-                inhem = apF['DEC'] > -32.
+                inhem = apF['TELESCOPE'] == 'apo25m'
             if hemisphere == 'south':
-                inhem = apF['DEC'] < 29.
-            apF = apF[inhem]
-            apFlb = apFlb[inhem]
+                inhem = apF['TELESCOPE'] == 'lco25m'
+            apF = apF[inhem & ~inap1]
+            apFlb = apFlb[inhem & ~inap1]
 
         if incl_not_started:
             bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
