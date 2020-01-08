@@ -1760,18 +1760,20 @@ class apogee2Select(apogeeSelect):
             allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
-            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                     allVisit['PLATE'][ii]+b'-'+
-                     b'%05i' % allVisit['MJD'][ii] + b'-'
-                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S19')
+        #make sure we have all the relevant columns for 'visits' as bytes - to make things easier
+        if not isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visitsplates = [allVisit['PLATE'][ii].encode('utf-8') for ii in range(len(allVisit))]
         else:
-            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode()+b'-'+
-                     allVisit['PLATE'][ii].encode()+b'-'+
-                     b'%05i' % allVisit['MJD'][ii] + b'-'
-                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S19')
+            visitsplates = allVisit['PLATE']
+        if not isinstance(allVisit['APRED_VERSION'][0], (bytes,numpy.bytes_)):
+            apredvers = [allVisit['APRED_VERSION'][ii].encode('utf-8') for ii in range(len(allVisit))]
+        else:
+            apredvers = allVisit['APRED_VERSION']
+        visits= numpy.array([apredvers[ii]+b'-'+
+                visitsplates[ii]+b'-'+
+                b'%05i' % allVisit['MJD'][ii] + b'-'
+                b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
@@ -1880,7 +1882,11 @@ class apogee2Select(apogeeSelect):
                                                 ak=True,akvers='targ')
             except OSError:
                 #try field name+location?
-                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode()
+                #ensure that field name and loc are in str...
+                thisloc = int(self._locations[ii])
+                if isinstance(field_name, (bytes,numpy.bytes_)):
+                    field_name = field_name.decode()
+                field_name = field_name.strip()+'_loc'+str(int(self._locations[ii]))
                 tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
                                                 ak=True,akvers='targ')
             #Cut to relevant color range
