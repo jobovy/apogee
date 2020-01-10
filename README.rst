@@ -1271,7 +1271,7 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed plates are considered
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sample (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L950>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
 The selection function for APOGEE-1 can be evaluated (as a function) by calling the instance with the location_id and desired apparent H band magnitude. For example::
 
