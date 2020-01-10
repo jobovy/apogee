@@ -389,6 +389,8 @@ class apogeeSelectPlotsMixin:
             w= []
         for ii in range_func(len(location)):
             tphotdata= self._photdata['%i' % location[ii]]
+            if tphotdata is None:
+                continue
             locIndx= self._locations == location[ii]
             if cohort.lower() == 'short':
                 indx= (tphotdata['H'] >= self._short_hmin[locIndx])\
@@ -570,7 +572,10 @@ class apogeeSelectPlotsMixin:
         if isinstance(self,apogeeCombinedSelect):
             # Combined, create combined apogeeField
             ap1F= numpy.asarray(apread.apogeeField(dr='12'))
-            ap2F= numpy.asarray(apread.apogeeField(dr='14'))
+            if self.apo2year > 5:
+                ap2F= numpy.asarray(apread.apogeeField(dr='16'))
+            else:
+                ap2F= numpy.asarray(apread.apogeeField(dr='14'))
             ap2F4stack= ap2F[[name for name
                                in ap1F.dtype.names]]
             ap1F4stack= ap1F.astype(ap2F4stack.dtype)
@@ -609,15 +614,23 @@ class apogeeSelectPlotsMixin:
         apF= apF[has_cohort]
         apFlb= bovy_coords.radec_to_lb(apF['RA'],apF['DEC'],degree=True)
         colormap = cm.get_cmap(cmap)
-        #Remove fields not in this hemisphere (apogee2Select only)
+        #Remove fields not in this hemisphere and from APOGEE-1 (apogee2Select only)
         if isinstance(self,apogee2Select):
+            #need to get the final APOGEE-1 Field file...
+            ap1F = apread.apogeeField(dr='12')
+            ap1_fields= numpy.unique(ap1F['FIELD_NAME'])
+            ap1_fields = [f.strip() for f in ap1_fields]
+            #make a boolean array indicating the APOGEE-1 fields
+            inap1 = numpy.zeros(len(apF), dtype=bool)
+            for q,f in enumerate(apF['FIELD_NAME']):
+                inap1[q] = f.strip() in ap1_fields
             hemisphere = self._hemisphere
             if hemisphere == 'north':
-                inhem = apF['DEC'] > -32.
+                inhem = apF['TELESCOPE'] == 'apo25m'
             if hemisphere == 'south':
-                inhem = apF['DEC'] < 29.
-            apF = apF[inhem]
-            apFlb = apFlb[inhem]
+                inhem = apF['TELESCOPE'] == 'lco25m'
+            apF = apF[inhem & ~inap1]
+            apFlb = apFlb[inhem & ~inap1]
 
         if incl_not_started:
             bovy_plot.bovy_plot(apFlb[:,0],apFlb[:,1],
@@ -1220,9 +1233,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             if obslog[ii]['NObs_Ver_Done'] < obslog[ii]['NObs_Ver_Plan']:
                 indx[ii]= False
         obslog= obslog[indx]
-        self._plates = obslog['Plate']
-        self._obslog = obslog
-        nplates= len(self._plates)
+
         #Read the plate and design files
         if self._year == 1:
             self._dr= '10'
@@ -1235,7 +1246,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         elif self._year == 7:
             self._dr = '16'
         #Match up plates with designs
-        apogeePlate= apread.apogeePlate(dr=self._dr)
+        apogeePlate= apread.apogeePlate(dr=self._dr, stdize=True)
         pindx= numpy.ones(len(apogeePlate),dtype='bool') #Clean of plates not scheduled to be observed or commisioning
         for ii in range(len(apogeePlate)):
             if numpy.sum(origobslog['Plate'] == apogeePlate['PLATE_ID'][ii]) == 0:
@@ -1243,6 +1254,15 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             if apogeePlate['PLATE_ID'][ii] in _COMPLATES:
                 pindx[ii]= False
         apogeePlate= apogeePlate[pindx]
+        #reverse this do clean out plates in allPlate but not in the obslog (?)
+        oindx= numpy.ones(len(obslog),dtype='bool')
+        for ii in range(len(obslog)):
+            if numpy.sum(apogeePlate['PLATE_ID'] == obslog['Plate'][ii]) == 0:
+                oindx[ii]= False
+        obslog = obslog[oindx]
+        self._plates = obslog['Plate']
+        self._obslog = obslog
+        nplates= len(self._plates)
         apogeeDesign= apread.apogeeDesign(dr=self._dr,ap1ize=True)
         designs= numpy.zeros_like(self._plates)
         platesIndx= numpy.zeros(nplates,dtype='int')
@@ -1252,6 +1272,7 @@ class apogeeSelect(apogeeSelectPlotsMixin):
             if numpy.sum(dindx) == 0:
                 raise IOError("No entry found in apogeePlate for plate %i" % self._plates[ii])
             elif numpy.sum(dindx) > 1:
+                #remove this warning, because allPlate includes multiple entries for each MJD when a plate was observed...
                 warnings.warn("multiple entries in apogeePlate for plate %i (multiple designs on the same plate?), returning the first of these..." % self._plates[ii])
                 ndindx = numpy.zeros(len(dindx), dtype=bool)
                 ndindx[numpy.where(dindx)[0][0]] = True
@@ -1311,7 +1332,11 @@ class apogeeSelect(apogeeSelectPlotsMixin):
                 oindx= origobslog['Plate'] == apogeePlate['PLATE_ID'][cpindx][jj]
                 if origobslog['ObsHistory'][oindx] == b'NOT,OBSERVED':
                     pindx[dummyIndxArray[cpindx][jj]]= False
-            locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
+            try:
+                locPlatesIndx[ii,:numpy.sum(pindx)]= dummyIndxArray[pindx]
+            except ValueError:
+                print(self._locations[ii])
+                raise ValueError
             for jj in range(numpy.sum(pindx)):
                 #Find the design index
                 dindx= apogeeDesign['DESIGN_ID'] == apogeePlate['DESIGN_ID'][pindx][jj]
@@ -1478,18 +1503,20 @@ class apogee1Select(apogeeSelect):
             allVisit= apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
-            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                    allVisit['PLATE'][ii]+b'-'+
-                    b'%05i' % allVisit['MJD'][ii] + b'-'
-                    b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S18')
+        #make sure we have all the relevant columns for 'visits' as bytes - to make things easier
+        if not isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visitsplates = [allVisit['PLATE'][ii].encode('utf-8') for ii in range(len(allVisit))]
         else:
-            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode('utf-8')+b'-'+
-                    allVisit['PLATE'][ii].encode('utf-8')+b'-'+
-                    b'%05i' % allVisit['MJD'][ii] + b'-'
-                    b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S18')
+            visitsplates = allVisit['PLATE']
+        if not isinstance(allVisit['APRED_VERSION'][0], (bytes,numpy.bytes_)):
+            apredvers = [allVisit['APRED_VERSION'][ii].encode('utf-8') for ii in range(len(allVisit))]
+        else:
+            apredvers = allVisit['APRED_VERSION']
+        visits= numpy.array([apredvers[ii]+b'-'+
+                visitsplates[ii]+b'-'+
+                b'%05i' % allVisit['MJD'][ii] + b'-'
+                b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S18')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
@@ -1583,12 +1610,15 @@ class apogee1Select(apogeeSelect):
             sys.stdout.write('\r'+_ERASESTR+'\r')
             sys.stdout.write('\r'+"Reading photometric data for field %16s ...\r" % field_name.strip())
             sys.stdout.flush()
+            field_name_bytes = field_name
+            if not isinstance(field_name_bytes, (bytes,numpy.bytes_)):
+                field_name_bytes = field_name_bytes.encode('utf-8')
             try:
                 tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
                                                 ak=True,akvers='targ')
             except OSError:
                 #try field name+location?
-                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode()
+                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode('utf-8')
                 tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
                                                 ak=True,akvers='targ')
             #Cut to relevant color range
@@ -1742,18 +1772,20 @@ class apogee2Select(apogeeSelect):
             allVisit = apread.allVisit(mjd=self._mjd, plateS4=True)
         else:
             allVisit= apread.allVisit(plateS4=True) #no need to cut to main, don't care about special plates
-        if isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
-            visits= numpy.array([allVisit['APRED_VERSION'][ii]+b'-'+
-                     allVisit['PLATE'][ii]+b'-'+
-                     b'%05i' % allVisit['MJD'][ii] + b'-'
-                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S19')
+        #make sure we have all the relevant columns for 'visits' as bytes - to make things easier
+        if not isinstance(allVisit['PLATE'][0], (bytes,numpy.bytes_)):
+            visitsplates = [allVisit['PLATE'][ii].encode('utf-8') for ii in range(len(allVisit))]
         else:
-            visits= numpy.array([allVisit['APRED_VERSION'][ii].encode()+b'-'+
-                     allVisit['PLATE'][ii].encode()+b'-'+
-                     b'%05i' % allVisit['MJD'][ii] + b'-'
-                     b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
-                                dtype='|S19')
+            visitsplates = allVisit['PLATE']
+        if not isinstance(allVisit['APRED_VERSION'][0], (bytes,numpy.bytes_)):
+            apredvers = [allVisit['APRED_VERSION'][ii].encode('utf-8') for ii in range(len(allVisit))]
+        else:
+            apredvers = allVisit['APRED_VERSION']
+        visits= numpy.array([apredvers[ii]+b'-'+
+                visitsplates[ii]+b'-'+
+                b'%05i' % allVisit['MJD'][ii] + b'-'
+                b'%03i' % allVisit['FIBERID'][ii] for ii in range(len(allVisit))],
+                            dtype='|S19')
         statIndx= numpy.zeros(len(specdata),dtype='bool')
         #Go through the spectroscopic sample and check that it is in a full cohort
         plateIncomplete= 0
@@ -1862,7 +1894,11 @@ class apogee2Select(apogeeSelect):
                                                 ak=True,akvers='targ')
             except OSError:
                 #try field name+location?
-                field_name = (field_name.strip().decode()+'_loc'+str(int(self._locations[ii]))).encode()
+                #ensure that field name and loc are in str...
+                thisloc = int(self._locations[ii])
+                if isinstance(field_name, (bytes,numpy.bytes_)):
+                    field_name = field_name.decode()
+                field_name = field_name.strip()+'_loc'+str(int(self._locations[ii]))
                 tapogeeObject= apread.apogeeObject(field_name,dr=self._dr,
                                                 ak=True,akvers='targ')
             #Cut to relevant color range
@@ -2162,10 +2198,12 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 year= 5
             elif appath._default_dr() == '16':
                 year= 7
+				self._dr = '16'
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         # APO-1 is until year 3
         self.apo1year= 3
         self.apo2year= year
+		self._dr= appath._default_dr()
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         if not locations is None:

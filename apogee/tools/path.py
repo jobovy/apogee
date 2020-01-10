@@ -372,26 +372,29 @@ def obslogPath(year=None, hemisphere=None):
        2012-11-04 - Edited for obslog - Bovy (IAS)
        2018-03-26 - Edited for APOGEE-2 DR14 - Bovy (UofT)
     """
+    base = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                   'obslogs') #point to new location for obslogs...
     if year is None:
         if _APOGEE_REDUX == 'v402': year= 2
         elif _APOGEE_REDUX == 'v603' or _APOGEE_REDUX == 'l30e.2': year= 3
         elif _APOGEE_REDUX == 'l31c.2': year= 5
+        elif _APOGEE_REDUX == 'l33': year=7
         else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     if year == 1 or year == 2:
-        return os.path.join(_APOGEE_DATA,
+        return os.path.join(base,
                             'obs-summary-year12.csv')
     elif year == 3:
-        return os.path.join(_APOGEE_DATA,
+        return os.path.join(base,
                             'obs-summary-year123.csv')
     elif year == 5:
-        return os.path.join(_APOGEE_DATA,
+        return os.path.join(base,
                             'obs-summary-year45.csv')
     elif year == 7:
-        if hemisphere == 'north' or hemisphere == None:
-            return os.path.join(_APOGEE_DATA,
+        if hemisphere == 'north' or hemisphere == None: #return north by default?
+            return os.path.join(base,
                                 'obs-summary-year6-north.csv')
         elif hemisphere == 'south':
-            return os.path.join(_APOGEE_DATA,
+            return os.path.join(base,
                                 'obs-summary-year6-south.csv')
         else:
             raise IOError('Must set hemisphere to north or south for year 6... (hemisphere = None returns north!)')
@@ -536,13 +539,15 @@ def apogeeObjectPath(field_name,dr=None):
        2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
+    if isinstance(field_name, (bytes,numpy.bytes_)):
+        field_name = field_name.decode()
     if dr == '11' or dr == '12':
-        filename= 'apogeeObject_%s.fits' % field_name.strip().decode()
+        filename= 'apogeeObject_%s.fits' % field_name.strip()
     elif int(dr) > 13:
         filename= os.path.join('apogee2Object',
-                               'apogee2Object_%s.fits' % field_name.strip().decode())
+                               'apogee2Object_%s.fits' % field_name.strip())
     else:
-        filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip().decode())
+        filename= 'apogeeObject_DR%s_%s.fits' % (dr,field_name.strip())
     return os.path.join(apogeeTargetDirPath(dr=dr),
                         filename)
 

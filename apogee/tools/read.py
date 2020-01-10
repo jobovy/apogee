@@ -741,7 +741,7 @@ def obslog(year=None, hemisphere=None):
     obslogtxt= numpy.genfromtxt(obslogfilename,**genfromtxtKwargs)
     return obslogtxt
 
-def apogeePlate(dr=None):
+def apogeePlate(dr=None, stdize=False):
     """
     NAME:
        apogeePlate
@@ -757,7 +757,26 @@ def apogeePlate(dr=None):
     filePath= path.apogeePlatePath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeePlate(dr=dr)
-    return fitsread(filePath)
+    out = fitsread(filePath)
+    if stdize and 'PLATE_ID' not in out.dtype.fields: #is new version file -> need to convert to more apogeePlate like
+        out= numpy.asarray(out) # makes sure that FITS_REC --> recarray for apy
+        names= list(out.dtype.names)
+        names[names.index('PLATE')]= 'PLATE_ID' #adjust relevant field names...
+        names[names.index('DESIGNID')] = 'DESIGN_ID'
+        out.dtype.names= names
+        nurec = numpy.recarray(len(numpy.unique(out['PLATE_ID'])), dtype=[('LOCATION_ID', '>i4'),
+                                                                    ('PLATE_ID', '>i4'),
+                                                                    ('DESIGN_ID', '>i4'),
+                                                                    ('FIELD_NAME', '<U16')])
+        plateids = numpy.unique(out['PLATE_ID'])
+        for i in range(len(plateids)):
+            entries = out[out['PLATE_ID'] == plateids[i]]
+            nurec['PLATE_ID'][i] = plateids[i]
+            nurec['DESIGN_ID'][i] = numpy.unique(entries['DESIGN_ID'])
+            nurec['FIELD_NAME'][i] = entries['NAME'][0] #this isnt so essential?
+            nurec['LOCATION_ID'][i] = numpy.unique(entries['LOCATION_ID'])
+        out = nurec
+    return out
 
 def apogeeDesign(dr=None,ap1ize=False):
     """
