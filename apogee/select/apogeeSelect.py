@@ -2198,12 +2198,11 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
                 year= 5
             elif appath._default_dr() == '16':
                 year= 7
-				self._dr = '16'
             else: raise IOError('No default year available for APOGEE_REDUX %s, need to set it by hand' % appath._APOGEE_REDUX)
         # APO-1 is until year 3
         self.apo1year= 3
         self.apo2year= year
-		self._dr= appath._default_dr()
+        self._dr= appath._default_dr()
         self._minnspec = minnspec
         #load an APOGEE 1 and 2 selection function
         if not locations is None:
