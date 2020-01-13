@@ -626,9 +626,11 @@ class apogeeSelectPlotsMixin:
                 inap1[q] = f.strip() in ap1_fields
             hemisphere = self._hemisphere
             if hemisphere == 'north':
-                inhem = apF['TELESCOPE'] == 'apo25m'
+                inhem = (apF['TELESCOPE'] == 'apo25m') \
+                        + (apF['TELESCOPE'] == b'apo25m')
             if hemisphere == 'south':
-                inhem = apF['TELESCOPE'] == 'lco25m'
+                inhem = (apF['TELESCOPE'] == 'lco25m') \
+                        + (apF['TELESCOPE'] == b'lco25m')
             apF = apF[inhem & ~inap1]
             apFlb = apFlb[inhem & ~inap1]
 
