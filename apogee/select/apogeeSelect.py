@@ -1124,7 +1124,11 @@ class apogeeSelect(apogeeSelectPlotsMixin):
         """check_consistency for a single field
         location: location_id
         cohort: cohort ('all', 'short', 'medium', 'long'"""
-        photH,specH,fn1,fn2= self._location_Hcdfs(location,cohort)
+        try:
+            photH,specH,fn1,fn2= self._location_Hcdfs(location,cohort)
+        except TypeError:
+            # Happens when there is no data for a given location
+            return numpy.nan
         if numpy.all(numpy.isnan(photH)):
             return -1
         j1, j2, i= 0, 0, 0
@@ -2696,7 +2700,11 @@ class apogeeCombinedSelect(apogeeSelectPlotsMixin):
         """check_consistency for a single field
         location: location_id
         cohort: cohort ('all', 'short', 'medium', 'long'"""
-        photH,specH,fn1,fn2= self._location_Hcdfs(location,cohort)
+        try:
+            photH,specH,fn1,fn2= self._location_Hcdfs(location,cohort)
+        except TypeError:
+            # Happens when there is no data for a given location
+            return numpy.nan
         if numpy.all(numpy.isnan(photH)):
             return -1
         j1, j2, i= 0, 0, 0
