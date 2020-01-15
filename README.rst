@@ -11,7 +11,13 @@ Tools for dealing with `SDSS-III <http://sdss3.org/>`__ `APOGEE
 AUTHOR
 ======
 
-Jo Bovy - bovy at astro dot utoronto dot ca
+Main author: Jo Bovy - bovy at astro dot utoronto dot ca
+
+Substantial contributions from
+
+* Ted Mackereth (`@jmackereth <https://github.com/jmackereth>`__)
+* Natalie Price-Jones (`@npricejones <https://github.com/npricejones>`__)
+* Meredith Rawls (`@mrawls <https://github.com/mrawls>`__)
 
 CITING THIS CODE
 =================
@@ -20,8 +26,10 @@ Please cite `Bovy (2016) <http://arxiv.org/abs/1510.06745>`__ when
 using this code. Appendix C of this paper has a brief overview of the
 code. When using the selection function, please cite `Bovy et
 al. (2014) <http://adsabs.harvard.edu/abs/2014ApJ...790..127B>`__ and
-when using the effective selection function, please cite `Bovy et
-al. (2016a) <http://arxiv.org/abs/1509.06751>`__ and/or `Bovy et
+when using the DR14 selection function please cite `Mackereth & Bovy
+(2020) <https://ui.adsabs.harvard.edu/abs/2019arXiv191003590M>`__ as
+well. When using the effective selection function, please cite `Bovy
+et al. (2016a) <http://arxiv.org/abs/1509.06751>`__ and/or `Bovy et
 al. (2016b) <http://arxiv.org/abs/1509.05796>`__.
 
 INSTALLATION
@@ -132,7 +140,7 @@ RECENTLY CHANGED TO BE MORE CONSISTENT WITH SDSS' OWN ENVIRONMENT
 VARIABLES**)
 
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
-* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path`` (also available in ``apogee.tools.read`` for convenience).
+* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14, l33 for DR16); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path`` (also available in ``apogee.tools.read`` for convenience).
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a); note that this does not load the public catalog and is only for internal SDSS use.
 
 In order to use this code, you will need to set these environment variables
