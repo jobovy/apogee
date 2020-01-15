@@ -1252,7 +1252,7 @@ The selection function for APOGEE 1 is loaded using::
    apo= apogee.select.apogee1Select()
 
 which will load the selection function for the full sample (this will
-take a few minutes, and can take longer if the necessary files need to be downloaded, dependent on your connection). Replacing ``apogee1Select()`` with ``apogee2Select`` will load the selection function for APOGEE-2. If only
+take a few minutes, and can take longer if the necessary files need to be downloaded, dependent on your connection). Replacing ``apogee1Select()`` with ``apogee2Select`` will load the selection function for APOGEE-2. For ``apogee2Select``, you can supply the ``hemisphere=`` keyword to select between APOGEE-2 `'north'` and `'south'` (by default this is set to `'north'`). If only
 a few fields are needed, only those fields can be loaded by supplying
 the *locations=* keyword, e.g.::
 
@@ -1271,7 +1271,7 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed plates are considered
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sample (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L950>`__ for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only, in the case of APOGEE-1) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L950>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
 The selection function for APOGEE-1 can be evaluated (as a function) by calling the instance with the location_id and desired apparent H band magnitude. For example::
 
@@ -1403,25 +1403,29 @@ example,::
 The array **statIndx** now is an boolean index array that identifies
 the stars that are in the statistical sample.
 
+
 Combining APOGEE-1 and 2 Selection Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A novel key feature of this package is that it can be used to determine the *combined* selection function of the APOGEE-1 and 2 surveys, allowing the use of full use of the available data set. This is implemented through the ``apogeeCombinedSelect`` class, which is called as::
+A detailed look at the *combined* selection function for the latest APOGEE DR16 release can be found as a jupyter notebook in this `gist
+<https://gist.github.com/jobovy/47507a217409f152315323905edd711d>`__, but we can examine it's high level properties and access here.
 
-    apo = apogee.select.apogeeCombinedSelect()
+The *combined* selection function of the APOGEE-1 and 2 surveys allows the use of the full available data set and includes data from SDSS-III and IV. We have implemented this through the ``apogeeCombinedSelect`` class, which is called as::
+
+    apo = apogee.select.apogeeCombinedSelect(year = 7)
     
-This will load an instance of ``apogee1Select`` and ``apogee2Select``, then combine them to make a single consistent selection function, which can be evaluated, as above, like::
+Specifying the year up to DR16. This loads an instance of ``apogee1Select`` and the northern and southern hemisphere instances of ``apogee2Select`` (which are stored inside the ``apogeeCombinedSelect`` object as ``apo.apo2Nsel`` and ``apo.apo2Ssel``), then combines them to make a single consistent selection function, which can be evaluated, as if it was the regular ``apogee2Select`` instance like::
 
     apo(4240,11.8,0.8)
     0.014097291164373848
     
-since location 4240 is an APOGEE-1 location, it is simply evaluated as a location with a *single* color bin, and the APOGEE-1 selection fraction is returned. We can then re-plot the selection fraction on the sky for the entire APOGEE sample up to DR14, as before, using::
+since location 4240 is an APOGEE-1 location, it is simply evaluated as a location with a *single* color bin, and the APOGEE-1 selection fraction is returned. We can then re-plot the selection fraction on the sky for the entire APOGEE sample up to DR16, as before, using::
 
-    apo.plot_selfunc_lb(cohort='short',type='selfunc',vmax=15.)
+    apo.plot_selfunc_lb(cohort='short',type='selfunc',)
     
 .. image:: _readme_files/_apogeeCombinedSelect_lb.png
 
-Which, by default, will plot the selection fraction for just the first of the color bins in any APOGEE-2 fields (this can be adjusted with the ``color_bin`` keyword, as before). Compared to the equivalent plot above, it is clear that APOGEE now covers a larger portion of the sky than in DR12 (shown above), and with a far higher selection fraction in many fields.
+Which, by default, will plot the selection fraction for just the first of the color bins in any APOGEE-2 fields (this can be adjusted with the ``color_bin`` keyword, as before). Compared to the equivalent plot above, it is clear that APOGEE now covers a far larger portion of the sky than in DR12 (shown above), and with a far higher selection fraction in many fields.
 
 We can also now re-plot the comparison between the spectroscopic and photometric color--magnitude distributions, now for the whole APOGEE data set, as before::
 
@@ -1431,7 +1435,7 @@ We can also now re-plot the comparison between the spectroscopic and photometric
 
 The newly adopted color binning in APOGEE-2 is clear in this plot, but we can see that the selection function still does a good job of re-weighting the underlying photometric sample (underlying in black, re-weighted in blue contours) to match the spectroscopic sample (red contours).  
 
-The loaded ``apogeeCombinedSelect`` object also contains the individual ``apogee1Select`` and ``apogee2Select`` objects, which can be accessed via ``apo.apo1sel`` and ``apo.apo2sel``, respectively. 
+As mentioned before, the loaded ``apogeeCombinedSelect`` object also contains the individual ``apogee1Select`` and ``apogee2Select`` objects, which can be accessed via ``apo.apo1sel``, ``apo.apo2Nsel`` and ``apo.apo2Ssel``, respectively. You can see that functionality in action in this  `jupyter notebook <https://gist.github.com/jobovy/47507a217409f152315323905edd711d>`__, which also does some further exploration of the selection and completeness of DR16.
 
 Effective selection function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
