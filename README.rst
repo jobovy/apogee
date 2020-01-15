@@ -1235,29 +1235,30 @@ Very simple stacking functions are included in
 ``apogee.spec.stack``. Currently these consist of a (masked)
 median-stacking routine and an inverse-variance stacking.
 
-APOGEE SELECTION FUNCTION
+APOGEE 1 AND 2 SELECTION FUNCTIONS
 ==========================
 
-Raw selection function
+Raw selection functions
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 One of the main uses of this codebase is that it can determine the
 selection function---the fraction of objects in APOGEE's color and
 magnitude range(s) successfully observed spectroscopically. This code
-is contained in *apogee.select.apogeeSelect*. The selection function
-is loaded using::
+is contained in *apogee.select.apogeeSelect*. Because the selection function differs between APOGEE-1 (observations in SDSS-III) and APOGEE-2 (SDSS-IV), these survey selection functions need to be evaluated separately. Both functions are implemented as sub-classes of the ``apogeeSelect`` superclass. 
+
+The selection function for APOGEE 1 is loaded using::
 
    import apogee.select.apogeeSelect
-   apo= apogee.select.apogeeSelect()
+   apo= apogee.select.apogee1Select()
 
 which will load the selection function for the full sample (this will
-take a few minutes; seems to take about 20 minutes for DR12). If only
+take a few minutes, and can take longer if the necessary files need to be downloaded, dependent on your connection). Replacing ``apogee1Select()`` with ``apogee2Select`` will load the selection function for APOGEE-2. For ``apogee2Select``, you can supply the ``hemisphere=`` keyword to select between APOGEE-2 `'north'` and `'south'` (by default this is set to `'north'`). If only
 a few fields are needed, only those fields can be loaded by supplying
 the *locations=* keyword, e.g.::
 
-       apo= apogee.select.apogeeSelect(locations=[4240,4241,4242])
+       apo= apogee.select.apogee1Select(locations=[4240,4241,4242])
 
-will only load the fields *030+00*, *060+00*, and *090+00*. Locations
+will only load the fields *030+00*, *060+00*, and *090+00* (this functionality is also available in ``apogee2Select``). Locations
 are identified using their location_id. Because loading the selection
 function takes a long time, you might want to pickle it to save it
 (this is supported); to reduce the size of the object and pickle, you
@@ -1270,9 +1271,9 @@ The basic algorithm to determine the selection function is very simple:
 * Only completed plates are considered
 * Only completed cohorts are used; only stars observed as part of a completed cohort are considered to be part of the statistical sample (but, there is an initialization option *frac4complete* that can be used to set a lower completeness threshold; this still only uses complete plates)
 * For any field/cohort combination, the selection function is the number of stars in the spectroscopic sample divided by the number of stars in the photometric sample (within the color and magnitude limits of the cohort).
-* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L345>`__ for the precise sequence of targeting-flag cuts that define the main sample.
+* Only stars in APOGEE's main sample (selected using a dereddened *J-K*\ :sub:`s` > 0.5 color cut only, in the case of APOGEE-1) are included in the spectroscopic sample. See the function `apogee.tools.read.mainIndx <http://github.com/jobovy/apogee/blob/master/apogee/tools/read.py#L950>`__ for the precise sequence of targeting-flag cuts that define the main sample.
 
-The selection function can be evaluated (as a function) by calling the instance. For example::
+The selection function for APOGEE-1 can be evaluated (as a function) by calling the instance with the location_id and desired apparent H band magnitude. For example::
 
     apo(4240,11.8)
     0.0043398099560346048
@@ -1284,7 +1285,18 @@ The selection function can be evaluated (as a function) by calling the instance.
 (all of the examples here use a preliminary version of the selection function for year1+2 APOGEE data; later versions might give slightly different answers and later years will give very different answers if the number of completed cohorts changes)
 
 The latter is zero, because the long cohort for this field has not
-been completed yet (as of year1+2).
+been completed yet (as of year1+2). 
+
+Evaluation of the APOGEE-2 selection function also requires a dereddened (J-Ks) colour as an argument, e.g.::
+    
+    apo(5155,11.8,0.6)
+    0.1602803738317757
+    apo(5155,11.8,0.9)
+    0.9022988505747126
+    apo(5155,13.,0.9)
+    0.0
+    
+You can see that the redder color bins in APOGEE-2 have higher levels of completeness.
 
 To get a list of all locations that are part of the statistical sample (i.e., that have at least a single completed cohort), do::
 
@@ -1297,15 +1309,27 @@ To get the H-band limits for a field's cohort do::
 
    apo.Hmin(4240,cohort='short')
    apo.Hmax(4240,cohort='short')
-
-
+   
 and similar for medium and long cohorts. We can also get the center of the plate in longitude and latitude, the radius within which targets are drawn, or the string name for each field::
 
     apo.glonGlat(4240)
     apo.radius(4240)
     apo.fieldName(4240)
+    
+The above functions work for both APOGEE-1 and 2 selection functions. The APOGEE-2 function can also return information about the color bins employed in the target selection for that survey::
 
-The selection function can be plotted using::
+    apo.NColorBins(5155)
+    2 #this location had two (J-K) bins
+    apo.JKmin(5155, bin=0)
+    0.5
+    apo.JKmax(5155, bin=0)
+    0.800000011920929
+    apo.JKmin(5155, bin=1)
+    0.800000011920929
+    apo.JKmax(5155, bin=1)
+    999.9
+    
+The selection function can be plotted for both ``apogee1Select`` and ``apogee2Select`` objects using::
 
     apo.plot_selfunc_xy(vmax=15.) #for Galactic X and Y
     apo.plot_selfunc_xy(type='rz',vmax=15.) #For Galactocentric R and Z
@@ -1317,7 +1341,7 @@ The selection function can be plotted using::
 which gives a sense of the spatial dependence of the selection
 function (which is really a function of *H* and not distance; *H* is
 converted to distance here assuming a red-clump like absolute
-magnitude and a fiducial extinction model). The selection function for
+magnitude and a fiducial extinction model). An optional ``color_bin`` keyword allows for plotting of the selection function in each color bin for APOGEE-2 (this defaults to the first bin if not set). The selection function for
 a given cohort can also be plotted as a function of Galactic longitude
 and latitude::
 
@@ -1379,6 +1403,40 @@ example,::
 The array **statIndx** now is an boolean index array that identifies
 the stars that are in the statistical sample.
 
+
+Combining APOGEE-1 and 2 Selection Functions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A detailed look at the *combined* selection function for the latest APOGEE DR16 release can be found as a jupyter notebook in this `gist
+<https://gist.github.com/jobovy/47507a217409f152315323905edd711d>`__, but we can examine it's high level properties and access here.
+
+The *combined* selection function of the APOGEE-1 and 2 surveys allows the use of the full available data set and includes data from SDSS-III and IV. We have implemented this through the ``apogeeCombinedSelect`` class, which is called as::
+
+    apo = apogee.select.apogeeCombinedSelect(year = 7)
+    
+Specifying the year up to DR16. This loads an instance of ``apogee1Select`` and the northern and southern hemisphere instances of ``apogee2Select`` (which are stored inside the ``apogeeCombinedSelect`` object as ``apo.apo2Nsel`` and ``apo.apo2Ssel``), then combines them to make a single consistent selection function, which can be evaluated, as if it was the regular ``apogee2Select`` instance like::
+
+    apo(4240,11.8,0.8)
+    0.014097291164373848
+    
+since location 4240 is an APOGEE-1 location, it is simply evaluated as a location with a *single* color bin, and the APOGEE-1 selection fraction is returned. We can then re-plot the selection fraction on the sky for the entire APOGEE sample up to DR16, as before, using::
+
+    apo.plot_selfunc_lb(cohort='short',type='selfunc',)
+    
+.. image:: _readme_files/_apogeeCombinedSelect_lb.png
+
+Which, by default, will plot the selection fraction for just the first of the color bins in any APOGEE-2 fields (this can be adjusted with the ``color_bin`` keyword, as before). Compared to the equivalent plot above, it is clear that APOGEE now covers a far larger portion of the sky than in DR12 (shown above), and with a far higher selection fraction in many fields.
+
+We can also now re-plot the comparison between the spectroscopic and photometric color--magnitude distributions, now for the whole APOGEE data set, as before::
+
+    apo.plotColorMag(bins=101,specbins=51,onedhistsbins=201,onedhistsspecbins=101,cntrSmooth=.8)
+    
+.. image:: _readme_files/_apogeeCombinedSelect_colormag.png
+
+The newly adopted color binning in APOGEE-2 is clear in this plot, but we can see that the selection function still does a good job of re-weighting the underlying photometric sample (underlying in black, re-weighted in blue contours) to match the spectroscopic sample (red contours).  
+
+As mentioned before, the loaded ``apogeeCombinedSelect`` object also contains the individual ``apogee1Select`` and ``apogee2Select`` objects, which can be accessed via ``apo.apo1sel``, ``apo.apo2Nsel`` and ``apo.apo2Ssel``, respectively. You can see that functionality in action in this  `jupyter notebook <https://gist.github.com/jobovy/47507a217409f152315323905edd711d>`__, which also does some further exploration of the selection and completeness of DR16.
+
 Effective selection function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1401,7 +1459,7 @@ selection function requires a three-dimensional extinction map (to
 apply extinction when going from distance to magnitude), which has to
 be provided as a ``mwdust.Dustmap3D`` object (see `mwdust
 <https://github.com/jobovy/mwdust>`__). The initialization further
-requires a raw APOGEE selection-function instance (see ``apo`` above)
+requires a raw APOGEE selection-function instance (see ``apo`` above - this can be an APOGEE 1, 2 or Combined selection function instance)
 and a Monte Carlo sampling from the absolute *H* magnitude of the
 tracer (this can be a single value for a standard candle; the default
 is to use the red clump with *M_H = -1.49*)::
@@ -1420,6 +1478,8 @@ This returns the fraction of stars observed in the 4240 field
 (*030+00*) at 5 kpc from the Sun (this function is much more efficient
 for arrays). This function also takes the same ``MH=`` keyword that
 the initialization takes, so you can override the object-wide default.
+
+If using an APOGEE-2 or Combined selection function instance, one should also supply the ``JKO=`` keyword, which works similarly to the ``MH=`` keyword, in that it should be passed some representation of the dereddened (J-K) color distribution of the tracer which corresponds to the given absolute magnitude sampling. As an example, if using RGB stars in APOGEE, one could sample a set of isochrones in the APOGEE color and magnitude range, to gain a consistent sampling of the underlying absolute H magnitude and colour.
 
 TOOLS FOR WORKING WITH INTERESTING APOGEE SUBSAMPLES
 =====================================================

@@ -14,6 +14,7 @@ _DR10_URL= 'http://data.sdss3.org/sas/dr10'
 _DR12_URL= 'http://data.sdss3.org/sas/dr12'
 _DR13_URL= 'http://data.sdss.org/sas/dr13'
 _DR14_URL= 'http://data.sdss.org/sas/dr14'
+_DR16_URL= 'https://data.sdss.org/sas/dr16'
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
@@ -53,7 +54,7 @@ def allStar(dr=None,mjd=58104):
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
-def allVisit(dr=None):
+def allVisit(dr=None, mjd=58104):
     """
     NAME:
        allVisit
@@ -69,7 +70,7 @@ def allVisit(dr=None):
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
-    filePath= path.allVisitPath(dr=dr)
+    filePath= path.allVisitPath(dr=dr, mjd=mjd)
     if os.path.exists(filePath): return None
     # Check whether we can find it in its old place
     oldFilePath= path.allVisitPath(dr=dr,_old=True)
@@ -143,7 +144,12 @@ def astroNN(dr=None):
     filePath= path.astroNNPath(dr=dr)
     if os.path.exists(filePath): return None
     # Create the file path
-    downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    if int(dr) == 14:
+        downloadPath= 'https://github.com/henrysky/astroNN_spectra_paper_figures/raw/master/astroNN_apogee_dr14_catalog.fits'
+    else:
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
+                                                    _dr_string(dr)),
+                                       _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
@@ -214,11 +220,41 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     # First make sure the file doesn't exist
     filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
+    return None
+
+def all_aspcapStar(dr=None):
+    """
+    NAME:
+       all_aspcapStar
+    PURPOSE:
+       Convenience function to download all aspcapStar files for a given DR
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2019-12-23 - Written - Bovy (UofT)
+    """
+    from . import read as apread
+    if dr is None: dr= path._default_dr()
+    alldata= apread.allStar(raw=True)
+    for ii in range(len(alldata)):
+        try:
+            _= apread.aspcapStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                                     else alldata['FIELD'][ii],
+                                 alldata['APOGEE_ID'][ii],
+                                 telescope=alldata['TELESCOPE'][ii],dr=dr)
+        except:
+            print("Failed to download location {}, apogee_id {}, telescope {}"\
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                              else alldata['FIELD'][ii],
+                          alldata['APOGEE_ID'][ii],
+                          alldata['TELESCOPE'][ii]))
     return None
 
 def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
@@ -242,11 +278,41 @@ def apStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     # First make sure the file doesn't exist
     filePath= path.apStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
+    return None
+
+def all_apStar(dr=None):
+    """
+    NAME:
+       all_apStar
+    PURPOSE:
+       Convenience function to download all apStar files for a given DR
+    INPUT:
+       dr= return the path corresponding to this data release (general default)
+    OUTPUT:
+       (none; just downloads)
+    HISTORY:
+       2019-12-23 - Written - Bovy (UofT)
+    """
+    from . import read as apread
+    if dr is None: dr= path._default_dr()
+    alldata= apread.allStar(raw=True)
+    for ii in range(len(alldata)):
+        try:
+            _= apread.apStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                                 else alldata['FIELD'][ii],
+                             alldata['APOGEE_ID'][ii],
+                             telescope=alldata['TELESCOPE'][ii],dr=dr)
+        except:
+            print("Failed to download location {}, apogee_id {}, telescope {}"\
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                              else alldata['FIELD'][ii],
+                          alldata['APOGEE_ID'][ii],
+                          alldata['TELESCOPE'][ii]))
     return None
 
 def apVisit(plateid, mjd, fiberid, telescope='apo25m', dr=None):
@@ -271,8 +337,8 @@ def apVisit(plateid, mjd, fiberid, telescope='apo25m', dr=None):
                                 telescope=telescope,dr=dr)
     if os.path.exists(filePath):
         return None
-    # Create the file path    
-    downloadPath = filePath.replace(os.path.join(path._APOGEE_DATA, _dr_string(dr)), 
+    # Create the file path
+    downloadPath = filePath.replace(os.path.join(path._APOGEE_DATA, _dr_string(dr)),
                                       _base_url(dr=dr))
     _download_file(downloadPath, filePath, dr)
     return None
@@ -294,10 +360,15 @@ def apogeePlate(dr=None):
     # First make sure the file doesn't exist
     filePath= path.apogeePlatePath(dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
-    downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
-                               'apogee','target',os.path.basename(filePath))\
-                               .replace(os.path.join(path._APOGEE_DATA,
+    # Create the file path
+    if int(dr) < 16:
+        downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
+                                'apogee','target',os.path.basename(filePath))\
+                                .replace(os.path.join(path._APOGEE_DATA,
+                                                     _dr_string(dr)),
+                                        _base_url(dr=dr))
+    elif int(dr) >= 16: #change of location/format after DR16
+        downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                      _dr_string(dr)),
                                         _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr)
@@ -320,7 +391,7 @@ def apogeeDesign(dr=None):
     # First make sure the file doesn't exist
     filePath= path.apogeeDesignPath(dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
                                'apogee','target',os.path.basename(filePath))\
                                .replace(os.path.join(path._APOGEE_DATA,
@@ -346,7 +417,7 @@ def apogeeField(dr=None):
     # First make sure the file doesn't exist
     filePath= path.apogeeFieldPath(dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
                                'apogee','target',os.path.basename(filePath))\
                                .replace(os.path.join(path._APOGEE_DATA,
@@ -368,14 +439,16 @@ def apogeeObject(field_name,dr=None):
        (none; just downloads)
     HISTORY:
        2015-12-27 - Written - Bovy (UofT)
+       2018-03-16 - Edited for DR14 - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
     filePath= path.apogeeObjectPath(field_name,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= os.path.join(path._APOGEE_DATA,'dr%s' % dr,
-                               'apogee','target','apogeeObject',
+                               'apogee','target',
+                               'apogee%sObject' % ('2' if int(dr) > 13 else ''),
                                os.path.basename(filePath))\
                                .replace(os.path.join(path._APOGEE_DATA,
                                                      _dr_string(dr)),
@@ -413,7 +486,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
     filePath= path.modelSpecPath(lib=lib,teff=teff,logg=logg,metals=metals,
                                  cfe=cfe,nfe=nfe,afe=afe,vmicro=vmicro,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
@@ -428,12 +501,12 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
         hdulist= apyfits.open(filePath)
         if rmHDU1:
             hdu= apyfits.PrimaryHDU(numpy.zeros((2,2)))
-        else: 
+        else:
             hdu= hdulist[0].copy()
         inp= [hdu]
         if rmHDU2:
             hdu2= apyfits.ImageHDU(numpy.zeros((2,2)))
-        else: 
+        else:
             hdu2= hdulist[1].copy()
         inp.append(hdu2)
         inp.extend(hdulist[2:])
@@ -475,7 +548,7 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
     filePath= path.ferreModelLibraryPath(lib=lib,dr=dr,pca=pca,
                                          sixd=sixd,unf=unf)
     if not os.path.exists(filePath):
-        # Create the file path    
+        # Create the file path
         downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                     _dr_string(dr)),
                                        _base_url(dr=dr))
@@ -495,7 +568,7 @@ def ferreModelLibrary(lib='GK',pca=True,sixd=True,unf=False,dr=None,
             except subprocess.CalledProcessError:
                 print("Conversion of %s to binary failed ..." % (os.path.basename(filePath)))
             sys.stdout.write('\r'+_ERASESTR+'\r')
-            sys.stdout.flush()        
+            sys.stdout.flush()
     # Also download the header
     if unf:
         headerFilePath= filePath.replace('.unf','.hdr')
@@ -537,7 +610,7 @@ def modelAtmosphere(lib='kurucz_filled',teff=4500,logg=2.5,metals=0.,
                                        metals=metals,cfe=cfe,afe=afe,
                                        vmicro=2.,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
@@ -563,7 +636,7 @@ def linelist(linelist,dr=None,spider=False):
     # First make sure the file doesn't exist
     filePath= path.linelistPath(linelist,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     if '201404080919' in filePath:
         downloadPath= \
             filePath.replace(os.path.dirname(filePath),
@@ -583,7 +656,7 @@ def apWave(chip,dr=None):
        download an apWave file
     INPUT:
        chip - chip 'a', 'b', or 'c'
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        (none; just downloads)
     HISTORY:
@@ -593,7 +666,7 @@ def apWave(chip,dr=None):
     # First make sure the file doesn't exist
     filePath= path.apWavePath(chip,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
@@ -608,7 +681,7 @@ def apLSF(chip,dr=None):
        download an apLSF file
     INPUT:
        chip - chip 'a', 'b', or 'c'
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        (none; just downloads)
     HISTORY:
@@ -618,14 +691,14 @@ def apLSF(chip,dr=None):
     # First make sure the file doesn't exist
     filePath= path.apLSFPath(chip,dr=dr)
     if os.path.exists(filePath): return None
-    # Create the file path    
+    # Create the file path
     downloadPath= filePath.replace(os.path.join(path._APOGEE_DATA,
                                                 _dr_string(dr)),
                                    _base_url(dr=dr))
     _download_file(downloadPath,filePath,dr,verbose=True)
     return None
 
-def obslog(year=None):
+def obslog(year=None, hemisphere=None):
     """
     NAME:
        obslog
@@ -639,7 +712,7 @@ def obslog(year=None):
        2015-05-01 - Written - Bovy (IAS)
     """
     # First make sure the file doesn't exist
-    filePath= path.obslogPath(year=year)
+    filePath= path.obslogPath(year=year, hemisphere=hemisphere)
     if os.path.exists(filePath): return None
     # Create the file path
     downloadPath= \
@@ -654,7 +727,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     sys.stdout.flush()
     try:
         # make all intermediate directories
-        os.makedirs(os.path.dirname(filePath)) 
+        os.makedirs(os.path.dirname(filePath))
     except OSError: pass
     # Safe way of downloading
     downloading= True
@@ -700,7 +773,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
             downloadPath= downloadPath.replace('mirror.sdss','data.sdss')
         ntries+= 1
     sys.stdout.write('\r'+_ERASESTR+'\r')
-    sys.stdout.flush()        
+    sys.stdout.flush()
     return None
 
 def _base_url(dr,rc=False):
@@ -708,6 +781,7 @@ def _base_url(dr,rc=False):
     elif dr == '12': return _DR12_URL
     elif dr == '13': return _DR13_URL
     elif dr == '14': return _DR14_URL
+    elif dr == '16': return _DR16_URL
     else: return _PROPRIETARY_URL
 
 def _dr_string(dr):

@@ -3,7 +3,7 @@
 #   apogee.tools.read: read various APOGEE data files
 #
 #   contains:
-#   
+#
 #             - allStar: read the allStar.fits file
 #             - apogeeDesign: read the apogeeDesign file
 #             - apogeeField: read the apogeeField file
@@ -37,11 +37,13 @@ try:
     fitsread= fitsio.read
     fitswrite=fitsio.write
     headerread=fitsio.read_header
+    _FITSIO_LOADED = True
 except ImportError:
     import astropy.io.fits as pyfits
     fitsread= pyfits.getdata
     fitswrite=pyfits.writeto
     headerread=pyfits.getheader
+    _FITSIO_LOADED = False
 import tqdm
 from apogee.tools import path, paramIndx, download
 from apogee.tools.path import change_dr # make this available here
@@ -60,7 +62,7 @@ def modelspecOnApStarWavegrid(func):
                 out= out.T
             else:
                 newOut= numpy.zeros(8575,dtype=out.dtype)+numpy.nan
-            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)
             aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             newOut[apStarBlu_lo:apStarBlu_hi]= out[:aspcapGre_start]
             newOut[apStarGre_lo:apStarGre_hi]= out[aspcapGre_start:aspcapRed_start]
@@ -80,7 +82,7 @@ def specOnAspcapWavegrid(func):
         if kwargs.get('header',True):
             out, hdr= out
         if kwargs.get('aspcapWavegrid',False):
-            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)    
+            apStarBlu_lo,apStarBlu_hi,apStarGre_lo,apStarGre_hi,apStarRed_lo,apStarRed_hi = _apStarPixelLimits(dr=None)
             aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=None)
             if len(out.shape) == 2:
                 newOut= numpy.zeros((aspcapTotal,out.shape[0]),dtype=out.dtype)
@@ -108,17 +110,21 @@ def allStar(rmcommissioning=True,
             exclude_star_warn=False,
             ak=True,
             akvers='targ',
+            survey='all',
             rmnovisits=False,
             use_astroNN=False,
             use_astroNN_abundances=False,
-            use_astroNN_distances=False,          
-            use_astroNN_ages=False,          
+            use_astroNN_distances=False,
+            use_astroNN_ages=False,
             adddist=False,
             distredux=None,
             rmdups=False,
             raw=False,
             mjd=58104,
-            xmatch=None,**kwargs):
+            xmatch=None,
+            test=False,
+            dr=None,
+            **kwargs):
     """
     NAME:
        allStar
@@ -131,35 +137,44 @@ def allStar(rmcommissioning=True,
        exclude_star_warn= (False) if True, remove stars with the STAR_WARN flag set in ASPCAPFLAG
        ak= (default: True) only use objects for which dereddened mags exist
        akvers= 'targ' (default) or 'wise': use target AK (AK_TARG) or AK derived from all-sky WISE (AK_WISE)
+       survey= ('all') When reading an APOGEE-2 allStar file, select stars from both APOGEE-1 and -2 ('all'), just APOGEE-1 ('apogee1'), or just APOGEE-2 ('apogee-2') [Note: both 'apogee1' and 'apogee2' exclude stars from the APO-1m]
        rmnovisits= (False) if True, remove stars with no good visits (to go into the combined spectrum); shouldn't be necessary
-       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. (2019)
+       use_astroNN= (False) if True, swap in astroNN (Leung & Bovy 2019a) parameters (get placed in, e.g., TEFF and TEFF_ERR), astroNN distances (Leung & Bovy 2019b), and astroNN ages (Mackereth, Bovy, Leung, et al. 2019)
        use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
        use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
-       rmdups= (False) if True, remove duplicates
+       rmdups= (False) if True, remove duplicates (very slow)
        raw= (False) if True, just return the raw file, read w/ fitsio
        mjd= (58104) MJD of version for monthly internal pipeline runs
        xmatch= (None) uses gaia_tools.xmatch.cds to x-match to an external catalog (eg., Gaia DR2 for xmatch='vizier:I/345/gaia2') and caches the result for re-use; requires jobovy/gaia_tools
-        +gaia_tools.xmatch.cds keywords 
+        +gaia_tools.xmatch.cds keywords
     OUTPUT:
        allStar data[,xmatched table]
     HISTORY:
        2013-09-06 - Written - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
-       2018-05-09 - Add xmatch - Bovy (UofT) 
-       2018-10-20 - Add use_astroNN option - Bovy (UofT) 
-       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
-       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT) 
+       2018-05-09 - Add xmatch - Bovy (UofT)
+       2018-10-20 - Add use_astroNN option - Bovy (UofT)
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
+       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
+       2019-08-13 - Edited for DR16 (incl. astroNN) - Bovy (UofT)
     """
-    filePath= path.allStarPath(mjd=mjd)
-    if not os.path.exists(filePath):
-        download.allStar(mjd=mjd)
-    #read allStar file
-    data= fitsread(path.allStarPath(mjd=mjd))
+    if dr is None:
+        filePath= path.allStarPath(mjd=mjd)
+        if not os.path.exists(filePath):
+            download.allStar(mjd=mjd)
+            #read allStar file
+        data= fitsread(path.allStarPath(mjd=mjd))
+    else:
+        filePath= path.allStarPath(mjd=mjd, dr=dr)
+        if not os.path.exists(filePath):
+            download.allStar(mjd=mjd, dr=dr)
+            #read allStar file
+        data= fitsread(path.allStarPath(mjd=mjd, dr=dr))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
-    # [ages file not matched line-by-line]
+    # [ages file not matched line-by-line in DR14]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
         _warn_astroNN_abundances()
         astroNNdata= astroNN()
@@ -175,19 +190,32 @@ def allStar(rmcommissioning=True,
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ...\r")
-        sys.stdout.flush()
-        data= remove_duplicates(data)
-        sys.stdout.write('\r'+_ERASESTR+'\r')
-        sys.stdout.flush()
+        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
+        #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
+        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages:
+            astronn_used = True
+        else:
+            astronn_used = False
+        if os.path.exists(dupsFilename) and not astronn_used:
+            data= fitsread(dupsFilename)
+        else:
+            sys.stdout.write('\r'+"Removing duplicates (might take a while) and caching the duplicate-free file ... (file not cached if use_astroNN=True)\r")
+            sys.stdout.flush()
+            data= remove_duplicates(data)
+            #Cache this file for subsequent use of rmdups (only if not astroNN!)
+            if not astronn_used:
+                fitswrite(dupsFilename,data,clobber=True)
+            sys.stdout.write('\r'+_ERASESTR+'\r')
+            sys.stdout.flush()
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if rmdups:
-            matchFilePath= path.allStarPath(mjd=mjd).replace('.fits',
-                                                             '-nodups.fits')
+            matchFilePath= dupsFilename
         else:
             matchFilePath= filePath
-        ma,mai= _xmatch_cds(data,xmatch,matchFilePath,**kwargs)
+        if use_astroNN_ages:
+            matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
     if rmcommissioning:
@@ -203,6 +231,32 @@ def allStar(rmcommissioning=True,
         indx= numpy.array([s.strip() != '' for s in data['VISITS']])
         data= data[indx]
         if not xmatch is None: ma= ma[indx]
+    if not survey.lower() == 'all' and 'SURVEY' in data.dtype.names:
+        #get rid of any trailing whitespace...
+        surv = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
+        if not isinstance(surv[0], (bytes,numpy.bytes_)):
+            surv = numpy.array([surv[i].encode('utf-8') for i in range(len(surv))])
+        if survey.lower() == 'apogee1':
+            indx = ((surv == b'apogee')
+                      + (surv == b'apogee,apogee-marvels')
+                      + (surv == b'apogee,apogee-marvels,apogee2')
+                      + (surv == b'apogee,apogee-marvels,apogee2-manga')
+                      + (surv == b'apogee,apogee2')
+                      + (surv == b'apogee,apogee2,apogee2-manga')
+                      + (surv == b'apogee,apogee2-manga')
+                      + (surv == b'apogee-marvels')
+                      + (surv == b'apogee-marvels,apogee2')
+                      + (surv == b'apogee-marvels,apogee2-manga'))
+        elif survey.lower() == 'apogee2':
+            indx = ((surv == b'apogee2')
+                      + (surv == b'apogee2-manga')
+                      + (surv == b'manga-apogee2')
+                      + (surv == b'apogee2,apogee2-manga')
+                      + (surv == b'apogee2s'))
+        data= data[indx]
+        if not xmatch is None: ma= ma[indx]
+    if test:
+        return data
     if main:
         indx= mainIndx(data)
         data= data[indx]
@@ -306,7 +360,7 @@ def allStar(rmcommissioning=True,
         return (data,ma)
     else:
         return data
-        
+
 def allVisit(rmcommissioning=True,
              main=False,
              ak=True,
@@ -348,7 +402,7 @@ def allVisit(rmcommissioning=True,
             indx+= numpy.array(['apogee.s.c'.encode('utf-8') in s for s in data['VISIT_ID']])
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
-            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])           
+            indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -362,7 +416,7 @@ def allVisit(rmcommissioning=True,
         data= data[(data[aktag] > -50.)]
     if plateInt or plateS4:
         #If plate is a string, cast it as an integer
-        if isinstance(data['PLATE'][0],str):
+        if isinstance(data['PLATE'][0],(bytes,str)):
             #First cast the special plates as -1
             plateDtype= data['PLATE'].dtype
             data['PLATE'][data['PLATE'] == 'calibration'.ljust(int(str(plateDtype)[2:]))]= '-1'
@@ -373,13 +427,28 @@ def allVisit(rmcommissioning=True,
             #Now change the dtype to make plate an int
             dt= data.dtype
             dt= dt.descr
-            plateDtypeIndx= dt.index(('PLATE', '|S13'))
+            try:
+                plateDtypeIndx= dt.index(('PLATE', '|S13'))
+            except ValueError: #PLATE column is not string - try U
+                plateDtypeIndx = dt.index(('PLATE', '<U13'))
             if plateInt:
                 dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
-            elif plateS4:
-                dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S4')
+                dt= numpy.dtype(dt)
+                data= data.astype(dt)
+        # If we want the plate as a S4 string...
+        if plateS4:
+            #go to int first, as this field is formatted differently in diff releases...
+            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'int')
             dt= numpy.dtype(dt)
             data= data.astype(dt)
+            dt= data.dtype
+            dt= dt.descr
+            plateDtypeIndx= dt.index(('PLATE', '<i8'))
+            dt[plateDtypeIndx]= (dt[plateDtypeIndx][0],'|S5')
+            dt= numpy.dtype(dt)
+            data= data.astype(dt)
+
+
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
@@ -394,9 +463,9 @@ def allVisit(rmcommissioning=True,
         data['H0'][(data[aktag] <= -50.)]= -9999.9999
         data['K0'][(data[aktag] <= -50.)]= -9999.9999
     else:
-        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     return data
-        
+
 def apokasc(rmcommissioning=True,
             main=False):
     """
@@ -469,16 +538,17 @@ def rcsample(main=False,dr=None,xmatch=None,
        use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
        use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
-        +gaia_tools.xmatch.cds keywords 
+        +gaia_tools.xmatch.cds keywords
     OUTPUT:
        rcsample data[,xmatched table]
     HISTORY:
        2013-10-08 - Written - Bovy (IAS)
-       2018-05-09 - Add xmatch - Bovy (UofT) 
-       2018-10-20 - Added use_astroNN - Bovy (UofT) 
-       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT) 
-       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT) 
+       2018-05-09 - Add xmatch - Bovy (UofT)
+       2018-10-20 - Added use_astroNN - Bovy (UofT)
+       2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
+       2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
     """
+    if dr is None: dr= path._default_dr()
     filePath= path.rcsamplePath(dr=dr)
     if not os.path.exists(filePath):
         download.rcsample(dr=dr)
@@ -490,7 +560,9 @@ def rcsample(main=False,dr=None,xmatch=None,
         astroNNdata= astroNN()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
-            colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC')
+            colRA1='RA',colDec1='DEC',
+                         colRA2='RA' if int(dr) < 16 else 'ra_apogee',
+                         colDec2='DEC' if int(dr) < 16 else 'dec_apogee')
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _swap_in_astroNN(data,astroNNdata)
@@ -506,7 +578,12 @@ def rcsample(main=False,dr=None,xmatch=None,
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
         _warn_astroNN_ages()
         astroNNdata= astroNNAges()
-        data= _add_astroNN_ages(data,astroNNdata)       
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _add_astroNN_ages(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if use_astroNN or kwargs.get('astroNN',False):
@@ -543,13 +620,14 @@ def astroNN(dr=None):
        astroNN data
     HISTORY:
        2018-10-20 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     filePath= path.astroNNPath(dr=dr)
     if not os.path.exists(filePath):
         download.astroNN(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNPath(dr=dr))
-        
+
 def astroNNDistances(dr=None):
     """
     NAME:
@@ -562,12 +640,13 @@ def astroNNDistances(dr=None):
        astroNN distances data
     HISTORY:
        2018-02-15 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNDistancesPath(dr=dr)):
         download.astroNNDistances(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNDistancesPath(dr=dr))
-        
+
 def astroNNAges(dr=None):
     """
     NAME:
@@ -580,13 +659,14 @@ def astroNNAges(dr=None):
        astroNN ages data
     HISTORY:
        2018-02-16 - Written - Bovy (UofT)
+       2019-08-13 - Edited for DR16 - Bovy (UofT)
     """
     if not os.path.exists(path.astroNNAgesPath(dr=dr)):
         download.astroNNAges(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNAgesPath(dr=dr))
-        
-def obslog(year=None):
+
+def obslog(year=None, hemisphere=None):
     """
     NAME:
        obslog
@@ -599,46 +679,69 @@ def obslog(year=None):
     HISTORY:
        2013-11-04 - Written - Bovy (IAS)
     """
-    obslogfilename= path.obslogPath(year=year)
+    obslogfilename= path.obslogPath(year=year, hemisphere=hemisphere)
     if not os.path.exists(obslogfilename):
-        download.obslog(year=year)
-    genfromtxtKwargs= {'delimiter':'|',
-                       'dtype':[('Fieldname','S14'),
-                                ('LocID','int'),
-                                ('ra','float'),
-                                ('dec','float'),
-                                ('Plate','int'),
-                                ('A_ver','S14'),
-                                ('DrilledHA','float'),
-                                ('HDB','int'),
-                                ('NObs_Plan','int'),
-                                ('NObs_Done','int'),
-                                ('NObs_Ver_Plan','int'),
-                                ('NObs_Ver_Done','int'),
-                                ('Total_SN','float'),
-                                ('Red_SN','float'),
-                                ('ManPriority','int'),
-                                ('Priority','float'),
-                                ('Time','float'),
-                                ('Shared','int'),
-                                ('Stars','int'),
-                                ('At_APO','int'),
-                                ('Reduction','int'),
-                                ('ObsHistory','S50'),
-                                ('UNKNOWN','S50'),
-                                ('UNKNOWN1','int'),
-                                ('UNKNOWN2','int'),
-                                ('ReductionHistory','S50')],
-                       'skip_footer':1}
+        download.obslog(year=year, hemisphere=hemisphere)
+    if year is None:
+        if path._default_dr() == '11':
+            year= 2
+        elif path._default_dr() == '12' or path._default_dr() == '13':
+            year= 3
+        elif path._default_dr() == '14':
+            year= 5
+        elif path._default_dr() == '16':
+                year= 7
+        else: raise IOError('No default year available for DR{}, need to set it by hand'.format(path._default_dr()))
+    if year > 3:
+        genfromtxtKwargs= {'delimiter':', ',
+                           'dtype':[('Plate','int'),
+                                    ('LocID','int'),
+                                    ('ra','float'),
+                                    ('dec','float'),
+                                    ('A_ver','S14'),
+                                    ('NObs_Ver_Done','int'),
+                                    ('NObs_Ver_Plan','int'),
+                                    ('Total_SN','float'),
+                                    ('ObsHistory','S50')],
+                           'skip_footer':0}
+    else:
+        genfromtxtKwargs= {'delimiter':'|',
+                           'dtype':[('Fieldname','S14'),
+                                    ('LocID','int'),
+                                    ('ra','float'),
+                                    ('dec','float'),
+                                    ('Plate','int'),
+                                    ('A_ver','S14'),
+                                    ('DrilledHA','float'),
+                                    ('HDB','int'),
+                                    ('NObs_Plan','int'),
+                                    ('NObs_Done','int'),
+                                    ('NObs_Ver_Plan','int'),
+                                    ('NObs_Ver_Done','int'),
+                                    ('Total_SN','float'),
+                                    ('Red_SN','float'),
+                                    ('ManPriority','int'),
+                                    ('Priority','float'),
+                                    ('Time','float'),
+                                    ('Shared','int'),
+                                    ('Stars','int'),
+                                    ('At_APO','int'),
+                                    ('Reduction','int'),
+                                    ('ObsHistory','S50'),
+                                    ('UNKNOWN','S50'),
+                                    ('UNKNOWN1','int'),
+                                    ('UNKNOWN2','int'),
+                                    ('ReductionHistory','S50')],
+                           'skip_footer':1}
     if int(numpy.__version__.split('.')[0]) < 1 \
             or int(numpy.__version__.split('.')[1]) < 10:
-        genfromtxtKwargs['skiprows']= 2
+        genfromtxtKwargs['skiprows']= 1+(year<4)
     else:
-        genfromtxtKwargs['skip_header']= 2
+        genfromtxtKwargs['skip_header']= 1+(year<4)
     obslogtxt= numpy.genfromtxt(obslogfilename,**genfromtxtKwargs)
     return obslogtxt
 
-def apogeePlate(dr=None):
+def apogeePlate(dr=None, stdize=False):
     """
     NAME:
        apogeePlate
@@ -654,9 +757,28 @@ def apogeePlate(dr=None):
     filePath= path.apogeePlatePath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeePlate(dr=dr)
-    return fitsread(filePath)
+    out = fitsread(filePath)
+    if stdize and 'PLATE_ID' not in out.dtype.fields: #is new version file -> need to convert to more apogeePlate like
+        out= numpy.asarray(out) # makes sure that FITS_REC --> recarray for apy
+        names= list(out.dtype.names)
+        names[names.index('PLATE')]= 'PLATE_ID' #adjust relevant field names...
+        names[names.index('DESIGNID')] = 'DESIGN_ID'
+        out.dtype.names= names
+        nurec = numpy.recarray(len(numpy.unique(out['PLATE_ID'])), dtype=[('LOCATION_ID', '>i4'),
+                                                                    ('PLATE_ID', '>i4'),
+                                                                    ('DESIGN_ID', '>i4'),
+                                                                    ('FIELD_NAME', '<U16')])
+        plateids = numpy.unique(out['PLATE_ID'])
+        for i in range(len(plateids)):
+            entries = out[out['PLATE_ID'] == plateids[i]]
+            nurec['PLATE_ID'][i] = plateids[i]
+            nurec['DESIGN_ID'][i] = numpy.unique(entries['DESIGN_ID'])
+            nurec['FIELD_NAME'][i] = entries['NAME'][0] #this isnt so essential?
+            nurec['LOCATION_ID'][i] = numpy.unique(entries['LOCATION_ID'])
+        out = nurec
+    return out
 
-def apogeeDesign(dr=None):
+def apogeeDesign(dr=None,ap1ize=False):
     """
     NAME:
        apogeeDesign
@@ -664,6 +786,7 @@ def apogeeDesign(dr=None):
        read the apogeeDesign file
     INPUT:
        dr= return the file corresponding to this data release
+       ap1ize= (False) if True and DR >= 14: adjust tags to match APOGEE-1 more
     OUTPUT:
        apogeeDesign file
     HISTORY:
@@ -672,7 +795,27 @@ def apogeeDesign(dr=None):
     filePath= path.apogeeDesignPath(dr=dr)
     if not os.path.exists(filePath):
         download.apogeeDesign(dr=dr)
-    return fitsread(filePath)
+    out= fitsread(filePath)
+    if ap1ize and 'COHORT_SHORT_VERSION' in out.dtype.fields:
+        out= numpy.asarray(out) # makes sure that FITS_REC --> recarray for apy
+        names= list(out.dtype.names)
+        names[names.index('COHORT_SHORT_VERSION')]= 'SHORT_COHORT_VERSION'
+        names[names.index('COHORT_MEDIUM_VERSION')]= 'MEDIUM_COHORT_VERSION'
+        names[names.index('COHORT_LONG_VERSION')]= 'LONG_COHORT_VERSION'
+        out.dtype.names= names
+        out= esutil.numpy_util.add_fields(out,[('SHORT_COHORT_MIN_H', float),
+                                               ('SHORT_COHORT_MAX_H', float),
+                                               ('MEDIUM_COHORT_MIN_H', float),
+                                               ('MEDIUM_COHORT_MAX_H', float),
+                                               ('LONG_COHORT_MIN_H', float),
+                                               ('LONG_COHORT_MAX_H', float)])
+        out['SHORT_COHORT_MIN_H']= out['COHORT_MIN_H'][:,0]
+        out['SHORT_COHORT_MAX_H']= out['COHORT_MAX_H'][:,0]
+        out['MEDIUM_COHORT_MIN_H']= out['COHORT_MIN_H'][:,1]
+        out['MEDIUM_COHORT_MAX_H']= out['COHORT_MAX_H'][:,1]
+        out['LONG_COHORT_MIN_H']= out['COHORT_MIN_H'][:,2]
+        out['LONG_COHORT_MAX_H']= out['COHORT_MAX_H'][:,2]
+    return out
 
 def apogeeField(dr=None):
     """
@@ -724,7 +867,7 @@ def apogeeObject(field_name,dr=None,
     #Add dereddened J, H, and Ks
     aj= data[aktag]*2.5
     ah= data[aktag]*1.55
-    if _ESUTIL_LOADED:   
+    if _ESUTIL_LOADED:
         data= esutil.numpy_util.add_fields(data,[('J0', float),
                                                  ('H0', float),
                                                  ('K0', float)])
@@ -735,7 +878,7 @@ def apogeeObject(field_name,dr=None,
         data['H0'][(data[aktag] <= -50.)]= -9999.9999
         data['K0'][(data[aktag] <= -50.)]= -9999.9999
     else:
-        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)       
+        warnings.warn("Extinction-corrected J,H,K not added because esutil is not installed",RuntimeWarning)
     return data
 
 @specOnAspcapWavegrid
@@ -753,7 +896,7 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',ext=1,dr=None,header=True,
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
-       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP
                        wavelength grid
     OUTPUT:
        aspcapStar file or (aspcapStar file, header)
@@ -782,7 +925,7 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
        ext= (1) extension to load
        header= (True) if True, also return the header
        dr= return the path corresponding to this data release (general default)
-       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP 
+       aspcapWavegrid= (False) if True, output the spectrum on the ASPCAP
                        wavelength grid
     OUTPUT:
        apStar file or (apStar file, header)
@@ -809,7 +952,7 @@ def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
        header = (False) if True, return ONLY the header for the specified extension
        telescope= ('apo25m') Telescope at which this plate has been observed ('apo25m' for standard APOGEE-N, 'apo1m' for the 1m telescope)
        dr = return the path corresponding to this data release (general default)
-    OUTPUT: 
+    OUTPUT:
        header=False:
             1D array with apVisit fluxes (ext=1), or
             1D array with apVisit flux errors (ext=2), or
@@ -897,7 +1040,7 @@ def modelSpec(lib='GK',teff=4500,logg=2.5,metals=0.,
                 hdulist[ext].header)
     elif not ext == 234:
         return hdulist[ext].data[metalsIndx,loggIndx,teffIndx]
-    else: #ext == 234, combine 2,3,4    
+    else: #ext == 234, combine 2,3,4
         aspcapBlu_start,aspcapGre_start,aspcapRed_start,aspcapTotal = _aspcapPixelLimits(dr=dr)
         out= numpy.zeros(aspcapTotal)
         out[:aspcapGre_start]= hdulist[2].data[metalsIndx,loggIndx,teffIndx]
@@ -914,7 +1057,7 @@ def apWave(chip,ext=2,dr=None):
     INPUT:
        chip - chip 'a', 'b', or 'c'
        ext= (2) extension to read
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        contents of HDU ext
     HISTORY:
@@ -935,7 +1078,7 @@ def apLSF(chip,ext=0,dr=None):
     INPUT:
        chip - chip 'a', 'b', or 'c'
        ext= (0) extension to read
-       dr= return the path corresponding to this data release      
+       dr= return the path corresponding to this data release
     OUTPUT:
        contents of HDU ext
     HISTORY:
@@ -959,12 +1102,39 @@ def mainIndx(data):
        index of 'main' targets in data
     HISTORY:
        2013-11-19 - Written - Bovy (IAS)
+       2018-03-27 - Edited for APOGEE-2 - Bovy (UofT)
     """
     indx= (((data['APOGEE_TARGET1'] & 2**11) != 0)+((data['APOGEE_TARGET1'] & 2**12) != 0)+((data['APOGEE_TARGET1'] & 2**13) != 0))\
         *((data['APOGEE_TARGET1'] & 2**7) == 0)\
         *((data['APOGEE_TARGET1'] & 2**8) == 0)\
         *((data['APOGEE_TARGET2'] & 2**9) == 0)
+    if 'APOGEE2_TARGET1' in data.dtype.names:
+        indx += (((data['APOGEE2_TARGET1'] & 2**11) != 0)+((data['APOGEE2_TARGET1'] & 2**12) != 0)+((data['APOGEE2_TARGET1'] & 2**13) != 0))\
+            *((data['APOGEE2_TARGET1'] & 2**7) == 0)\
+            *((data['APOGEE2_TARGET1'] & 2**8) == 0)\
+            *((data['APOGEE2_TARGET2'] & 2**9) == 0)
         #*((data['APOGEE_TARGET1'] & 2**17) == 0)\
+    if 'SURVEY' in data.dtype.names: # APOGEE-2 file --> split by AP1 / AP2
+        #ensure the whitespace is gone... (whitespace was left in some old fits reading...)
+        survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
+        if not isinstance(survey[0], (bytes,numpy.bytes_)):
+            survey = numpy.array([survey[i].encode('utf-8') for i in range(len(survey))])
+        indx *= ((survey == b'apogee')
+                  + (survey == b'apogee,apogee-marvels')
+                  + (survey == b'apogee,apogee-marvels,apogee2')
+                  + (survey == b'apogee,apogee-marvels,apogee2-manga')
+                  + (survey == b'apogee,apogee2')
+                  + (survey == b'apogee,apogee2,apogee2-manga')
+                  + (survey == b'apogee,apogee2-manga')
+                  + (survey == b'apogee-marvels')
+                  + (survey == b'apogee-marvels,apogee2')
+                  + (survey == b'apogee-marvels,apogee2-manga'))
+        indx+= ((survey == b'apogee2')
+                  + (survey == b'apogee2-manga')
+                  + (survey == b'manga-apogee2')
+                  + (survey == b'apogee2,apogee2-manga')
+                  + (survey == b'apogee2s'))#\
+            #*((data['APOGEE2_TARGET1'] & 2**14) != 0)
     return indx
 
 def remove_duplicates(data):
@@ -1029,8 +1199,8 @@ def remove_duplicates(data):
 
 def _xmatch(cat1,cat2,maxdist=2,
             colRA1='RA',colDec1='DEC',colRA2='RA',colDec2='DEC'):
-    """Internal version, basically copied and simplified from 
-    gaia_tools.xmatch, but put here to avoid adding gaia_tools as 
+    """Internal version, basically copied and simplified from
+    gaia_tools.xmatch, but put here to avoid adding gaia_tools as
     a dependency"""
     try:
         import astropy.coordinates as acoords
@@ -1049,27 +1219,49 @@ def _xmatch(cat1,cat2,maxdist=2,
     return (m1,m2,d2d[mindx])
 
 def _swap_in_astroNN(data,astroNNdata):
-    for tag,indx in zip(['TEFF','LOGG'],[0,1]):
-        data[tag]= astroNNdata['astroNN'][:,indx]
-        data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
-    for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
-                         'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
-                        range(2,22)):
-        data['X_H'][:,elemIndx(tag.upper())]=\
-            astroNNdata['astroNN'][:,indx]
-        data['X_H_ERR'][:,elemIndx(tag.upper())]=\
-            astroNNdata['astroNN_error'][:,indx]
-        if tag.upper() != 'FE':
-            data['{}_FE'.format(tag.upper())]=\
-                astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
-            data['{}_FE_ERR'.format(tag.upper())]=\
-                numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
-                           +astroNNdata['astroNN_error'][:,19]**2.)
-        else:
-            data['FE_H'.format(tag.upper())]=\
+    dr= path._default_dr()
+    if int(dr) == 14:
+        for tag,indx in zip(['TEFF','LOGG'],[0,1]):
+            data[tag]= astroNNdata['astroNN'][:,indx]
+            data[tag+'_ERR']= astroNNdata['astroNN_error'][:,indx]
+        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                            range(2,22)):
+            data['X_H'][:,elemIndx(tag.upper())]=\
                 astroNNdata['astroNN'][:,indx]
-            data['FE_H_ERR'.format(tag.upper())]=\
+            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
                 astroNNdata['astroNN_error'][:,indx]
+            if tag.upper() != 'FE':
+                data['{}_FE'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]-astroNNdata['astroNN'][:,19]
+                data['{}_FE_ERR'.format(tag.upper())]=\
+                    numpy.sqrt(astroNNdata['astroNN_error'][:,indx]**2.
+                               +astroNNdata['astroNN_error'][:,19]**2.)
+            else:
+                data['FE_H'.format(tag.upper())]=\
+                    astroNNdata['astroNN'][:,indx]
+                data['FE_H_ERR'.format(tag.upper())]=\
+                    astroNNdata['astroNN_error'][:,indx]
+    else:
+        for tag in ['TEFF','LOGG']:
+            data[tag]= astroNNdata[tag]
+            data[tag+'_ERR']= astroNNdata[tag+'_ERR']
+        for tag,indx in zip(['C','CI','N','O','Na','Mg','Al','Si','P','S','K',
+                             'Ca','Ti','TiII','V','Cr','Mn','Fe','Co','Ni'],
+                            range(2,22)):
+            data['X_H'][:,elemIndx(tag.upper())]=\
+                astroNNdata[tag.upper()+'_H']
+            data['X_H_ERR'][:,elemIndx(tag.upper())]=\
+                astroNNdata[tag.upper()+'_H_ERR']
+            if tag.upper() != 'FE':
+                data['{}_FE'.format(tag.upper())]=\
+                    astroNNdata[tag.upper()+'_H']-astroNNdata['FE_H']
+                data['{}_FE_ERR'.format(tag.upper())]=\
+                    numpy.sqrt(astroNNdata['{}_H_ERR'.format(tag.upper())]**2.
+                               +astroNNdata['FE_H_ERR']**2.)
+            else:
+                data['FE_H']= astroNNdata['FE_H']
+                data['FE_H_ERR']= astroNNdata['FE_H_ERR']
     return data
 
 def _add_astroNN_distances(data,astroNNDistancesdata):
@@ -1094,8 +1286,14 @@ def _add_astroNN_distances(data,astroNNDistancesdata):
             usemask=False)
 
 def _add_astroNN_ages(data,astroNNAgesdata):
-    fields_to_append= ['astroNN_age','astroNN_age_total_std',
-                       'astroNN_age_predictive_std','astroNN_age_model_std']
+    dr= path._default_dr()
+    if int(dr) == 14:
+        fields_to_append= ['astroNN_age','astroNN_age_total_std',
+                           'astroNN_age_predictive_std',
+                           'astroNN_age_model_std']
+    else:
+        fields_to_append= ['age','age_linear_correct','age_lowess_correct',
+                           'age_total_error','age_model_error']
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1113,18 +1311,22 @@ def _add_astroNN_ages(data,astroNNAgesdata):
             fields_to_append,
             [numpy.zeros(len(data))-9999. for f in fields_to_append],
             usemask=False)
-    # Only match primary targets
-    hash1= dict(zip(data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
-                    numpy.arange(len(data))[(data['EXTRATARG'] & 2**4) == 0]))
-    hash2= dict(zip(astroNNAgesdata['APOGEE_ID'],
-                    numpy.arange(len(astroNNAgesdata))))
-    common= numpy.intersect1d(\
-        data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
-        astroNNAgesdata['APOGEE_ID'])
-    indx1= list(itemgetter(*common)(hash1))
-    indx2= list(itemgetter(*common)(hash2))
-    for f in fields_to_append:
-        data[f][indx1]= astroNNAgesdata[f][indx2]
+    if int(dr) == 14: # Not row-matched to allStar, so need to match
+        # Only match primary targets
+        hash1= dict(zip(data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+                     numpy.arange(len(data))[(data['EXTRATARG'] & 2**4) == 0]))
+        hash2= dict(zip(astroNNAgesdata['APOGEE_ID'],
+                     numpy.arange(len(astroNNAgesdata))))
+        common= numpy.intersect1d(\
+                    data['APOGEE_ID'][(data['EXTRATARG'] & 2**4) == 0],
+                    astroNNAgesdata['APOGEE_ID'])
+        indx1= list(itemgetter(*common)(hash1))
+        indx2= list(itemgetter(*common)(hash2))
+        for f in fields_to_append:
+            data[f][indx1]= astroNNAgesdata[f][indx2]
+    else:
+        for f in fields_to_append:
+            data[f]= astroNNAgesdata[f]
     return data
 
 def _warn_astroNN_abundances():
