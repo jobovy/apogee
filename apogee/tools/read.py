@@ -116,6 +116,7 @@ def allStar(rmcommissioning=True,
             use_astroNN_abundances=False,
             use_astroNN_distances=False,
             use_astroNN_ages=False,
+            use_astroNN_orbits=False,
             adddist=False,
             distredux=None,
             rmdups=False,
@@ -143,6 +144,7 @@ def allStar(rmcommissioning=True,
        use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
        use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
+       use_astroNN_orbits= (False) only swap in orbits/Galactocentric coordinates
        adddist= (default: False) add distances (DR10/11 Hayden distances, DR12 combined distances)
        distredux= (default: DR default) reduction on which the distances are based
        rmdups= (False) if True, remove duplicates (very slow)
@@ -187,6 +189,10 @@ def allStar(rmcommissioning=True,
         _warn_astroNN_ages()
         astroNNdata= astroNNAges()
         data= _add_astroNN_ages(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_orbits:
+        _warn_astroNN_orbits()
+        astroNNdata= astroNN()
+        data= _add_astroNN_orbits(data,astroNNdata)
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -584,6 +590,15 @@ def rcsample(main=False,dr=None,xmatch=None,
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _add_astroNN_ages(data,astroNNdata)
+    if use_astroNN or kwargs.get('astroNN', False) or use_astroNN_orbits:
+        _warn_astroNN_orbits()
+        astroNNdata= astroNN()
+        # Match on (ra,dec)
+        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+        data= data[m1]
+        astroNNdata= astroNNdata[m2]
+        data= _add_astroNN_orbts(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if use_astroNN or kwargs.get('astroNN',False):
@@ -665,6 +680,7 @@ def astroNNAges(dr=None):
         download.astroNNAges(dr=dr)
     #read astroNN file
     return fitsread(path.astroNNAgesPath(dr=dr))
+
 
 def obslog(year=None, hemisphere=None):
     """
@@ -1265,8 +1281,13 @@ def _swap_in_astroNN(data,astroNNdata):
     return data
 
 def _add_astroNN_distances(data,astroNNDistancesdata):
+    dr= path._default_dr()
     fields_to_append= ['dist','dist_model_error','dist_error',
                        'weighted_dist','weighted_dist_error']
+    if int(dr) == 16:
+        #also have galactocentric and orbit info
+        fields_to_append= ['dist','dist_model_error','dist_error',
+                           'weighted_dist','weighted_dist_error']
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1329,6 +1350,42 @@ def _add_astroNN_ages(data,astroNNAgesdata):
             data[f]= astroNNAgesdata[f]
     return data
 
+def _add_astroNN_orbits(data,astroNNOrbitsdata):
+    dr= path._default_dr()
+    if int(dr) < 16:
+        warnings.warn("Tried to include orbits: No orbits or Galactocentric coordinates in DR < 16 catalogues!")
+        return data
+    if int(dr) == 16:
+        #also have galactocentric and orbit info
+        fields_to_append= [ 'GALR','GALPHI', 'GALZ','GALR_ERR','GALPHI_ERR','GALZ_ERR',
+                            'GALVR','GALVT','GALVZ','GALVR_ERR','GALVT_ERR','GALVZ_ERR',
+                            'GALVR_GALVT_CORR','GALVR_GALVZ_CORR','GALVT_GALVZ_CORR',
+                            'e','e_err','zmax','zmax_err','rperi','rperi_err','rap','rap_err',
+                            'e_zmax_corr','e_rperi_corr','e_rap_corr','zmax_rperi_corr',
+                            'zmax_rap_corr','rperi_rap_corr','jr','jr_err','Lz','Lz_err',
+                            'jz','jz_err','jr_Lz_corr','jr_jz_corr','lz_jz_corr',
+                            'omega_r','omega_r_err','omega_phi','omega_phi_err',
+                            'omega_z','omega_z_err','theta_r','theta_r_err',
+                            'theta_phi','theta_phi_err','theta_z','theta_z_err',
+                            'rl','rl_err','Energy','Energy_Err','EminusEc','EminusEc_err']
+    if True:
+        # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
+        newdtype= data.dtype.descr+\
+            [(f,'<f8') for f in fields_to_append]
+        newdata= numpy.empty(len(data),dtype=newdtype)
+        for name in data.dtype.names:
+            newdata[name]= data[name]
+        for f in fields_to_append:
+            newdata[f]= astroNNOrbitsdata[f]
+        return newdata
+    else:
+        return numpy.lib.recfunctions.append_fields(\
+            data,
+            fields_to_append,
+            [astroNNOrbitsdata[f] for f in fields_to_append],
+            [astroNNOrbitsdata[f].dtype for f in fields_to_append],
+            usemask=False)
+
 def _warn_astroNN_abundances():
     warnings.warn("Swapping in stellar parameters and abundances from Leung & Bovy (2019a)")
 
@@ -1337,3 +1394,6 @@ def _warn_astroNN_distances():
 
 def _warn_astroNN_ages():
     warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")
+
+def _warn_astroNN_orbits():
+    warnings.warn("Adding orbits and Galactocentric coordinates from DR16 astroNN VAC")
