@@ -181,18 +181,22 @@ def allStar(rmcommissioning=True,
         _warn_astroNN_abundances()
         astroNNdata= astroNN()
         data= _swap_in_astroNN(data,astroNNdata)
+        del astroNNdata
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_distances:
         _warn_astroNN_distances()
         astroNNdata= astroNNDistances()
         data= _add_astroNN_distances(data,astroNNdata)
+        del astroNNdata
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
         _warn_astroNN_ages()
         astroNNdata= astroNNAges()
         data= _add_astroNN_ages(data,astroNNdata)
+        del astroNNdata
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_orbits:
         _warn_astroNN_orbits()
         astroNNdata= astroNN()
         data= _add_astroNN_orbits(data,astroNNdata)
+        del astroNNdata
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
@@ -530,6 +534,7 @@ def apokasc(rmcommissioning=True,
 def rcsample(main=False,dr=None,xmatch=None,
              use_astroNN=False,use_astroNN_abundances=False,
              use_astroNN_distances=False,use_astroNN_ages=False,
+             use_astroNN_orbits=False,
              **kwargs):
     """
     NAME:
@@ -544,6 +549,7 @@ def rcsample(main=False,dr=None,xmatch=None,
        use_astroNN_abundances= (False) only swap in astroNN parameters and abundances, not distances and ages
        use_astroNN_distances= (False) only swap in astroNN distances, not  parameters and abundances and ages
        use_astroNN_ages= (False) only swap in astroNN ages, not  parameters and abundances and distances
+       use_astroNN_orbits= (False) only swap in astroNN orbit info and Galactocentric coordinates
         +gaia_tools.xmatch.cds keywords
     OUTPUT:
        rcsample data[,xmatched table]
@@ -577,28 +583,43 @@ def rcsample(main=False,dr=None,xmatch=None,
         astroNNdata= astroNNDistances()
         # Match on (ra,dec)
         m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
-            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
+            colRA1='RA',colDec1='DEC', colRA2='ra_apogee', colDec2='dec_apogee')
         data= data[m1]
         astroNNdata= astroNNdata[m2]
         data= _add_astroNN_distances(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_ages:
         _warn_astroNN_ages()
-        astroNNdata= astroNNAges()
         # Match on (ra,dec)
-        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
-            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
-        data= data[m1]
-        astroNNdata= astroNNdata[m2]
-        data= _add_astroNN_ages(data,astroNNdata)
+        if int(dr) < 16:
+            astroNNdata= astroNNAges()
+            data = _add_astroNN_ages(data,astroNNdata)
+        else:
+            astroNNdata = astroNN() #ages are in the main VAC for DR > 16
+            m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+                colRA1='RA',colDec1='DEC',
+                             colRA2='ra_apogee',
+                             colDec2='dec_apogee')
+            data= data[m1]
+            astroNNdata= astroNNdata[m2]
+            data= _add_astroNN_ages(data,astroNNdata)
     if use_astroNN or kwargs.get('astroNN', False) or use_astroNN_orbits:
-        _warn_astroNN_orbits()
-        astroNNdata= astroNN()
-        # Match on (ra,dec)
-        m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
-            colRA1='RA',colDec1='DEC',colRA2='ra_apogee',colDec2='dec_apogee')
-        data= data[m1]
-        astroNNdata= astroNNdata[m2]
-        data= _add_astroNN_orbts(data,astroNNdata)
+        if int(dr) < 16:
+            # no orbits in < 16 - so skip this step.
+            pass
+        else:
+            #orbits are in the main VAC for DR > 16
+            _warn_astroNN_orbits()
+            astroNNdata= astroNN()
+            #need to adjust the GALVR,T,Z names in the rc catalogs
+            data = numpy.lib.recfunctions.rename_fields(data, {'GALVR': 'RC_GALVR', 'GALVT': 'RC_GALVT', 'GALVZ': 'RC_GALVZ'})
+            # Match on (ra,dec)
+            m1,m2,_= _xmatch(data,astroNNdata,maxdist=2.,
+                colRA1='RA',colDec1='DEC',
+                             colRA2='RA' if int(dr) < 16 else 'ra_apogee',
+                             colDec2='DEC' if int(dr) < 16 else 'dec_apogee')
+            data= data[m1]
+            astroNNdata= astroNNdata[m2]
+            data= _add_astroNN_orbits(data,astroNNdata)
     if not xmatch is None:
         from gaia_tools.load import _xmatch_cds
         if use_astroNN or kwargs.get('astroNN',False):
@@ -1284,10 +1305,6 @@ def _add_astroNN_distances(data,astroNNDistancesdata):
     dr= path._default_dr()
     fields_to_append= ['dist','dist_model_error','dist_error',
                        'weighted_dist','weighted_dist_error']
-    if int(dr) == 16:
-        #also have galactocentric and orbit info
-        fields_to_append= ['dist','dist_model_error','dist_error',
-                           'weighted_dist','weighted_dist_error']
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1396,4 +1413,4 @@ def _warn_astroNN_ages():
     warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")
 
 def _warn_astroNN_orbits():
-    warnings.warn("Adding orbits and Galactocentric coordinates from DR16 astroNN VAC")
+    warnings.warn("Adding orbits and Galactocentric coordinates from DR16 astroNN VAC, calculated using galpy (Bovy 2015) and the staeckel approximation (Mackereth & Bovy 2018)")
