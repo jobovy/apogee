@@ -944,7 +944,14 @@ def aspcapStar(loc_id,apogee_id,telescope='apo25m',ext=1,dr=None,header=True,
     filePath= path.aspcapStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if not os.path.exists(filePath):
         download.aspcapStar(loc_id,apogee_id,dr=dr,telescope=telescope)
-    data= fitsread(filePath,ext,header=header)
+    if not _FITSIO_LOADED:
+        # Using astropy, need to read header separately
+        if header:
+            data= fitsread(filePath,ext), headerread(filePath,ext)
+        else:
+            data= fitsread(filePath,ext)
+    else:
+        data= fitsread(filePath,ext,header=header)
     return data
 
 @specOnAspcapWavegrid
@@ -973,7 +980,14 @@ def apStar(loc_id,apogee_id,telescope='apo25m',
     filePath= path.apStarPath(loc_id,apogee_id,dr=dr,telescope=telescope)
     if not os.path.exists(filePath):
         download.apStar(loc_id,apogee_id,dr=dr,telescope=telescope)
-    data= fitsread(filePath,ext,header=header)
+    if not _FITSIO_LOADED:
+        # Using astropy, need to read header separately
+        if header:
+            data= fitsread(filePath,ext), headerread(filePath,ext)
+        else:
+            data= fitsread(filePath,ext)
+    else:
+        data= fitsread(filePath,ext,header=header)
     return data
 
 def apVisit(plateid, mjd, fiberid, ext=1, telescope='apo25m',
