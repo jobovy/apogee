@@ -562,6 +562,9 @@ def turbosynth(*args,**kwargs):
     # Parse the abundances
     if len(args) == 0: #special case that there are *no* differences
         args= ([26,0.],)
+    # Make sure to adjust C for the atmosphere's C value, by definitely including it (#61)
+    if not 6 in [elem[0] for elem in args]:
+        args= args+([6,0.])
     indiv_abu= {}
     for arg in args:
         indiv_abu[arg[0]]= arg[1]+solarabundances._ASPLUND05[arg[0]]\
