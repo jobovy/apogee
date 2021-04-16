@@ -361,6 +361,7 @@ def allStar(rmcommissioning=True,
         warnings.warn("Distances not added because matching requires the uninstalled esutil module",RuntimeWarning)
     if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
                                or 'l3' in path._APOGEE_REDUX.lower() \
+                               or 'synspec' in path._APOGEE_REDUX.lower() \
                                or int(path._APOGEE_REDUX[1:]) > 600):
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
