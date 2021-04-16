@@ -1045,6 +1045,9 @@ def apogeeSpectroASPCAPDirPath(dr=None):
     elif dr == '16':
         return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                             'apogee','spectro','aspcap')
+    elif dr == '17':
+        return os.path.join(_APOGEE_DATA,'dr%s' % dr,
+                            'apogee','spectro','aspcap', 'dr%s' % dr)
     else:
         return os.path.join(_APOGEE_DATA,'dr%s' % dr,
                             'apogee','spectro','redux')
