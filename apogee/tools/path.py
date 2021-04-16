@@ -53,6 +53,7 @@ _DR12REDUX='v603'
 _DR13REDUX='l30e.2'
 _DR14REDUX='l31c.2'
 _DR16REDUX='l33'
+_DR17REDUX='synspec'
 _CURRENTREDUX='current'
 
 if _APOGEE_REDUX is None:
@@ -138,6 +139,9 @@ def allStarPath(dr=None,_old=False,mjd=58104):
             specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
             return os.path.join(specReduxPath,'r12','l33',
                                 'allStar-r12-%s.fits' % redux)
+        elif dr == '17':
+            specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
+            return os.path.join(specReduxPath, redux, 'allStar-dr17-%s.fits' % redux)
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             if not isinstance(mjd, str) and mjd >= 58297:
@@ -270,6 +274,9 @@ def rcsamplePath(dr=None,_old=False):
         elif dr == '16':
             return os.path.join(_APOGEE_DATA,'dr16','apogee','vac','apogee-rc',
                                 'cat','apogee-rc-DR%s.fits' % dr)
+        elif dr == '17':
+            return os.path.join(_APOGEE_DATA,'dr17','apogee','vac','apogee-rc',
+                                'cat','apogee-rc-DR%s.fits' % dr)
 
 def astroNNPath(dr=None):
     """
@@ -297,6 +304,10 @@ def astroNNPath(dr=None):
                             'astroNN_apogee_dr14_catalog.fits')
     elif dr == '16':
         return os.path.join(_APOGEE_DATA,'dr16','apogee','vac',
+                            'apogee-astronn',
+                            'apogee_astroNN-DR{}-v1.fits'.format(dr))
+    elif dr == '17':
+        return os.path.join(_APOGEE_DATA,'dr17','apogee','vac',
                             'apogee-astronn',
                             'apogee_astroNN-DR{}.fits'.format(dr))
 
@@ -448,11 +459,17 @@ def apogeePlatePath(dr=None):
         platename= 'apogeePlate.fits'
     elif (int(dr) > 13) & (int(dr) <= 15):
         platename= 'apogee2Plate.fits'
-    elif int(dr) >= 16: #apogeePlate is in a completely different place/format....
+    elif int(dr) == 16: #apogeePlate is in a completely different place/format....
         redux= _redux_dr(dr=dr)
         specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
         platename = os.path.join(specReduxPath,'r12','l33',
                             'allPlates-r12-%s.fits' % redux)
+        return platename
+    elif int(dr) == 17: #apogeePlate is in a completely different place/format....
+        redux= _redux_dr(dr=dr)
+        specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
+        platename = os.path.join(specReduxPath,redux,
+                            'allPlate-dr17-%s.fits' % redux)
         return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
@@ -623,6 +640,10 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
         return os.path.join(specASPCAPPath,'r12','l33',telescope,
                             loc_id.strip(),
                             'aspcapStar-r12-%s.fits' % (apogee_id.strip()))
+    elif dr == '17':
+        return os.path.join(specASPCAPPath,'synspec',telescope,
+                            loc_id.strip(),
+                            'aspcapStar-dr17-%s.fits' % (apogee_id.strip()))
     elif dr == 'current':
         return os.path.join(specASPCAPPath,'t9','l31c',telescope,
                             loc_id.strip(),
@@ -696,6 +717,11 @@ def apStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                             loc_id.strip(),
                             '%s-r12-%s.fits' % (apStar_base_filename,
                                                apogee_id.strip()))
+    elif dr == '17':
+        return os.path.join(specReduxPath,'dr17','stars',telescope,
+                            loc_id.strip(),
+                            '%s-dr17-%s.fits' % (apStar_base_filename,
+                                               apogee_id.strip()))
     elif dr == 'current':
         return os.path.join(specReduxPath,'t9','stars',telescope,
                             loc_id.strip(),
@@ -746,6 +772,9 @@ def apVisitPath(plateid, mjd, fiberid, telescope='apo25m', dr=None):
     elif dr == '16':
         return os.path.join(specReduxPath, 'r12', telescope , plateid, mjd,
                             'apVisit-r12-%s-%s-%s.fits' % (plateid, mjd, fiberid))
+    elif dr == '17':
+        return os.path.join(specReduxPath, 'dr17', telescope , plateid, mjd,
+                            'apVisit-dr17-%s-%s-%s.fits' % (plateid, mjd, fiberid))
     elif dr == 'current':
         return os.path.join(specReduxPath, 'current', telescope , plateid, mjd,
                             'apVisit-current-%s-%s-%s.fits' % (plateid, mjd, fiberid))
@@ -1078,6 +1107,7 @@ def change_dr(dr=None):
     elif str(dr) == '13': _APOGEE_REDUX=_DR13REDUX
     elif str(dr) == '14': _APOGEE_REDUX=_DR14REDUX
     elif str(dr) == '16': _APOGEE_REDUX=_DR16REDUX
+    elif str(dr) == '17': _APOGEE_REDUX=_DR17REDUX
     elif str(dr) == 'current': _APOGEE_REDUX=_CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 
@@ -1088,6 +1118,7 @@ def _default_dr():
     elif _APOGEE_REDUX == _DR13REDUX: dr= '13'
     elif _APOGEE_REDUX == _DR14REDUX: dr= '14'
     elif _APOGEE_REDUX == _DR16REDUX: dr= '16'
+    elif _APOGEE_REDUX == _DR17REDUX: dr= '17'
     elif _APOGEE_REDUX == _CURRENTREDUX: dr= 'current'
     else: raise IOError('No default dr available for APOGEE_REDUX %s, need to set it by hand' % _APOGEE_REDUX)
     return dr
@@ -1100,6 +1131,7 @@ def _redux_dr(dr=None):
     elif dr == '13': return _DR13REDUX
     elif dr == '14': return _DR14REDUX
     elif dr == '16': return _DR16REDUX
+    elif dr == '17': return _DR17REDUX
     elif dr == 'current': return _CURRENTREDUX
     else: raise IOError('No reduction available for DR%s, need to set it by hand' % dr)
 

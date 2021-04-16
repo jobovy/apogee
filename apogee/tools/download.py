@@ -15,6 +15,7 @@ _DR12_URL= 'http://data.sdss3.org/sas/dr12'
 _DR13_URL= 'http://data.sdss.org/sas/dr13'
 _DR14_URL= 'http://data.sdss.org/sas/dr14'
 _DR16_URL= 'https://data.sdss.org/sas/dr16'
+_DR17_URL= 'https://data.sdss.org/sas/dr17' #Temporary until the public release!
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
@@ -245,13 +246,13 @@ def all_aspcapStar(dr=None):
     alldata= apread.allStar(raw=True)
     for ii in range(len(alldata)):
         try:
-            _= apread.aspcapStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+            _= apread.aspcapStar(alldata['LOCATION_ID'][ii] if int(dr) < 14
                                      else alldata['FIELD'][ii],
                                  alldata['APOGEE_ID'][ii],
                                  telescope=alldata['TELESCOPE'][ii],dr=dr)
         except:
             print("Failed to download location {}, apogee_id {}, telescope {}"\
-                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14
                               else alldata['FIELD'][ii],
                           alldata['APOGEE_ID'][ii],
                           alldata['TELESCOPE'][ii]))
@@ -303,13 +304,13 @@ def all_apStar(dr=None):
     alldata= apread.allStar(raw=True)
     for ii in range(len(alldata)):
         try:
-            _= apread.apStar(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+            _= apread.apStar(alldata['LOCATION_ID'][ii] if int(dr) < 14
                                  else alldata['FIELD'][ii],
                              alldata['APOGEE_ID'][ii],
                              telescope=alldata['TELESCOPE'][ii],dr=dr)
         except:
             print("Failed to download location {}, apogee_id {}, telescope {}"\
-                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14 
+                  .format(alldata['LOCATION_ID'][ii] if int(dr) < 14
                               else alldata['FIELD'][ii],
                           alldata['APOGEE_ID'][ii],
                           alldata['TELESCOPE'][ii]))
