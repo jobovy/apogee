@@ -202,7 +202,7 @@ def allStar(rmcommissioning=True,
     if rmdups:
         dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
         #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
-        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages:
+        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages or use_astroNN_orbits:
             astronn_used = True
         else:
             astronn_used = False
@@ -1388,9 +1388,9 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
         return data
     if int(dr) == 16:
         #also have galactocentric and orbit info
-        fields_to_append= [ 'GALR','GALPHI', 'GALZ','GALR_ERR','GALPHI_ERR','GALZ_ERR',
-                            'GALVR','GALVT','GALVZ','GALVR_ERR','GALVT_ERR','GALVZ_ERR',
-                            'GALVR_GALVT_CORR','GALVR_GALVZ_CORR','GALVT_GALVZ_CORR',
+        fields_to_append= [ 'galr','galphi', 'galz','galr_err','galphi_err','galz_err',
+                            'galvr','galvt','galvz','galvr_err','galvt_err','galvz_err',
+                            'galvr_galvt_corr','galvr_galvz_corr','galvt_galvz_corr',
                             'e','e_err','zmax','zmax_err','rperi','rperi_err','rap','rap_err',
                             'e_zmax_corr','e_rperi_corr','e_rap_corr','zmax_rperi_corr',
                             'zmax_rap_corr','rperi_rap_corr','jr','jr_err','Lz','Lz_err',
