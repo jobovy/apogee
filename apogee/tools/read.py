@@ -225,6 +225,8 @@ def allStar(rmcommissioning=True,
             matchFilePath= filePath
         if use_astroNN_ages:
             matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        # Remove NaNs
+        data= data[True^(numpy.isnan(data['RA'])+numpy.isnan(data['DEC']))]
         ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
