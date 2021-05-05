@@ -361,20 +361,15 @@ def allStar(rmcommissioning=True,
             data['SCHULTHEIS_DIST']= dist['SCHULTHEIS_dist']
     elif adddist:
         warnings.warn("Distances not added because matching requires the uninstalled esutil module",RuntimeWarning)
-    try:
-        if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
-                                   or 'l3' in path._APOGEE_REDUX.lower() \
-                                   or int(path._APOGEE_REDUX[1:]) > 600):
-            data= esutil.numpy_util.add_fields(data,[('METALS', float),
-                                                     ('ALPHAFE', float)])
-            data['METALS']= data['PARAM'][:,paramIndx('metals')]
-            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
-    except ValueError:
-        if _ESUTIL_LOADED and path._APOGEE_REDUX.lower() == 'synspec':
-            data= esutil.numpy_util.add_fields(data,[('METALS', float),
-                                                     ('ALPHAFE', float)])
-            data['METALS']= data['PARAM'][:,paramIndx('m_h')]
-            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha_m')]
+    if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
+                           or 'l3' in path._APOGEE_REDUX.lower() \
+                           or (path._APOGEE_REDUX.startswith('dr')
+                               and path._APOGEE_REDUX[2:] == '17') \
+                           or int(path._APOGEE_REDUX[1:]) > 600):
+        data= esutil.numpy_util.add_fields(data,[('METALS', float),
+                                                 ('ALPHAFE', float)])
+        data['METALS']= data['PARAM'][:,paramIndx('metals')]
+        data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
     if not xmatch is None:
         return (data,ma)
     else:
