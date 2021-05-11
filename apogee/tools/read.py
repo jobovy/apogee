@@ -368,8 +368,12 @@ def allStar(rmcommissioning=True,
                            or int(path._APOGEE_REDUX[1:]) > 600):
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
-        data['METALS']= data['PARAM'][:,paramIndx('metals')]
-        data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+        try:
+            data['METALS']= data['PARAM'][:,paramIndx('metals')]
+            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+        except KeyError: #DR17
+            data['METALS']= data['PARAM'][:,paramIndx('m_h')]
+            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha_m')]
     if not xmatch is None:
         return (data,ma)
     else:
