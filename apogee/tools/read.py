@@ -225,6 +225,8 @@ def allStar(rmcommissioning=True,
             matchFilePath= filePath
         if use_astroNN_ages:
             matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        # Remove NaNs
+        data= data[True^(numpy.isnan(data['RA'])+numpy.isnan(data['DEC']))]
         ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
@@ -359,18 +361,17 @@ def allStar(rmcommissioning=True,
             data['SCHULTHEIS_DIST']= dist['SCHULTHEIS_dist']
     elif adddist:
         warnings.warn("Distances not added because matching requires the uninstalled esutil module",RuntimeWarning)
-    try:
-        if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
-                                   or 'l3' in path._APOGEE_REDUX.lower() \
-                                   or int(path._APOGEE_REDUX[1:]) > 600):
-            data= esutil.numpy_util.add_fields(data,[('METALS', float),
-                                                     ('ALPHAFE', float)])
+    if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
+                           or 'l3' in path._APOGEE_REDUX.lower() \
+                           or (path._APOGEE_REDUX.startswith('dr')
+                               and path._APOGEE_REDUX[2:] == '17') \
+                           or int(path._APOGEE_REDUX[1:]) > 600):
+        data= esutil.numpy_util.add_fields(data,[('METALS', float),
+                                                 ('ALPHAFE', float)])
+        try:
             data['METALS']= data['PARAM'][:,paramIndx('metals')]
             data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
-    except ValueError:
-        if _ESUTIL_LOADED and path._APOGEE_REDUX.lower() == 'synspec':
-            data= esutil.numpy_util.add_fields(data,[('METALS', float),
-                                                     ('ALPHAFE', float)])
+        except KeyError: #DR17
             data['METALS']= data['PARAM'][:,paramIndx('m_h')]
             data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha_m')]
     if not xmatch is None:

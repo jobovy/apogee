@@ -53,7 +53,7 @@ _DR12REDUX='v603'
 _DR13REDUX='l30e.2'
 _DR14REDUX='l31c.2'
 _DR16REDUX='l33'
-_DR17REDUX='synspec'
+_DR17REDUX='dr17'
 _CURRENTREDUX='current'
 
 if _APOGEE_REDUX is None:
@@ -141,7 +141,8 @@ def allStarPath(dr=None,_old=False,mjd=58104):
                                 'allStar-r12-%s.fits' % redux)
         elif dr == '17':
             specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
-            return os.path.join(specReduxPath, redux, 'allStar-dr17-%s.fits' % redux)
+            return os.path.join(specReduxPath,'synspec',
+                                'allStar-dr17-synspec.fits')
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             if not isinstance(mjd, str) and mjd >= 58297:
@@ -255,6 +256,7 @@ def rcsamplePath(dr=None,_old=False):
         elif _APOGEE_REDUX == 'l30e.2': dr= '13'
         elif _APOGEE_REDUX == 'l31c.2': dr= '14'
         elif _APOGEE_REDUX == 'l33': dr= '16'
+        elif _APOGEE_REDUX == 'dr17': dr= '17'
         elif _APOGEE_REDUX == 'current':
             return os.path.join(_APOGEE_DATA,'apogee-rc-current.fits')
         else: raise IOError('No RC catalog available for the %s reduction' % _APOGEE_REDUX)
@@ -469,7 +471,7 @@ def apogeePlatePath(dr=None):
         redux= _redux_dr(dr=dr)
         specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
         platename = os.path.join(specReduxPath,redux,
-                            'allPlate-dr17-%s.fits' % redux)
+                            'allPlate-dr17-synspec.fits')
         return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
