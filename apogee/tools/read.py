@@ -1170,22 +1170,21 @@ def mainIndx(data):
         survey = numpy.array([data['SURVEY'][i].strip() for i in range(len(data['SURVEY']))])
         if not isinstance(survey[0], (bytes,numpy.bytes_)):
             survey = numpy.array([survey[i].encode('utf-8') for i in range(len(survey))])
-        indx *= ((survey == b'apogee')
-                  + (survey == b'apogee,apogee-marvels')
-                  + (survey == b'apogee,apogee-marvels,apogee2')
-                  + (survey == b'apogee,apogee-marvels,apogee2-manga')
-                  + (survey == b'apogee,apogee2')
-                  + (survey == b'apogee,apogee2,apogee2-manga')
-                  + (survey == b'apogee,apogee2-manga')
-                  + (survey == b'apogee-marvels')
-                  + (survey == b'apogee-marvels,apogee2')
-                  + (survey == b'apogee-marvels,apogee2-manga'))
-        indx+= ((survey == b'apogee2')
-                  + (survey == b'apogee2-manga')
-                  + (survey == b'manga-apogee2')
-                  + (survey == b'apogee2,apogee2-manga')
-                  + (survey == b'apogee2s'))#\
-            #*((data['APOGEE2_TARGET1'] & 2**14) != 0)
+        indx *= ((survey == b'apogee')\
+          + (survey == b'apogee,apogee-marvels')\
+          + (survey == b'apogee,apogee-marvels,apogee2')\
+          + (survey == b'apogee,apogee-marvels,apogee2-manga')\
+          + (survey == b'apogee,apogee2')\
+          + (survey == b'apogee,apogee2,apogee2-manga')\
+          + (survey == b'apogee,apogee2-manga')\
+          + (survey == b'apogee-marvels')\
+          + (survey == b'apogee-marvels,apogee2')\
+          + (survey == b'apogee-marvels,apogee2-manga')\
+          + (survey == b'apogee2')\
+          + (survey == b'apogee2-manga')\
+          + (survey == b'manga-apogee2')\
+          + (survey == b'apogee2,apogee2-manga')\
+          + (survey == b'apogee2s'))#\
     return indx
 
 def remove_duplicates(data):
