@@ -298,7 +298,7 @@ def astroNNPath(dr=None):
     elif dr == '16':
         return os.path.join(_APOGEE_DATA,'dr16','apogee','vac',
                             'apogee-astronn',
-                            'apogee_astroNN-DR{}.fits'.format(dr))
+                            'apogee_astroNN-DR{}-v1.fits'.format(dr))
 
 def astroNNDistancesPath(dr=None):
     """
