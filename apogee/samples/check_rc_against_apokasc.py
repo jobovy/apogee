@@ -44,10 +44,12 @@ if __name__ == '__main__':
     except ValueError:
         seismoStateTag= 'STELLO_EVSTATES'
         seismoState= numpy.char.strip(data[seismoStateTag])
-    clumpseismo= seismoState == 'CLUMP'
-    noseismo= seismoState == 'UNKNOWN'
+    print(set(seismoState))
+    clumpseismo= (seismoState == 'CLUMP') + (seismoState == b'CLUMP')
+    noseismo= (seismoState == 'UNKNOWN') + (seismoState == b'UNKNOWN')
     noclumpseismo= (seismoState == 'RGB') \
-        + (seismoState == 'DWARF/SUBGIANT')
+        + (seismoState == 'DWARF/SUBGIANT') + (seismoState == b'RGB') \
+        + (seismoState == b'DWARF/SUBGIANT')
     rcclumpseismo= clumpseismo*(data['RC'] == 1)#*(((data['TEFF']-4800.)/1000.+2.75) > data['LOGG'])
     rcnoclumpseismo= noclumpseismo*(data['RC'] == 1)#*(((data['TEFF']-4800.)/1000.+2.75) > data['LOGG'])
     #Statistics using evolutionary state measurements

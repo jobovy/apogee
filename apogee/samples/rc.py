@@ -88,15 +88,15 @@ class rcdist:
                 savefilename= args[0]
             if os.path.exists(savefilename):
                 savefile= open(savefilename,'rb')
-                self._meanmag= pickle.load(savefile)
-                self._jks= pickle.load(savefile)
-                self._zs= pickle.load(savefile)
+                self._meanmag= pickle.load(savefile,encoding='latin1')
+                self._jks= pickle.load(savefile,encoding='latin1')
+                self._zs= pickle.load(savefile,encoding='latin1')
                 savefile.close()
             else:
                 raise IOError(savefilename+' file does not exist')
             if not savefilenameH is None and os.path.exists(savefilenameH):
                 savefile= open(savefilename,'rb')
-                self._meanmagH= pickle.load(savefile)
+                self._meanmagH= pickle.load(savefile,encoding='latin1')
                 savefile.close()
             elif not savefilenameH:
                 raise IOError(savefilename+' file does not exist')

@@ -118,9 +118,9 @@ def make_rcsample(parser):
                                                'GAIA_RADIAL_VELOCITY_ERROR',
                                                'GAIA_R_EST',
                                                'GAIA_R_LO',
-                                               'GAIA_R_HI',
-                                               'TEFF_SPEC',
-                                               'LOGG_SPEC'])
+                                               'GAIA_R_HI'])
+        data= esutil.numpy_util.remove_fields(\
+            data,[f for f in data.dtype.fields if f.startswith('GAIAEDR3_')])
     if not appath._APOGEE_REDUX.lower() == 'current' \
             and not 'l3' in appath._APOGEE_REDUX \
             and not 'dr' in appath._APOGEE_REDUX \
