@@ -1405,7 +1405,7 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
     if int(dr) < 16:
         warnings.warn("Tried to include orbits: No orbits or Galactocentric coordinates in DR < 16 catalogues!")
         return data
-    if int(dr) == 16:
+    if int(dr) == 16 or int(dr) == 17:
         #also have galactocentric and orbit info
         fields_to_append= [ 'galr','galphi', 'galz','galr_err','galphi_err','galz_err',
                             'galvr','galvt','galvz','galvr_err','galvt_err','galvz_err',
@@ -1418,6 +1418,9 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
                             'omega_z','omega_z_err','theta_r','theta_r_err',
                             'theta_phi','theta_phi_err','theta_z','theta_z_err',
                             'rl','rl_err','Energy','Energy_Err','EminusEc','EminusEc_err']
+        if int(dr) == 17:
+            fields_to_append.remove('Energy_Err')
+            fields_to_append.append('Energy_err')
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1446,4 +1449,4 @@ def _warn_astroNN_ages():
     warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")
 
 def _warn_astroNN_orbits():
-    warnings.warn("Adding orbits and Galactocentric coordinates from DR16 astroNN VAC, calculated using galpy (Bovy 2015) and the staeckel approximation (Mackereth & Bovy 2018)")
+    warnings.warn("Adding orbits and Galactocentric coordinates from the astroNN VAC, calculated using galpy (Bovy 2015) and the staeckel approximation (Mackereth & Bovy 2018)")
