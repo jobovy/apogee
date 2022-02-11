@@ -472,8 +472,8 @@ def apogeePlatePath(dr=None):
     elif int(dr) == 17: #apogeePlate is in a completely different place/format....
         redux= _redux_dr(dr=dr)
         specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
-        platename = os.path.join(specReduxPath,redux,
-                            'allPlate-dr17-synspec.fits')
+        platename = os.path.join(specReduxPath,'synspec',
+                                 'allPlates-dr17-synspec.fits')
         return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
