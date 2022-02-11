@@ -203,7 +203,7 @@ def allStar(rmcommissioning=True,
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
+        dupsFilename= path.allStarPath(mjd=mjd,lite=lite).replace('.fits','-nodups.fits')
         #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
         if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages or use_astroNN_orbits:
             astronn_used = True
@@ -429,6 +429,8 @@ def allVisit(rmcommissioning=True,
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
             indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
+        except ValueError:
+            indx= (data['EXTRATARG'] & 2**1) != 0
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -1253,6 +1255,8 @@ def remove_duplicates(data):
         except TypeError:
             comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
             comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
+        except ValueError:
+            comindx= (data['EXTRATARG'][nm2] & 2**1) != 0
         goodak= (True^numpy.isnan(data['AK_TARG'][nm2]))\
             *(data['AK_TARG'][nm2] > -50.)
         hisnr= numpy.argmax(data['SNR'][nm2]*(True^comindx)*goodak) #effect. make com zero SNR
