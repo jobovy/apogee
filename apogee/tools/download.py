@@ -785,6 +785,7 @@ def _base_url(dr,rc=False):
     elif dr == '13': return _DR13_URL
     elif dr == '14': return _DR14_URL
     elif dr == '16': return _DR16_URL
+    elif dr == '17': return _DR17_URL
     else: return _PROPRIETARY_URL
 
 def _dr_string(dr):
