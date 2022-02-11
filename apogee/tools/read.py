@@ -125,6 +125,7 @@ def allStar(rmcommissioning=True,
             xmatch=None,
             test=False,
             dr=None,
+            lite=False,
             **kwargs):
     """
     NAME:
@@ -132,6 +133,7 @@ def allStar(rmcommissioning=True,
     PURPOSE:
        read the allStar file
     INPUT:
+       lite= (False) if True, use the 'lite' version of allStar that only contains a subset of all columns (only available for DR16 and DR17)
        rmcommissioning= (default: True) if True, only use data obtained after commissioning
        main= (default: False) if True, only select stars in the main survey
        exclude_star_bad= (False) if True, remove stars with the STAR_BAD flag set in ASPCAPFLAG
@@ -162,19 +164,20 @@ def allStar(rmcommissioning=True,
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
        2019-08-13 - Edited for DR16 (incl. astroNN) - Bovy (UofT)
+       2022-02-11 - Added lite option - Bovy (UofT)
     """
     if dr is None:
-        filePath= path.allStarPath(mjd=mjd)
+        filePath= path.allStarPath(mjd=mjd,lite=lite)
         if not os.path.exists(filePath):
-            download.allStar(mjd=mjd)
+            download.allStar(mjd=mjd,lite=lite)
             #read allStar file
-        data= fitsread(path.allStarPath(mjd=mjd))
+        data= fitsread(path.allStarPath(mjd=mjd,lite=lite))
     else:
-        filePath= path.allStarPath(mjd=mjd, dr=dr)
+        filePath= path.allStarPath(mjd=mjd,dr=dr,lite=lite)
         if not os.path.exists(filePath):
-            download.allStar(mjd=mjd, dr=dr)
+            download.allStar(mjd=mjd,dr=dr,lite=lite)
             #read allStar file
-        data= fitsread(path.allStarPath(mjd=mjd, dr=dr))
+        data= fitsread(path.allStarPath(mjd=mjd,dr=dr,lite=lite))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
     # [ages file not matched line-by-line in DR14]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
@@ -237,6 +240,8 @@ def allStar(rmcommissioning=True,
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
             indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
+        except ValueError:
+            indx= (data['EXTRATARG'] & 2**1) != 0
         data= data[True^indx]
         if not xmatch is None: ma= ma[True^indx]
     if rmnovisits:
@@ -374,6 +379,9 @@ def allStar(rmcommissioning=True,
         except KeyError: #DR17
             data['METALS']= data['PARAM'][:,paramIndx('m_h')]
             data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha_m')]
+        except ValueError: # Lite
+            data['METALS']= data['M_H']
+            data['ALPHAFE']= data['ALPHA_M']
     if not xmatch is None:
         return (data,ma)
     else:

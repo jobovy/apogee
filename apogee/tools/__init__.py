@@ -12,11 +12,11 @@ except ImportError:
 import warnings
 from periodictable import elements
 try:
-    # Need to have allStar
-    filePath= appath.allStarPath()
+    # Need to have allStar, use lite version when available
+    filePath= appath.allStarPath(lite=True)
     if not os.path.exists(filePath):
-        download.allStar()
-    indexArrays= fitsread(appath.allStarPath(),3)
+        download.allStar(lite=True)
+    indexArrays= fitsread(appath.allStarPath(lite=True),3)
 except ValueError:
     _INDEX_ARRAYS_LOADED= False
 else:

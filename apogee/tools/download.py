@@ -19,7 +19,7 @@ _DR17_URL= 'https://data.sdss.org/sas/dr17'
 _PROPRIETARY_URL= 'https://data.sdss.org/sas/apogeework'
 _MAX_NTRIES= 2
 _ERASESTR= "                                                                                "
-def allStar(dr=None,mjd=58104):
+def allStar(dr=None,lite=False,mjd=58104):
     """
     NAME:
        allStar
@@ -27,6 +27,7 @@ def allStar(dr=None,mjd=58104):
        download the allStar file
     INPUT:
        dr= return the path corresponding to this data release (general default)
+       lite= (False) if True, use the 'lite' version of allStar that only contains a subset of all columns (only available for DR16 and DR17)
        mjd= (58104) MJD of version for monthly internal pipeline runs
     OUTPUT:
        (none; just downloads)
@@ -34,13 +35,14 @@ def allStar(dr=None,mjd=58104):
        2014-11-26 - Written - Bovy (IAS)
        2015-08-17 - Adjusted for new path (mv old to new) - Bovy (UofT)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
+       2022-02-11 - Added lite option - Bovy (UofT)
     """
     if dr is None: dr= path._default_dr()
     # First make sure the file doesn't exist
-    filePath= path.allStarPath(dr=dr,mjd=mjd)
+    filePath= path.allStarPath(dr=dr,mjd=mjd,lite=lite)
     if os.path.exists(filePath): return None
     # Check whether we can find it in its old place
-    oldFilePath= path.allStarPath(dr=dr,_old=True)
+    oldFilePath= path.allStarPath(dr=dr,_old=True,lite=lite)
     if os.path.exists(oldFilePath):
         # mv to new place
         try:
