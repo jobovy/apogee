@@ -125,6 +125,7 @@ def allStar(rmcommissioning=True,
             xmatch=None,
             test=False,
             dr=None,
+            lite=False,
             **kwargs):
     """
     NAME:
@@ -132,6 +133,7 @@ def allStar(rmcommissioning=True,
     PURPOSE:
        read the allStar file
     INPUT:
+       lite= (False) if True, use the 'lite' version of allStar that only contains a subset of all columns (only available for DR16 and DR17)
        rmcommissioning= (default: True) if True, only use data obtained after commissioning
        main= (default: False) if True, only select stars in the main survey
        exclude_star_bad= (False) if True, remove stars with the STAR_BAD flag set in ASPCAPFLAG
@@ -162,19 +164,20 @@ def allStar(rmcommissioning=True,
        2018-02-15 - Add astroNN distances and corresponding options - Bovy (UofT)
        2018-02-16 - Add astroNN ages and corresponding options - Bovy (UofT)
        2019-08-13 - Edited for DR16 (incl. astroNN) - Bovy (UofT)
+       2022-02-11 - Added lite option - Bovy (UofT)
     """
     if dr is None:
-        filePath= path.allStarPath(mjd=mjd)
+        filePath= path.allStarPath(mjd=mjd,lite=lite)
         if not os.path.exists(filePath):
-            download.allStar(mjd=mjd)
+            download.allStar(mjd=mjd,lite=lite)
             #read allStar file
-        data= fitsread(path.allStarPath(mjd=mjd))
+        data= fitsread(path.allStarPath(mjd=mjd,lite=lite))
     else:
-        filePath= path.allStarPath(mjd=mjd, dr=dr)
+        filePath= path.allStarPath(mjd=mjd,dr=dr,lite=lite)
         if not os.path.exists(filePath):
-            download.allStar(mjd=mjd, dr=dr)
+            download.allStar(mjd=mjd,dr=dr,lite=lite)
             #read allStar file
-        data= fitsread(path.allStarPath(mjd=mjd, dr=dr))
+        data= fitsread(path.allStarPath(mjd=mjd,dr=dr,lite=lite))
     #Add astroNN? astroNN file matched line-by-line to allStar, so match here
     # [ages file not matched line-by-line in DR14]
     if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances:
@@ -200,9 +203,9 @@ def allStar(rmcommissioning=True,
     if raw: return data
     #Remove duplicates, cache
     if rmdups:
-        dupsFilename= path.allStarPath(mjd=mjd).replace('.fits','-nodups.fits')
+        dupsFilename= path.allStarPath(mjd=mjd,lite=lite).replace('.fits','-nodups.fits')
         #need to stop code from loading the cached duplicate free file, if crossmatching with astroNN results!
-        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages:
+        if use_astroNN or kwargs.get('astroNN',False) or use_astroNN_abundances or use_astroNN_distances or use_astroNN_ages or use_astroNN_orbits:
             astronn_used = True
         else:
             astronn_used = False
@@ -225,6 +228,8 @@ def allStar(rmcommissioning=True,
             matchFilePath= filePath
         if use_astroNN_ages:
             matchFilePath= matchFilePath.replace('rc-','rc-astroNN-ages-')
+        # Remove NaNs
+        data= data[True^(numpy.isnan(data['RA'])+numpy.isnan(data['DEC']))]
         ma,mai= _xmatch_cds(data,xmatch,filePath,**kwargs)
         data= data[mai]
     #Some cuts
@@ -235,6 +240,8 @@ def allStar(rmcommissioning=True,
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID']])
             indx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID']])
+        except ValueError:
+            indx= (data['EXTRATARG'] & 2**1) != 0
         data= data[True^indx]
         if not xmatch is None: ma= ma[True^indx]
     if rmnovisits:
@@ -360,12 +367,21 @@ def allStar(rmcommissioning=True,
     elif adddist:
         warnings.warn("Distances not added because matching requires the uninstalled esutil module",RuntimeWarning)
     if _ESUTIL_LOADED and (path._APOGEE_REDUX.lower() == 'current' \
-                               or 'l3' in path._APOGEE_REDUX.lower() \
-                               or int(path._APOGEE_REDUX[1:]) > 600):
+                           or 'l3' in path._APOGEE_REDUX.lower() \
+                           or (path._APOGEE_REDUX.startswith('dr')
+                               and path._APOGEE_REDUX[2:] == '17') \
+                           or int(path._APOGEE_REDUX[1:]) > 600):
         data= esutil.numpy_util.add_fields(data,[('METALS', float),
                                                  ('ALPHAFE', float)])
-        data['METALS']= data['PARAM'][:,paramIndx('metals')]
-        data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+        try:
+            data['METALS']= data['PARAM'][:,paramIndx('metals')]
+            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha')]
+        except KeyError: #DR17
+            data['METALS']= data['PARAM'][:,paramIndx('m_h')]
+            data['ALPHAFE']= data['PARAM'][:,paramIndx('alpha_m')]
+        except ValueError: # Lite
+            data['METALS']= data['M_H']
+            data['ALPHAFE']= data['ALPHA_M']
     if not xmatch is None:
         return (data,ma)
     else:
@@ -413,6 +429,8 @@ def allVisit(rmcommissioning=True,
         except TypeError:
             indx= numpy.array(['apogee.n.c' in s for s in data['VISIT_ID']])
             indx+= numpy.array(['apogee.s.c' in s for s in data['VISIT_ID']])
+        except ValueError:
+            indx= (data['EXTRATARG'] & 2**1) != 0
         data= data[True^indx]
     if main:
         indx= mainIndx(data)
@@ -1237,6 +1255,8 @@ def remove_duplicates(data):
         except TypeError:
             comindx= numpy.array(['apogee.n.c' in s for s in data['APSTAR_ID'][nm2]])
             comindx+= numpy.array(['apogee.s.c' in s for s in data['APSTAR_ID'][nm2]])
+        except ValueError:
+            comindx= (data['EXTRATARG'][nm2] & 2**1) != 0
         goodak= (True^numpy.isnan(data['AK_TARG'][nm2]))\
             *(data['AK_TARG'][nm2] > -50.)
         hisnr= numpy.argmax(data['SNR'][nm2]*(True^comindx)*goodak) #effect. make com zero SNR
@@ -1385,11 +1405,11 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
     if int(dr) < 16:
         warnings.warn("Tried to include orbits: No orbits or Galactocentric coordinates in DR < 16 catalogues!")
         return data
-    if int(dr) == 16:
+    if int(dr) == 16 or int(dr) == 17:
         #also have galactocentric and orbit info
-        fields_to_append= [ 'GALR','GALPHI', 'GALZ','GALR_ERR','GALPHI_ERR','GALZ_ERR',
-                            'GALVR','GALVT','GALVZ','GALVR_ERR','GALVT_ERR','GALVZ_ERR',
-                            'GALVR_GALVT_CORR','GALVR_GALVZ_CORR','GALVT_GALVZ_CORR',
+        fields_to_append= [ 'galr','galphi', 'galz','galr_err','galphi_err','galz_err',
+                            'galvr','galvt','galvz','galvr_err','galvt_err','galvz_err',
+                            'galvr_galvt_corr','galvr_galvz_corr','galvt_galvz_corr',
                             'e','e_err','zmax','zmax_err','rperi','rperi_err','rap','rap_err',
                             'e_zmax_corr','e_rperi_corr','e_rap_corr','zmax_rperi_corr',
                             'zmax_rap_corr','rperi_rap_corr','jr','jr_err','Lz','Lz_err',
@@ -1398,6 +1418,9 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
                             'omega_z','omega_z_err','theta_r','theta_r_err',
                             'theta_phi','theta_phi_err','theta_z','theta_z_err',
                             'rl','rl_err','Energy','Energy_Err','EminusEc','EminusEc_err']
+        if int(dr) == 17:
+            fields_to_append.remove('Energy_Err')
+            fields_to_append.append('Energy_err')
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
@@ -1426,4 +1449,4 @@ def _warn_astroNN_ages():
     warnings.warn("Adding ages from Mackereth, Bovy, Leung, et al. (2019)")
 
 def _warn_astroNN_orbits():
-    warnings.warn("Adding orbits and Galactocentric coordinates from DR16 astroNN VAC, calculated using galpy (Bovy 2015) and the staeckel approximation (Mackereth & Bovy 2018)")
+    warnings.warn("Adding orbits and Galactocentric coordinates from the astroNN VAC, calculated using galpy (Bovy 2015) and the staeckel approximation (Mackereth & Bovy 2018)")

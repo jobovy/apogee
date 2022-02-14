@@ -14,6 +14,8 @@
 #
 # DR16 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR16.fits --rmdups --addl-logg-cut --nostat'
 #
+# DR17 catalog created using 'python make_rcsample.py -o ~/tmp/apogee-rc-DR17.fits --rmdups --addl-logg-cut --nostat'
+#
 # current catalog created using 'python make_rcsample.py -o /work/bovy/data/bovy/apogee/apogee-rc-current.fits --addl-logg-cut --rmdups --nostat --nopm'
 #
 import os, os.path
@@ -99,7 +101,8 @@ def make_rcsample(parser):
                                            'SRC_H',
                                            'PM_SRC'])
     # More
-    if appath._APOGEE_REDUX.lower() == 'l33':
+    if appath._APOGEE_REDUX.lower() == 'l33' \
+       or appath._APOGEE_REDUX.lower() == 'dr17':
         data= esutil.numpy_util.remove_fields(data,
                                               ['GAIA_SOURCE_ID',
                                                'GAIA_PARALLAX',
@@ -115,11 +118,12 @@ def make_rcsample(parser):
                                                'GAIA_RADIAL_VELOCITY_ERROR',
                                                'GAIA_R_EST',
                                                'GAIA_R_LO',
-                                               'GAIA_R_HI',
-                                               'TEFF_SPEC',
-                                               'LOGG_SPEC'])
+                                               'GAIA_R_HI'])
+        data= esutil.numpy_util.remove_fields(\
+            data,[f for f in data.dtype.fields if f.startswith('GAIAEDR3_')])
     if not appath._APOGEE_REDUX.lower() == 'current' \
             and not 'l3' in appath._APOGEE_REDUX \
+            and not 'dr' in appath._APOGEE_REDUX \
             and int(appath._APOGEE_REDUX[1:]) < 500:
         data= esutil.numpy_util.remove_fields(data,
                                               ['ELEM'])
@@ -130,8 +134,9 @@ def make_rcsample(parser):
         logg= data['LOGG']
     elif 'l30' in appath._APOGEE_REDUX:
         logg= data['LOGG']
-    elif appath._APOGEE_REDUX.lower() == 'current' \
-            or int(appath._APOGEE_REDUX[1:]) > 600:
+    elif appath._APOGEE_REDUX.lower() != 'dr17' and \
+         (appath._APOGEE_REDUX.lower() == 'current' \
+            or int(appath._APOGEE_REDUX[1:]) > 600):
         if False:
             #Use my custom logg calibration that's correct for the RC
             logg= (1.-0.042)*data['FPARAM'][:,paramIndx('logg')]-0.213
@@ -154,7 +159,8 @@ def make_rcsample(parser):
         *(z >= rcmodel.jkzcut(jk))\
         *(logg >= rcmodel.loggteffcut(data['TEFF'],z,upper=False))\
         *(logg+0.1*('l31' in appath._APOGEE_REDUX 
-                    or 'l33' in appath._APOGEE_REDUX) \
+                    or 'l33' in appath._APOGEE_REDUX
+                    or 'dr17' in appath._APOGEE_REDUX) \
               <= rcmodel.loggteffcut(data['TEFF'],z,upper=True))
     data= data[indx]
     #Add more aggressive flag cut
@@ -265,14 +271,16 @@ def make_rcsample(parser):
 def _add_proper_motions(data,savefilename):
     if 'l33' in appath._APOGEE_REDUX:
         return _add_proper_motions_gaia(data)
+    elif 'dr17' in appath._APOGEE_REDUX:
+        return _add_proper_motions_gaia(data,xcat='vizier:I/350/gaiaedr3')
     else:
         return _add_proper_motions_pregaia(data,savefilename)
 
-def _add_proper_motions_gaia(data):
+def _add_proper_motions_gaia(data,xcat='vizier:I/345/gaia2'):
     from gaia_tools import xmatch
     gaia2_matches, matches_indx= xmatch.cds(data,colRA='RA',
                                             colDec='DEC',
-                                            xcat='vizier:I/345/gaia2')
+                                            xcat=xcat)
     # Add matches
     try: #These already exist currently, but may not always exist
         data= esutil.numpy_util.remove_fields(data,['PMRA','PMDEC'])
