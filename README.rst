@@ -140,7 +140,7 @@ RECENTLY CHANGED TO BE MORE CONSISTENT WITH SDSS' OWN ENVIRONMENT
 VARIABLES**)
 
 * **SDSS_LOCAL_SAS_MIRROR**: top-level directory that will be used to (selectively) mirror the SDSS SAS
-* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14, l33 for DR16); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path`` (also available in ``apogee.tools.read`` for convenience).
+* **RESULTS_VERS**: APOGEE reduction version (e.g., v304 for DR10, v402 for DR11, v603 for DR12, l30e.2 for DR13, l31c.2 for DR14, l33 for DR16, dr17 for DR17); note that you can set and change the DR on the fly using the function ``change_dr`` in ``apogee.tools.path`` (also available in ``apogee.tools.read`` for convenience).
 * **APOGEE_APOKASC_REDUX**: APOKASC catalog version (e.g., v6.2a); note that this does not load the public catalog and is only for internal SDSS use.
 
 In order to use this code, you will need to set these environment variables

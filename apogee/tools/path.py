@@ -96,7 +96,7 @@ def apallPath(visit=False):
             return os.path.join(_APOGEE_DATA,
                                 'allStar-'+_APOGEE_ASPCAP_REDUX+'.fits')
 
-def allStarPath(dr=None,_old=False,mjd=58104):
+def allStarPath(dr=None,lite=False,_old=False,mjd=58104):
     """
     NAME:
        allStarPath
@@ -104,6 +104,7 @@ def allStarPath(dr=None,_old=False,mjd=58104):
        returns the path of the relevant file
     INPUT:
        dr= return the path corresponding to this data release
+       lite= (False) if True, use the 'lite' version of allStar that only contains a subset of all columns (only available for DR16 and DR17)
        mjd= (58104) MJD of version for monthly internal pipeline runs
     OUTPUT:
        path string
@@ -114,6 +115,7 @@ def allStarPath(dr=None,_old=False,mjd=58104):
        2012-01-02 - Written - Bovy (IAS)
        2012-05-30 - Edited for ASPCAP - Bovy (IAS)
        2018-01-22 - Edited for new monthly pipeline runs - Bovy (UofT)
+       2022-02-11 - Added lite option - Bovy (UofT)
     """
     if dr is None: dr= _default_dr()
     redux= _redux_dr(dr=dr)
@@ -138,11 +140,11 @@ def allStarPath(dr=None,_old=False,mjd=58104):
             # Think this specReduxPath should work for all DR, but just in case
             specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
             return os.path.join(specReduxPath,'r12','l33',
-                                'allStar-r12-%s.fits' % redux)
+                    'allStar%s-r12-%s.fits' % ('Lite' if lite else '',redux))
         elif dr == '17':
             specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
             return os.path.join(specReduxPath,'synspec',
-                                'allStar-dr17-synspec.fits')
+                    'allStar%s-dr17-synspec.fits' % ('Lite' if lite else ''))
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             if not isinstance(mjd, str) and mjd >= 58297:
@@ -470,8 +472,8 @@ def apogeePlatePath(dr=None):
     elif int(dr) == 17: #apogeePlate is in a completely different place/format....
         redux= _redux_dr(dr=dr)
         specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
-        platename = os.path.join(specReduxPath,redux,
-                            'allPlate-dr17-synspec.fits')
+        platename = os.path.join(specReduxPath,'synspec',
+                                 'allPlates-dr17-synspec.fits')
         return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
