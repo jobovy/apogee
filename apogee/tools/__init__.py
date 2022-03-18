@@ -13,7 +13,7 @@ import warnings
 from periodictable import elements
 try:
     # Need to have allStar, use lite version when available (simpler to only do this for DR17)
-    if not appath._APOGEE_REDUX == 'dr17':
+    if appath._APOGEE_REDUX == 'l33':
         lite = False
     else:
         lite = True 
