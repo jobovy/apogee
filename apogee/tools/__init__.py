@@ -12,11 +12,15 @@ except ImportError:
 import warnings
 from periodictable import elements
 try:
-    # Need to have allStar, use lite version when available
-    filePath= appath.allStarPath(lite=True)
+    # Need to have allStar, use lite version when available (simpler to only do this for DR17)
+    if not appath._APOGEE_REDUX == 'dr17':
+        lite = False
+    else:
+        lite = True 
+    filePath= appath.allStarPath(lite=lite)
     if not os.path.exists(filePath):
-        download.allStar(lite=True)
-    indexArrays= fitsread(appath.allStarPath(lite=True),3)
+        download.allStar(lite=lite)
+    indexArrays= fitsread(appath.allStarPath(lite=lite),3)
 except ValueError:
     _INDEX_ARRAYS_LOADED= False
 else:
