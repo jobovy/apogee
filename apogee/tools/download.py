@@ -168,16 +168,20 @@ def astroNNDistances(dr=None):
        (none; just downloads)
     HISTORY:
        2018-02-15 - Written - Bovy (UofT)
+       2022-03-23 - Edited for dr>14 - Hopkins (Oxford)
     """
     if dr is None: dr= path._default_dr()
-    # First make sure the file doesn't exist
-    filePath= path.astroNNDistancesPath(dr=dr)
-    if os.path.exists(filePath): return None
-    # Create the file path
-    downloadPath= 'https://github.com/henrysky/astroNN_gaia_dr2_paper/raw/'\
-        'master/apogee_dr14_nn_dist.fits'
-    _download_file(downloadPath,filePath,dr,verbose=True)
-    return None
+    if int(dr) == 14:
+        # First make sure the file doesn't exist
+        filePath= path.astroNNDistancesPath(dr=dr)
+        if os.path.exists(filePath): return None
+        # Create the file path
+        downloadPath= 'https://github.com/henrysky/astroNN_gaia_dr2_paper/raw/'\
+            'master/apogee_dr14_nn_dist.fits'
+        _download_file(downloadPath,filePath,dr,verbose=True)
+        return None
+    else: # From DR16 onwards, one astroNN file
+        return astroNN(dr=dr)
 
 def astroNNAges(dr=None):
     """
@@ -191,16 +195,20 @@ def astroNNAges(dr=None):
        (none; just downloads)
     HISTORY:
        2018-02-16 - Written - Bovy (UofT)
+       2022-03-23 - Edited for dr>14 - Hopkins (Oxford)
     """
     if dr is None: dr= path._default_dr()
-    # First make sure the file doesn't exist
-    filePath= path.astroNNAgesPath(dr=dr)
-    if os.path.exists(filePath): return None
-    # Create the file path
-    downloadPath= 'http://www.astro.ljmu.ac.uk/~astjmack/APOGEEGaiaAges/'\
-                  'astroNNBayes_ages_goodDR14.fits'
-    _download_file(downloadPath,filePath,dr,verbose=True)
-    return None
+    if int(dr) == 14:
+        # First make sure the file doesn't exist
+        filePath= path.astroNNAgesPath(dr=dr)
+        if os.path.exists(filePath): return None
+        # Create the file path
+        downloadPath= 'http://www.astro.ljmu.ac.uk/~astjmack/APOGEEGaiaAges/'\
+                      'astroNNBayes_ages_goodDR14.fits'
+        _download_file(downloadPath,filePath,dr,verbose=True)
+        return None
+    else: # From DR16 onwards, one astroNN file
+        return astroNN(dr=dr)
 
 def aspcapStar(loc_id,apogee_id,telescope='apo25m',dr=None):
     """
