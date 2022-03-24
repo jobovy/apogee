@@ -1417,10 +1417,7 @@ def _add_astroNN_orbits(data,astroNNOrbitsdata):
                             'omega_r','omega_r_err','omega_phi','omega_phi_err',
                             'omega_z','omega_z_err','theta_r','theta_r_err',
                             'theta_phi','theta_phi_err','theta_z','theta_z_err',
-                            'rl','rl_err','Energy','Energy_Err','EminusEc','EminusEc_err']
-        if int(dr) == 17:
-            fields_to_append.remove('Energy_Err')
-            fields_to_append.append('Energy_err')
+                            'rl','rl_err','Energy','Energy_err','EminusEc','EminusEc_err']
     if True:
         # Faster way to join structured arrays (see https://stackoverflow.com/questions/5355744/numpy-joining-structured-arrays)
         newdtype= data.dtype.descr+\
