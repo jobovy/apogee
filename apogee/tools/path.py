@@ -143,8 +143,8 @@ def allStarPath(dr=None,lite=False,_old=False,mjd=58104):
                     'allStar%s-r12-%s.fits' % ('Lite' if lite else '',redux))
         elif dr == '17':
             specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
-            return os.path.join(specReduxPath,'synspec',
-                    'allStar%s-dr17-synspec.fits' % ('Lite' if lite else ''))
+            return os.path.join(specReduxPath,'synspec_rev1',
+                    'allStar%s-dr17-synspec_rev1.fits' % ('Lite' if lite else ''))
         elif dr == 'current':
             specASPCAPPath= apogeeSpectroASPCAPDirPath(dr=dr)
             if not isinstance(mjd, str) and mjd >= 58297:
@@ -472,8 +472,8 @@ def apogeePlatePath(dr=None):
     elif int(dr) == 17: #apogeePlate is in a completely different place/format....
         redux= _redux_dr(dr=dr)
         specReduxPath= apogeeSpectroASPCAPDirPath(dr=dr)
-        platename = os.path.join(specReduxPath,'synspec',
-                                 'allPlates-dr17-synspec.fits')
+        platename = os.path.join(specReduxPath,'synspec_rev1',
+                                 'allPlates-dr17-synspec_rev1.fits')
         return platename
     else:
         platename= 'apogeePlate_DR%s.fits' % dr
@@ -645,7 +645,7 @@ def aspcapStarPath(loc_id,apogee_id,telescope='apo25m',dr=None):
                             loc_id.strip(),
                             'aspcapStar-r12-%s.fits' % (apogee_id.strip()))
     elif dr == '17':
-        return os.path.join(specASPCAPPath,'synspec',telescope,
+        return os.path.join(specASPCAPPath,'synspec_rev1',telescope,
                             loc_id.strip(),
                             'aspcapStar-dr17-%s.fits' % (apogee_id.strip()))
     elif dr == 'current':
