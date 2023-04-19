@@ -5,6 +5,7 @@
 ###############################################################################
 import os
 import sys
+import errno
 import shutil
 import tempfile
 import subprocess
@@ -748,12 +749,11 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
     ntries= 1
     while downloading:
         try:
-            cmd= ['wget','%s' % downloadPath,
-                  '-O','%s' % tmp_savefilename,
-                  '--read-timeout=10',
-                  '--tries=3']
-            if not verbose: cmd.append('-q')
-            if spider: cmd.append('--spider')
+            cmd= ['curl','%s' % downloadPath,
+                  '-o','%s' % tmp_savefilename,
+                  '--retry','3']
+            if not verbose: cmd.append('-s')
+            if spider: cmd.append('--head')
             subprocess.check_call(cmd)
             if not spider: shutil.move(tmp_savefilename,filePath)
             downloading= False
@@ -770,7 +770,7 @@ def _download_file(downloadPath,filePath,dr,verbose=False,spider=False):
                 interrupted= True
             os.remove(tmp_savefilename)
         except OSError as e:
-            if e.errno == os.errno.ENOENT:
+            if e.errno == errno.ENOENT:
                 raise OSError("Automagically downloading catalogs and data files requires the wget program; please install wget and try again...")
             else:
                 raise
