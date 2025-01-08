@@ -6,6 +6,8 @@ Tools for dealing with `SDSS-III <http://sdss3.org/>`__ `APOGEE
 <http://sdss.org/>`__ `APOGEE-2
 <http://www.sdss.org/surveys/apogee-2/>`__ data.
 
+**PLEASE NOTE THAT THIS REPOSITORY IS NO LONGER ACTIVELY MAINTAINED AS OF 01/01/2025**
+
 .. contents::
 
 AUTHOR
